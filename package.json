@@ -1,0 +1,34 @@
+{
+  "name": "chargebot-services",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "sst dev",
+    "build": "sst build",
+    "deploy": "sst deploy",
+    "remove": "sst remove",
+    "console": "sst console",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@tsconfig/node18": "^18.2.2",
+    "aws-cdk-lib": "2.95.1",
+    "constructs": "10.2.69",
+    "sst": "^2.30.3",
+    "typescript": "^5.2.2"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "@aws-sdk/client-rds-data": "^3.431.0",
+    "@middy/core": "^4.6.5",
+    "@middy/http-error-handler": "^4.6.5",
+    "@middy/http-json-body-parser": "^4.6.5",
+    "@middy/http-response-serializer": "^4.6.5",
+    "@middy/validator": "^4.6.5",
+    "kysely": "^0.26.3",
+    "kysely-data-api": "^0.2.1"
+  }
+}
