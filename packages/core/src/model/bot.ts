@@ -1,7 +1,8 @@
-export interface Bot {
-  id?: number;
-  device_uuid: string;
+import { AuditedEntity } from "./audited_entity";
+
+export interface Bot extends AuditedEntity {
+  bot_uuid: string;
   name: string;
   initials: string;
-  color: string;
+  pin_color: string;
 }
