@@ -1,0 +1,27 @@
+import { Kysely } from "kysely";
+
+/**
+ * @param db {Kysely<any>}
+ */
+export async function up(db) {
+  await db.schema
+    .createTable("{{name}}")
+    .addColumn("id", "serial", (col) => col.primaryKey())
+    {{#each attributes}}
+        {{#if unique}}
+        .addColumn("{{attribute}}", "{{type}}", (col) => col.notNull().unique())
+        {{#else if not_null}}
+        .addColumn("{{attribute}}", "{{type}}", (col) => col.notNull())
+        {{#else}}
+        .addColumn("{{attribute}}", "{{type}}")
+        {{/if}}
+    {{/each}}
+    .execute();
+}
+
+/**
+ * @param db {Kysely<any>}
+ */
+export async function down(db) {
+  await db.schema.dropTable("{{name}}").execute();
+}

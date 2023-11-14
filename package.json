@@ -10,7 +10,8 @@
     "deploy": "sst deploy",
     "remove": "sst remove",
     "console": "sst console",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "plop": "plop"
   },
   "devDependencies": {
     "@tsconfig/node18": "^18.2.2",
@@ -26,8 +27,10 @@
   ],
   "dependencies": {
     "@aws-sdk/client-rds-data": "^3.431.0",
+    "inquirer-recursive": "^0.0.7",
     "kysely": "^0.26.3",
     "kysely-data-api": "^0.2.1",
+    "plop": "^4.0.0",
     "uuid": "^9.0.1"
   }
 }
