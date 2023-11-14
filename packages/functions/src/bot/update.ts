@@ -10,6 +10,14 @@ const handler = async (event: any) => {
     const id = +event.pathParameters!.id!;
     const user_id = event.requestContext.authorizer.jwt.claims.sub;
     const bot = await Bot.update(id, event.body, user_id);
+
+    if (!bot) {
+        return {
+            statusCode: 404,
+            headers: { "Content-Type": "application/json" }
+        };
+    }
+
     return {
         statusCode: 200,
         headers: { "Content-Type": "application/json" },

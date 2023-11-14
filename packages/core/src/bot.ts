@@ -22,22 +22,33 @@ export async function update(id: number, update: any, user_id: string) {
             modified_by: user_id
         })
         .where('id', '=', id)
+        .where('deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 }
 
 export async function remove(id: number, user_id: string) {
-    await db
+    return await db
         .updateTable('bot')
         .set({
             deleted_date: new Date(),
             deleted_by: user_id
         })
         .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .returning(['id'])
         .executeTakeFirst();
 }
 
 export async function list() {
+    return await db
+        .selectFrom("bot")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function count() {
     return await db
         .selectFrom("bot")
         .selectAll()

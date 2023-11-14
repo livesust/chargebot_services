@@ -7,8 +7,15 @@ import { Bot } from "@chargebot-services/core/bot";
 const handler = async (event: any) => {
     const id = +event.pathParameters!.id!;
     const user_id = event.requestContext.authorizer.jwt.claims.sub;
-    await Bot.remove(id, user_id);
+    const deleted = await Bot.remove(id, user_id);
 
+    // @ts-ignore
+    if (!deleted) {
+        return {
+            statusCode: 404,
+            headers: { "Content-Type": "application/json" }
+        };
+    }
     return {
         statusCode: 200,
         headers: { "Content-Type": "application/json" },
