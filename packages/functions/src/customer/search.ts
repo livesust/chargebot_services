@@ -2,10 +2,12 @@ import middy from "@middy/core";
 import validator from "@middy/validator";
 import httpErrorHandler from "@middy/http-error-handler";
 import { JsonResponseSchema } from "../shared/schemas";
-import { Bot } from "@chargebot-services/core/services/bot";
+import { SearchCustomerSchema } from "./customer.schema";
+import { Customer } from "@chargebot-services/core/services/customer";
+import jsonBodyParser from "@middy/http-json-body-parser";
 
 const handler = async (event: any) => {
-    const bots = await Bot.list();
+    const bots = await Customer.findByCriteria(event.body);
     const response = {
         statusCode: 200,
         headers: { "Content-Type": "application/json" },
@@ -15,5 +17,9 @@ const handler = async (event: any) => {
 };
 
 export const main = middy(handler)
-    .use(validator({ responseSchema: JsonResponseSchema }))
+    .use(jsonBodyParser())
+    .use(validator({
+        eventSchema: SearchCustomerSchema,
+        responseSchema: JsonResponseSchema
+    }))
     .use(httpErrorHandler());

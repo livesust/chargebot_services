@@ -1,15 +1,14 @@
 import { expect, test } from "vitest";
-import { Bot } from "../src/services/bot";
+import { Customer } from "../src/services/customer";
 import { getRandom } from './utils';
 
 let entity_id;
 
 test("Create", async () => {
-    const response = await Bot.create({
-        "bot_uuid": getRandom('text'),
+    const response = await Customer.create({
         "name": getRandom('text'),
-        "initials": getRandom('varchar(10)'),
-        "pin_color": getRandom('varchar(100)'),
+        "email": getRandom('text'),
+        "first_order_date": getRandom('timestamptz'),
     }, "unit test");
     expect(response).toBeDefined();
     expect(response!.id).toBeTruthy();
@@ -18,29 +17,29 @@ test("Create", async () => {
 
 test("Update", async () => {
     const value = getRandom('text');
-    const response = await Bot.update(
+    const response = await Customer.update(
         entity_id!,
-        { "bot_uuid": value },
+        { "name": value },
         "unit test"
     );
     expect(response).toBeDefined();
-    expect(response!.bot_uuid).toEqual(value);
+    expect(response!.name).toEqual(value);
 });
 
 test("List", async () => {
-    const response = await Bot.list();
+    const response = await Customer.list();
     expect(response).toBeDefined();
     expect(response.length).toBeGreaterThan(0);
 });
 
 test("Get by ID", async () => {
-    const response = await Bot.get(entity_id!);
+    const response = await Customer.get(entity_id!);
     expect(response).toBeTruthy();
     expect(response!.id).toEqual(entity_id!);
 });
 
 test("Search", async () => {
-    const response: any[] = await Bot.findByCriteria({
+    const response: any[] = await Customer.findByCriteria({
         "id": entity_id!
     });
     expect(response).toBeTruthy();
@@ -49,9 +48,9 @@ test("Search", async () => {
 });
 
 test("Delete", async () => {
-    const response = await Bot.list();
-    await Bot.remove(entity_id!, "unit test");
-    const list = await Bot.list();
+    const response = await Customer.list();
+    await Customer.remove(entity_id!, "unit test");
+    const list = await Customer.list();
 
     expect(response).toBeTruthy();
     expect(list).toBeDefined();

@@ -2,7 +2,7 @@ import middy from "@middy/core";
 import validator from "@middy/validator";
 import httpErrorHandler from "@middy/http-error-handler";
 import { IdPathParamSchema, JsonResponseSchema } from "../shared/schemas";
-import { Bot } from "@chargebot-services/core/bot";
+import { Bot } from "@chargebot-services/core/services/bot";
 
 const handler = async (event: any) => {
     const bot = await Bot.get(+event.pathParameters!.id!);

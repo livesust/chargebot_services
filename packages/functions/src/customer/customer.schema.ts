@@ -1,57 +1,48 @@
 import { transpileSchema } from '@middy/validator/transpile';
 import { CreateSchemaDef, UpdateSchemaDef, SearchSchemaDef, PathParametersIdDef } from "../shared/schemas";
 
-export const CreateBotSchema = transpileSchema({
+export const CreateCustomerSchema = transpileSchema({
     ...CreateSchemaDef,
     properties: {
         body: {
             type: "object",
             properties: {
-                bot_uuid: { type: "string" },
                 name: { type: "string" },
-                initials: { type: "string" },
-                pin_color: { type: "string" },
+                email: { type: "string" },
+                first_order_date: { type: "Date" },
             },
             required: [
-                "bot_uuid",
                 "name",
-                "initials",
-                "pin_color",
-            ],
+                                ],
         }
     }
 });
 
-export const UpdateBotSchema = transpileSchema({
+export const UpdateCustomerSchema = transpileSchema({
     ...UpdateSchemaDef,
     properties: {
         pathParameters: { ...PathParametersIdDef },
         body: {
             type: "object",
             properties: {
-                bot_uuid: { type: "string" },
                 name: { type: "string" },
-                initials: { type: "string" },
-                pin_color: { type: "string" },
+                email: { type: "string" },
+                first_order_date: { type: "Date" },
             },
         },
     },
 });
 
-export const SearchBotSchema = transpileSchema({
+export const SearchCustomerSchema = transpileSchema({
     ...SearchSchemaDef,
     properties: {
-        pathParameters: { ...PathParametersIdDef },
         body: {
             type: "object",
             properties: {
                 id: { type: "number" },
-                bot_uuid: { type: "string" },
                 name: { type: "string" },
-                initials: { type: "string" },
-                pin_color: { type: "string" },
-                created_by: { type: "string" },
-                modified_by: { type: "string" },
+                email: { type: "string" },
+                first_order_date: { type: "Date" },
             },
         },
     },

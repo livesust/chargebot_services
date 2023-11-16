@@ -1,0 +1,23 @@
+import { Insertable, Selectable, Updateable } from 'kysely'
+import { AuditedEntity } from "./audited_entity";
+
+export interface {{pascalCase name}}Table extends AuditedEntity {
+
+  {{#each attributes}}
+      {{#if unique}}
+  {{snakeCase attribute}}: {{tsType}};
+      {{else if not_null}}
+  {{snakeCase attribute}}: {{tsType}};
+      {{else}}
+  {{snakeCase attribute}}?: {{tsType}};
+      {{/if}}
+  {{/each}}
+
+}
+
+// You should not use the table schema interfaces directly. Instead, you should
+// use the `Selectable`, `Insertable` and `Updateable` wrappers. These wrappers
+// make sure that the correct types are used in each operation.
+export type {{pascalCase name}} = Selectable<{{pascalCase name}}Table>
+export type New{{pascalCase name}} = Insertable<{{pascalCase name}}Table>
+export type {{pascalCase name}}Update = Updateable<{{pascalCase name}}Table>

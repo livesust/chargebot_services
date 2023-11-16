@@ -1,0 +1,32 @@
+{
+  "name": "bot",
+  "attributes": [
+    {
+      "attribute": "bot_uuid",
+      "type": "text",
+      "tsType": "string",
+      "unique": true
+    },
+    {
+      "attribute": "name",
+      "type": "text",
+      "tsType": "string",
+      "unique": false,
+      "not_null": true
+    },
+    {
+      "attribute": "initials",
+      "type": "varchar(2)",
+      "tsType": "string",
+      "unique": false,
+      "not_null": true
+    },
+    {
+      "attribute": "pin color",
+      "type": "varchar(100)",
+      "tsType": "string",
+      "unique": false,
+      "not_null": true
+    }
+  ]
+}

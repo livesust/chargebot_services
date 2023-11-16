@@ -1,0 +1,108 @@
+export * as {{pascalCase name}} from "./{{snakeCase name}}";
+import db from '../model';
+import { {{pascalCase name}}, {{pascalCase name}}Update, New{{pascalCase name}} } from "../database/{{snakeCase name}}";
+
+export async function create({{snakeCase name}}: {{pascalCase name}}, user_id: string): Promise<{{pascalCase name}} | undefined> {
+    return await db
+        .insertInto('{{snakeCase name}}')
+        .values({
+            ...{{snakeCase name}},
+            created_date: new Date(),
+            created_by: user_id
+        })
+        .returningAll()
+        .executeTakeFirst();
+}
+
+export async function update(id: number, update: {{pascalCase name}}Update, user_id: string): Promise<{{pascalCase name}} | undefined> {
+    return await db
+        .updateTable('{{snakeCase name}}')
+        .set({
+            ...update,
+            modified_date: new Date(),
+            modified_by: user_id
+        })
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .returningAll()
+        .executeTakeFirst();
+}
+
+export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {
+    return await db
+        .updateTable('{{snakeCase name}}')
+        .set({
+            deleted_date: new Date(),
+            deleted_by: user_id
+        })
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .returning(['id'])
+        .executeTakeFirst();
+}
+
+export async function list(): Promise<{{pascalCase name}}[]> {
+    return await db
+        .selectFrom("{{snakeCase name}}")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function get(id: number): Promise<{{pascalCase name}} | undefined> {
+    return await db
+        .selectFrom("{{snakeCase name}}")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
+export async function findByCriteria(criteria: Partial<{{pascalCase name}}>) {
+  let query = db.selectFrom('{{snakeCase name}}')
+
+  if (criteria.id) {
+    query = query.where('id', '=', criteria.id);
+  }
+
+{{#each attributes}}
+{{#eq tsType "string"}}
+  if (criteria.{{snakeCase attribute}} !== undefined) {
+    query = query.where(
+      '{{snakeCase attribute}}', 
+      criteria.{{snakeCase attribute}} === null ? 'is' : '=', 
+      criteria.{{snakeCase attribute}}
+    );
+  }
+{{/eq}}
+{{#eq tsType "number"}}
+  if (criteria.{{snakeCase attribute}}) {
+    query = query.where('{{snakeCase attribute}}', '=', criteria.{{snakeCase attribute}});
+  }
+{{/eq}}
+{{#eq tsType "Date"}}
+  if (criteria.{{snakeCase attribute}}) {
+    query = query.where('{{snakeCase attribute}}', '=', criteria.{{snakeCase attribute}});
+  }
+{{/eq}}
+{{#eq tsType "boolean"}}
+  if (criteria.{{snakeCase attribute}}) {
+    query = query.where('{{snakeCase attribute}}', '=', criteria.{{snakeCase attribute}});
+  }
+{{/eq}}
+{{/each}}
+
+  if (criteria.created_by) {
+    query = query.where('created_by', '=', criteria.created_by);
+  }
+
+  if (criteria.modified_by !== undefined) {
+    query = query.where(
+      'modified_by', 
+      criteria.modified_by === null ? 'is' : '=', 
+      criteria.modified_by
+    );
+  }
+
+  return await query.selectAll().execute();
+}

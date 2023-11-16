@@ -9,7 +9,7 @@ export async function up(db) {
     .addColumn("id", "serial", (col) => col.primaryKey())
     .addColumn("bot_uuid", "text", (col) => col.notNull().unique())
     .addColumn("name", "text", (col) => col.notNull())
-    .addColumn("initials", "varchar(2)", (col) => col.notNull())
+    .addColumn("initials", "varchar(10)", (col) => col.notNull())
     .addColumn("pin_color", "varchar(100)", (col) => col.notNull())
     .addColumn("created_date", "timestamp")
     .addColumn("created_by", "varchar(255)")

@@ -1,0 +1,25 @@
+import middy from "@middy/core";
+import validator from "@middy/validator";
+import httpErrorHandler from "@middy/http-error-handler";
+import { JsonResponseSchema } from "../shared/schemas";
+import { Search{{pascalCase name}}Schema } from "./{{snakeCase name}}.schema";
+import { {{pascalCase name}} } from "@chargebot-services/core/services/{{snakeCase name}}";
+import jsonBodyParser from "@middy/http-json-body-parser";
+
+const handler = async (event: any) => {
+    const {{snakeCase name}}s = await {{pascalCase name}}.findByCriteria(event.body);
+    const response = {
+        statusCode: 200,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({{snakeCase name}}s)
+    };
+    return response;
+};
+
+export const main = middy(handler)
+    .use(jsonBodyParser())
+    .use(validator({
+        eventSchema: Search{{pascalCase name}}Schema,
+        responseSchema: JsonResponseSchema
+    }))
+    .use(httpErrorHandler());

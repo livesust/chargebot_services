@@ -1,0 +1,55 @@
+import { transpileSchema } from '@middy/validator/transpile';
+import { CreateSchemaDef, UpdateSchemaDef, SearchSchemaDef, PathParametersIdDef } from "../shared/schemas";
+
+export const Create{{pascalCase name}}Schema = transpileSchema({
+    ...CreateSchemaDef,
+    properties: {
+        body: {
+            type: "object",
+            properties: {
+                {{#each attributes}}
+                {{snakeCase attribute}}: { type: "{{tsType}}" },
+                {{/each}}
+            },
+            required: [
+                {{#each attributes}}
+                    {{#if unique}}
+                "{{snakeCase attribute}}",
+                    {{else if not_null}}
+                "{{snakeCase attribute}}",
+                    {{/if}}
+                {{/each}}
+            ],
+        }
+    }
+});
+
+export const Update{{pascalCase name}}Schema = transpileSchema({
+    ...UpdateSchemaDef,
+    properties: {
+        pathParameters: { ...PathParametersIdDef },
+        body: {
+            type: "object",
+            properties: {
+                {{#each attributes}}
+                {{snakeCase attribute}}: { type: "{{tsType}}" },
+                {{/each}}
+            },
+        },
+    },
+});
+
+export const SearchCustomerSchema = transpileSchema({
+    ...SearchSchemaDef,
+    properties: {
+        body: {
+            type: "object",
+            properties: {
+                id: { type: "number" },
+                {{#each attributes}}
+                {{snakeCase attribute}}: { type: "{{tsType}}" },
+                {{/each}}
+            },
+        },
+    },
+});

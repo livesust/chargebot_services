@@ -2,14 +2,14 @@ import middy from "@middy/core";
 import validator from "@middy/validator";
 import httpErrorHandler from "@middy/http-error-handler";
 import { JsonResponseSchema } from "../shared/schemas";
-import { Bot } from "@chargebot-services/core/services/bot";
+import { {{pascalCase name}} } from "@chargebot-services/core/services/{{snakeCase name}}";
 
 const handler = async (event: any) => {
-    const bots = await Bot.list();
+    const {{snakeCase name}}s = await {{pascalCase name}}.list();
     const response = {
         statusCode: 200,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(bots)
+        body: JSON.stringify({{snakeCase name}}s)
     };
     return response;
 };

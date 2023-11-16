@@ -1,17 +1,13 @@
 import middy from "@middy/core";
 import validator from "@middy/validator";
 import httpErrorHandler from "@middy/http-error-handler";
-import jsonBodyParser from "@middy/http-json-body-parser";
-import { JsonResponseSchema } from "../shared/schemas";
-import { UpdateBotSchema } from "./bot.schema";
-import { Bot } from "@chargebot-services/core/services/bot";
+import { IdPathParamSchema, JsonResponseSchema } from "../shared/schemas";
+import { Customer } from "@chargebot-services/core/services/customer";
 
 const handler = async (event: any) => {
-    const id = +event.pathParameters!.id!;
-    const user_id = event.requestContext.authorizer.jwt.claims.sub;
-    const bot = await Bot.update(id, event.body, user_id);
+    const customer = await Customer.get(+event.pathParameters!.id!);
 
-    if (!bot) {
+    if (!customer) {
         return {
             statusCode: 404,
             headers: { "Content-Type": "application/json" }
@@ -21,14 +17,13 @@ const handler = async (event: any) => {
     return {
         statusCode: 200,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(bot)
+        body: JSON.stringify(customer),
     };
 };
 
 export const main = middy(handler)
-    .use(jsonBodyParser())
     .use(validator({
-        eventSchema: UpdateBotSchema,
+        eventSchema: IdPathParamSchema,
         responseSchema: JsonResponseSchema
     }))
     .use(httpErrorHandler());

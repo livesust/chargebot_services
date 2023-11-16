@@ -18,6 +18,11 @@ export const UpdateSchemaDef = {
     required: ["pathParameters", "body"]
 };
 
+export const SearchSchemaDef = {
+    type: "object",
+    required: ["body"]
+};
+
 export const IdPathParamSchema = transpileSchema({
     type: "object",
     required: ["pathParameters"],

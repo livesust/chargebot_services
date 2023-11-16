@@ -2,10 +2,14 @@ import { Kysely } from "kysely";
 import { DataApiDialect } from "kysely-data-api";
 import { RDSData } from "@aws-sdk/client-rds-data";
 import { RDS } from "sst/node/rds";
-import { Bot } from "./bot";
+import { BotTable } from "./bot";
+import { CustomerTable } from "./customer";
+// DO NOT REMOVE THIS LINE: PLOP ENTITY IMPORT
 
 export interface Database {
-  bot: Bot
+  bot: BotTable,
+  customer: CustomerTable,
+// DO NOT REMOVE THIS LINE: PLOP ENTITY LIST
 }
 
 export default new Kysely<Database>({

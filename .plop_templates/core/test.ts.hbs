@@ -1,15 +1,14 @@
 import { expect, test } from "vitest";
-import { Bot } from "../src/services/bot";
+import { {{pascalCase name}} } from "../src/services/{{snakeCase name}}";
 import { getRandom } from './utils';
 
 let entity_id;
 
 test("Create", async () => {
-    const response = await Bot.create({
-        "bot_uuid": getRandom('text'),
-        "name": getRandom('text'),
-        "initials": getRandom('varchar(10)'),
-        "pin_color": getRandom('varchar(100)'),
+    const response = await {{pascalCase name}}.create({
+        {{#each attributes}}
+        "{{snakeCase attribute}}": getRandom('{{type}}'),
+        {{/each}}
     }, "unit test");
     expect(response).toBeDefined();
     expect(response!.id).toBeTruthy();
@@ -17,30 +16,30 @@ test("Create", async () => {
 });
 
 test("Update", async () => {
-    const value = getRandom('text');
-    const response = await Bot.update(
+    const value = getRandom('{{attributes.0.type}}');
+    const response = await {{pascalCase name}}.update(
         entity_id!,
-        { "bot_uuid": value },
+        { "{{snakeCase attributes.0.attribute}}": value },
         "unit test"
     );
     expect(response).toBeDefined();
-    expect(response!.bot_uuid).toEqual(value);
+    expect(response!.{{snakeCase attributes.0.attribute}}).toEqual(value);
 });
 
 test("List", async () => {
-    const response = await Bot.list();
+    const response = await {{pascalCase name}}.list();
     expect(response).toBeDefined();
     expect(response.length).toBeGreaterThan(0);
 });
 
 test("Get by ID", async () => {
-    const response = await Bot.get(entity_id!);
+    const response = await {{pascalCase name}}.get(entity_id!);
     expect(response).toBeTruthy();
     expect(response!.id).toEqual(entity_id!);
 });
 
 test("Search", async () => {
-    const response: any[] = await Bot.findByCriteria({
+    const response: any[] = await {{pascalCase name}}.findByCriteria({
         "id": entity_id!
     });
     expect(response).toBeTruthy();
@@ -49,9 +48,9 @@ test("Search", async () => {
 });
 
 test("Delete", async () => {
-    const response = await Bot.list();
-    await Bot.remove(entity_id!, "unit test");
-    const list = await Bot.list();
+    const response = await {{pascalCase name}}.list();
+    await {{pascalCase name}}.remove(entity_id!, "unit test");
+    const list = await {{pascalCase name}}.list();
 
     expect(response).toBeTruthy();
     expect(list).toBeDefined();

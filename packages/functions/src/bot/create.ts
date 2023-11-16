@@ -4,7 +4,7 @@ import httpErrorHandler from "@middy/http-error-handler";
 import jsonBodyParser from "@middy/http-json-body-parser";
 import { JsonResponseSchema } from "../shared/schemas";
 import { CreateBotSchema } from "./bot.schema";
-import { Bot } from "@chargebot-services/core/bot";
+import { Bot } from "@chargebot-services/core/services/bot";
 
 /**
  * CREATE
