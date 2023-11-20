@@ -1,19 +1,27 @@
 import middy from "@middy/core";
-import validator from "@middy/validator";
+import warmup from "@middy/warmup";
 import httpErrorHandler from "@middy/http-error-handler";
-import { JsonResponseSchema } from "../shared/schemas";
+import validator from "../shared/middlewares/joi-validator";
+import jsonBodySerializer from "../shared/middlewares/json-serializer";
+import { CustomerArrayResponseSchema } from "./customer.schema";
 import { Customer } from "@chargebot-services/core/services/customer";
+
+const isWarmingUp = (event: any) => event.isWarmingUp === true
 
 const handler = async (event: any) => {
     const customers = await Customer.list();
     const response = {
         statusCode: 200,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(customers)
+        body: customers
     };
     return response;
 };
 
 export const main = middy(handler)
-    .use(validator({ responseSchema: JsonResponseSchema }))
-    .use(httpErrorHandler());
+    // before
+    .use(warmup({ isWarmingUp }))
+    // after: inverse order execution
+    .use(httpErrorHandler())
+    .use(jsonBodySerializer())
+    .use(validator({ responseSchema: CustomerArrayResponseSchema }));

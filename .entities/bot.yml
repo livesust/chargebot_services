@@ -1,0 +1,29 @@
+name: bot
+attributes:
+  - attribute: bot uuid
+    type: text
+    tsType: string
+    unique: true
+    switch_value: string
+  - attribute: initials
+    type: varchar
+    varchar_length: '2'
+    tsType: string
+    unique: false
+    not_null: true
+    switch_value: string
+  - attribute: name
+    type: varchar
+    varchar_length: '255'
+    tsType: string
+    unique: false
+    not_null: true
+    switch_value: string
+  - attribute: pin color
+    type: varchar
+    varchar_length: '100'
+    tsType: string
+    unique: false
+    not_null: false
+    switch_value: string
+relationships: []

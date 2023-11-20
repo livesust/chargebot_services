@@ -2,26 +2,19 @@ export * as Customer from "./customer";
 import db from '../database';
 import { Customer, CustomerUpdate, NewCustomer } from "../database/customer";
 
-export async function create(customer: NewCustomer, user_id: string): Promise<Customer | undefined> {
+
+export async function create(customer: NewCustomer): Promise<Customer | undefined> {
     return await db
         .insertInto('customer')
-        .values({
-            ...customer,
-            created_date: new Date(),
-            created_by: user_id
-        })
+        .values(customer)
         .returningAll()
         .executeTakeFirst();
 }
 
-export async function update(id: number, update: CustomerUpdate, user_id: string): Promise<Customer | undefined> {
+export async function update(id: number, customer: CustomerUpdate): Promise<Customer | undefined> {
     return await db
         .updateTable('customer')
-        .set({
-            ...update,
-            modified_date: new Date(),
-            modified_by: user_id
-        })
+        .set(customer)
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -31,12 +24,17 @@ export async function update(id: number, update: CustomerUpdate, user_id: string
 export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {
     return await db
         .updateTable('customer')
-        .set({
-            deleted_date: new Date(),
-            deleted_by: user_id
-        })
+        .set({ deleted_date: new Date(), deleted_by: user_id })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
+        .returning(['id'])
+        .executeTakeFirst();
+}
+
+export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
+    return await db
+        .deleteFrom('customer')
+        .where('id', '=', id)
         .returning(['id'])
         .executeTakeFirst();
 }
@@ -59,7 +57,7 @@ export async function get(id: number): Promise<Customer | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<Customer>) {
-  let query = db.selectFrom('customer').where('deleted_by', 'is', null);
+  let query = db.selectFrom('customer').where('deleted_by', 'is', null)
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -72,7 +70,6 @@ export async function findByCriteria(criteria: Partial<Customer>) {
       criteria.name
     );
   }
-
   if (criteria.email !== undefined) {
     query = query.where(
       'email', 
@@ -80,7 +77,6 @@ export async function findByCriteria(criteria: Partial<Customer>) {
       criteria.email
     );
   }
-
   if (criteria.first_order_date) {
     query = query.where('first_order_date', '=', criteria.first_order_date);
   }
@@ -99,4 +95,3 @@ export async function findByCriteria(criteria: Partial<Customer>) {
 
   return await query.selectAll().execute();
 }
-

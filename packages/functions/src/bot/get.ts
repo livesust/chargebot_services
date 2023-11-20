@@ -1,8 +1,13 @@
 import middy from "@middy/core";
-import validator from "@middy/validator";
+import warmup from "@middy/warmup";
 import httpErrorHandler from "@middy/http-error-handler";
-import { IdPathParamSchema, JsonResponseSchema } from "../shared/schemas";
 import { Bot } from "@chargebot-services/core/services/bot";
+import { IdPathParamSchema } from "../shared/schemas";
+import validator from "../shared/middlewares/joi-validator";
+import jsonBodySerializer from "../shared/middlewares/json-serializer";
+import { BotResponseSchema } from "./bot.schema";
+
+const isWarmingUp = (event: any) => event.isWarmingUp === true
 
 const handler = async (event: any) => {
     const bot = await Bot.get(+event.pathParameters!.id!);
@@ -17,13 +22,15 @@ const handler = async (event: any) => {
     return {
         statusCode: 200,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(bot),
+        body: bot,
     };
 };
 
 export const main = middy(handler)
-    .use(validator({
-        eventSchema: IdPathParamSchema,
-        responseSchema: JsonResponseSchema
-    }))
-    .use(httpErrorHandler());
+    // before
+    .use(warmup({ isWarmingUp }))
+    .use(validator({ eventSchema: IdPathParamSchema }))
+    // after: inverse order execution
+    .use(httpErrorHandler())
+    .use(jsonBodySerializer())
+    .use(validator({ responseSchema: BotResponseSchema }));

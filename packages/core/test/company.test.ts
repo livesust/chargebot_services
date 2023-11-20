@@ -1,14 +1,14 @@
 import { expect, test } from "vitest";
-import { Customer } from "../src/services/customer";
+import { Company } from "../src/services/company";
 import { getRandom } from './utils';
 
 let entity_id;
 
 test("Create", async () => {
-    const response = await Customer.create({
-        "name": getRandom('text'),
-        "email": getRandom('text'),
-        "first_order_date": getRandom('timestamptz'),
+    const response = await Company.create({
+        "name": getRandom('varchar', 255),
+        "emergency_phone": getRandom('varchar', 255),
+        "emergency_email": getRandom('varchar', 255),
     });
     expect(response).toBeDefined();
     expect(response!.id).toBeTruthy();
@@ -16,8 +16,8 @@ test("Create", async () => {
 });
 
 test("Update", async () => {
-    const value = getRandom('text');
-    const response = await Customer.update(
+    const value = getRandom('varchar');
+    const response = await Company.update(
         entity_id!,
         { "name": value }
     );
@@ -26,19 +26,19 @@ test("Update", async () => {
 });
 
 test("List", async () => {
-    const response = await Customer.list();
+    const response = await Company.list();
     expect(response).toBeDefined();
     expect(response.length).toBeGreaterThan(0);
 });
 
 test("Get by ID", async () => {
-    const response = await Customer.get(entity_id!);
+    const response = await Company.get(entity_id!);
     expect(response).toBeTruthy();
     expect(response!.id).toEqual(entity_id!);
 });
 
 test("Search", async () => {
-    const response: any[] = await Customer.findByCriteria({
+    const response: any[] = await Company.findByCriteria({
         "id": entity_id!
     });
     expect(response).toBeTruthy();
@@ -47,13 +47,13 @@ test("Search", async () => {
 });
 
 test("Delete", async () => {
-    const response = await Customer.list();
-    await Customer.remove(entity_id!, "unit_test");
-    const list = await Customer.list();
+    const response = await Company.list();
+    await Company.remove(entity_id!, "unit_test");
+    const list = await Company.list();
 
     expect(response).toBeTruthy();
     expect(list).toBeDefined();
 
     // force remove just to clean database
-    await Customer.hard_remove(entity_id!);
+    await Company.hard_remove(entity_id!);
 });

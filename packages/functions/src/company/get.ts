@@ -1,31 +1,36 @@
 import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import httpErrorHandler from "@middy/http-error-handler";
-import jsonBodyParser from "@middy/http-json-body-parser";
+import { Company } from "@chargebot-services/core/services/company";
+import { IdPathParamSchema } from "../shared/schemas";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
-import { CustomerArrayResponseSchema } from "./customer.schema";
-import { Customer } from "@chargebot-services/core/services/customer";
-import { SearchCustomerSchema } from "./customer.schema";
+import { CompanyResponseSchema } from "./company.schema";
 
 const isWarmingUp = (event: any) => event.isWarmingUp === true
 
 const handler = async (event: any) => {
-    const customers = await Customer.findByCriteria(event.body);
-    const response = {
+    const company = await Company.get(+event.pathParameters!.id!);
+
+    if (!company) {
+        return {
+            statusCode: 404,
+            headers: { "Content-Type": "application/json" }
+        };
+    }
+
+    return {
         statusCode: 200,
         headers: { "Content-Type": "application/json" },
-        body: customers
+        body: company,
     };
-    return response;
 };
 
 export const main = middy(handler)
     // before
     .use(warmup({ isWarmingUp }))
-    .use(jsonBodyParser())
-    .use(validator({ eventSchema: SearchCustomerSchema}))
+    .use(validator({ eventSchema: IdPathParamSchema }))
     // after: inverse order execution
     .use(httpErrorHandler())
     .use(jsonBodySerializer())
-    .use(validator({ responseSchema: CustomerArrayResponseSchema }));
+    .use(validator({ responseSchema: CompanyResponseSchema }));

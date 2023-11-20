@@ -9,12 +9,15 @@ export async function up(db) {
     .addColumn("id", "serial", (col) => col.primaryKey())
     {{#each attributes}}
         {{#if unique}}
-    .addColumn("{{snakeCase attribute}}", "{{type}}", (col) => col.notNull().unique())
+    .addColumn("{{snakeCase attribute}}", "{{type}}{{#when type 'eq' 'varchar'}}({{varchar_length}}){{/when}}", (col) => col.notNull().unique())
         {{else if not_null}}
-    .addColumn("{{snakeCase attribute}}", "{{type}}", (col) => col.notNull())
+    .addColumn("{{snakeCase attribute}}", "{{type}}{{#when type 'eq' 'varchar'}}({{varchar_length}}){{/when}}", (col) => col.notNull())
         {{else}}
-    .addColumn("{{snakeCase attribute}}", "{{type}}")
+    .addColumn("{{snakeCase attribute}}", "{{type}}{{#when type 'eq' 'varchar'}}({{varchar_length}}){{/when}}")
         {{/if}}
+    {{/each}}
+    {{#each relationships}}
+    .addColumn("{{snakeCase entity}}_id", "integer", (col) => col.references('{{snakeCase entity}}.id').onDelete('set null'))
     {{/each}}
     .addColumn("created_date", "timestamp")
     .addColumn("created_by", "varchar(255)")

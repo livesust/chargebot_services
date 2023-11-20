@@ -2,7 +2,7 @@
 import { faker } from '@faker-js/faker';
 
 export const getRandom = (type: string, lenght = 10): any => {
-    if (['text', 'varchar(10)', 'varchar(50)', 'varchar(100)', 'varchar(255)'].includes(type)) {
+    if (['text', 'varchar'].includes(type)) {
         return faker.lorem.word(lenght);
     } else if (['integer', 'bigint'].includes(type)) {
         return faker.number.bigInt();

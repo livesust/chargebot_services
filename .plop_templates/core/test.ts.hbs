@@ -7,9 +7,9 @@ let entity_id;
 test("Create", async () => {
     const response = await {{pascalCase name}}.create({
         {{#each attributes}}
-        "{{snakeCase attribute}}": getRandom('{{type}}'),
+        "{{snakeCase attribute}}": getRandom('{{type}}'{{#when type 'eq' 'varchar'}}, {{varchar_length}}{{/when}}),
         {{/each}}
-    }, "unit test");
+    });
     expect(response).toBeDefined();
     expect(response!.id).toBeTruthy();
     entity_id = response!.id;
@@ -19,8 +19,7 @@ test("Update", async () => {
     const value = getRandom('{{attributes.0.type}}');
     const response = await {{pascalCase name}}.update(
         entity_id!,
-        { "{{snakeCase attributes.0.attribute}}": value },
-        "unit test"
+        { "{{snakeCase attributes.0.attribute}}": value }
     );
     expect(response).toBeDefined();
     expect(response!.{{snakeCase attributes.0.attribute}}).toEqual(value);
@@ -49,9 +48,12 @@ test("Search", async () => {
 
 test("Delete", async () => {
     const response = await {{pascalCase name}}.list();
-    await {{pascalCase name}}.remove(entity_id!, "unit test");
+    await {{pascalCase name}}.remove(entity_id!, "unit_test");
     const list = await {{pascalCase name}}.list();
 
     expect(response).toBeTruthy();
     expect(list).toBeDefined();
+
+    // force remove just to clean database
+    await {{pascalCase name}}.hard_remove(entity_id!);
 });

@@ -3,9 +3,10 @@ import { AuditedEntity } from "./audited_entity";
 
 export interface BotTable extends AuditedEntity {
   bot_uuid: string;
-  name: string;
   initials: string;
-  pin_color: string;
+  name: string;
+  pin_color?: string;
+      
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

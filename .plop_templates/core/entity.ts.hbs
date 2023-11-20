@@ -2,7 +2,6 @@ import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 
 export interface {{pascalCase name}}Table extends AuditedEntity {
-
   {{#each attributes}}
       {{#if unique}}
   {{snakeCase attribute}}: {{tsType}};
@@ -13,6 +12,9 @@ export interface {{pascalCase name}}Table extends AuditedEntity {
       {{/if}}
   {{/each}}
 
+  {{#each relationships}}
+  {{snakeCase entity}}_id?: number;
+  {{/each}}
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

@@ -1,58 +1,44 @@
-import { transpileSchema } from '@middy/validator/transpile';
-import { CreateSchemaDef, UpdateSchemaDef, SearchSchemaDef, PathParametersIdDef } from "../shared/schemas";
+import Joi from 'joi';
+import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
 
-export const CreateBotSchema = transpileSchema({
-    ...CreateSchemaDef,
-    properties: {
-        body: {
-            type: "object",
-            properties: {
-                bot_uuid: { type: "string" },
-                name: { type: "string" },
-                initials: { type: "string" },
-                pin_color: { type: "string" },
-            },
-            required: [
-                "bot_uuid",
-                "name",
-                "initials",
-                "pin_color",
-            ],
-        }
-    }
+const BotSchemaDef = {
+    bot_uuid: Joi.string(),
+    initials: Joi.string().max(2),
+    name: Joi.string().max(255),
+    pin_color: Joi.string().max(100),
+};
+
+export const BotSchema = Joi.object({
+    ...AuditedEntitySchemaDef,
+    ...BotSchemaDef,
 });
 
-export const UpdateBotSchema = transpileSchema({
-    ...UpdateSchemaDef,
-    properties: {
-        pathParameters: { ...PathParametersIdDef },
-        body: {
-            type: "object",
-            properties: {
-                bot_uuid: { type: "string" },
-                name: { type: "string" },
-                initials: { type: "string" },
-                pin_color: { type: "string" },
-            },
-        },
-    },
+export const CreateBotSchema = Joi.object({
+    ...AuditedEntityCreateSchemaDef,
+    ...BotSchemaDef
+}).keys({
+    // overwrite keys for required attributes
+    bot_uuid: Joi.string().required(),
+    initials: Joi.string().max(2).required(),
+    name: Joi.string().max(255).required(),
+});;
+
+export const UpdateBotSchema = Joi.object({
+    ...AuditedEntityUpdateSchemaDef,
+    ...BotSchemaDef
 });
 
-export const SearchBotSchema = transpileSchema({
-    ...SearchSchemaDef,
-    properties: {
-        pathParameters: { ...PathParametersIdDef },
-        body: {
-            type: "object",
-            properties: {
-                id: { type: "number" },
-                bot_uuid: { type: "string" },
-                name: { type: "string" },
-                initials: { type: "string" },
-                pin_color: { type: "string" },
-                created_by: { type: "string" },
-                modified_by: { type: "string" },
-            },
-        },
-    },
+export const SearchBotSchema = Joi.object({
+    id: Joi.number(),
+    ...BotSchemaDef
+});
+
+export const BotResponseSchema = Joi.object({
+    ...JsonResponseSchemaDef,
+    body: BotSchema
+});
+
+export const BotArrayResponseSchema = Joi.object({
+    ...JsonResponseSchemaDef,
+    body: Joi.array().items(BotSchema)
 });

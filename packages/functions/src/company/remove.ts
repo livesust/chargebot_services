@@ -1,40 +1,37 @@
 import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import httpErrorHandler from "@middy/http-error-handler";
-import jsonBodyParser from "@middy/http-json-body-parser";
-import { Customer } from "@chargebot-services/core/services/customer";
-import auditUpdate from "../shared/middlewares/audit-update";
+import { IdPathParamSchema, SuccessResponseSchema } from "../shared/schemas";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
-import { UpdateCustomerSchema, CustomerResponseSchema } from "./customer.schema";
+import { Company } from "@chargebot-services/core/services/company";
 
 const isWarmingUp = (event: any) => event.isWarmingUp === true
 
 const handler = async (event: any) => {
     const id = +event.pathParameters!.id!;
-    const customer = await Customer.update(id, event.body);
+    const user_id = event.requestContext?.authorizer?.jwt.claims.sub;
+    const deleted = await Company.remove(id, user_id);
 
-    if (!customer) {
+    // @ts-ignore
+    if (!deleted) {
         return {
             statusCode: 404,
             headers: { "Content-Type": "application/json" }
         };
     }
-
     return {
         statusCode: 200,
         headers: { "Content-Type": "application/json" },
-        body: customer
+        body: { "response": "success" },
     };
 };
 
 export const main = middy(handler)
     // before
     .use(warmup({ isWarmingUp }))
-    .use(jsonBodyParser())
-    .use(auditUpdate())
-    .use(validator({ eventSchema: UpdateCustomerSchema }))
+    .use(validator({ eventSchema: IdPathParamSchema }))
     // after: inverse order execution
     .use(httpErrorHandler())
     .use(jsonBodySerializer())
-    .use(validator({ responseSchema: CustomerResponseSchema }));
+    .use(validator({ responseSchema: SuccessResponseSchema }));

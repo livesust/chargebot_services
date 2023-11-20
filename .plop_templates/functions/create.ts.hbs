@@ -1,30 +1,33 @@
 import middy from "@middy/core";
-import validator from "@middy/validator";
+import warmup from "@middy/warmup";
 import httpErrorHandler from "@middy/http-error-handler";
 import jsonBodyParser from "@middy/http-json-body-parser";
-import { JsonResponseSchema } from "../shared/schemas";
-import { Create{{pascalCase name}}Schema } from "./{{snakeCase name}}.schema";
 import { {{pascalCase name}} } from "@chargebot-services/core/services/{{snakeCase name}}";
+import auditCreation from "../shared/middlewares/audit-create";
+import validator from "../shared/middlewares/joi-validator";
+import jsonBodySerializer from "../shared/middlewares/json-serializer";
+import { Create{{pascalCase name}}Schema, {{pascalCase name}}ResponseSchema } from "./{{snakeCase name}}.schema";
 
-/**
- * CREATE
- */
+const isWarmingUp = (event: any) => event.isWarmingUp === true
+
 const handler = async (event: any, context: any) => {
     console.log('Request to create {{pascalCase name}}:', event, context);
-    const user_id = event.requestContext.authorizer.jwt.claims.sub;
-    const {{snakeCase name}} = await {{pascalCase name}}.create(event.body, user_id);
+    const {{snakeCase name}} = await {{pascalCase name}}.create(event.body);
 
     return {
         statusCode: 200,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({{snakeCase name}})
+        body: {{snakeCase name}}
     };
 };
 
 export const main = middy(handler)
+    // before
+    .use(warmup({ isWarmingUp }))
     .use(jsonBodyParser())
-    .use(validator({
-        eventSchema: Create{{pascalCase name}}Schema,
-        responseSchema: JsonResponseSchema
-    }))
-    .use(httpErrorHandler());
+    .use(auditCreation())
+    .use(validator({ eventSchema: Create{{pascalCase name}}Schema }))
+    // after: inverse order execution
+    .use(httpErrorHandler())
+    .use(jsonBodySerializer())
+    .use(validator({ responseSchema: {{pascalCase name}}ResponseSchema }));

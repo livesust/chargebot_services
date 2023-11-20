@@ -1,0 +1,20 @@
+name: customer
+attributes:
+  - attribute: name
+    type: text
+    tsType: string
+    unique: false
+    not_null: true
+    switch_value: string
+  - attribute: email
+    type: text
+    tsType: string
+    unique: false
+    not_null: false
+    switch_value: string
+  - attribute: first order date
+    type: timestamptz
+    tsType: Date
+    unique: false
+    not_null: false
+    switch_value: Date

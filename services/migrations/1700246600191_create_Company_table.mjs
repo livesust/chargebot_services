@@ -5,12 +5,12 @@ import { Kysely } from "kysely";
  */
 export async function up(db) {
   await db.schema
-    .createTable("bot")
+    .createTable("company")
     .addColumn("id", "serial", (col) => col.primaryKey())
-    .addColumn("bot_uuid", "text", (col) => col.notNull().unique())
-    .addColumn("name", "text", (col) => col.notNull())
-    .addColumn("initials", "varchar(10)", (col) => col.notNull())
-    .addColumn("pin_color", "varchar(100)", (col) => col.notNull())
+    .addColumn("name", "varchar(255)", (col) => col.notNull())
+    .addColumn("emergency_phone", "varchar(255)")
+    .addColumn("emergency_email", "varchar(255)")
+    .addColumn("customer_id", "integer", (col) => col.references('customer.id').onDelete('set null'))
     .addColumn("created_date", "timestamp")
     .addColumn("created_by", "varchar(255)")
     .addColumn("modified_date", "timestamp")
@@ -24,5 +24,5 @@ export async function up(db) {
  * @param db {Kysely<any>}
  */
 export async function down(db) {
-  await db.schema.dropTable("bot").execute();
+  await db.schema.dropTable("company").execute();
 }

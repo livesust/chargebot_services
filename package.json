@@ -11,7 +11,8 @@
     "remove": "sst remove",
     "console": "sst console",
     "typecheck": "tsc --noEmit",
-    "plop": "plop"
+    "plop": "plop",
+    "crud": "node crud.js"
   },
   "devDependencies": {
     "@faker-js/faker": "^8.2.0",
@@ -20,7 +21,8 @@
     "aws-cdk-lib": "2.95.1",
     "constructs": "10.2.69",
     "fs": "^0.0.1-security",
-    "handlebars-helpers": "^0.10.0",
+    "js-yaml": "^4.1.0",
+    "snake-case": "^4.0.0",
     "sst": "^2.30.3",
     "typescript": "^5.2.2",
     "vitest": "^0.34.6"
@@ -30,6 +32,8 @@
   ],
   "dependencies": {
     "@aws-sdk/client-rds-data": "^3.431.0",
+    "@middy/warmup": "^5.0.1",
+    "handlebars-helper-pluralize": "^1.0.3",
     "inquirer-recursive": "^0.0.7",
     "kysely": "^0.26.3",
     "kysely-data-api": "^0.2.1",

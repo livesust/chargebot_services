@@ -1,27 +1,33 @@
 export * as {{pascalCase name}} from "./{{snakeCase name}}";
-import db from '../model';
+import db{{#if relationships}}, { Database }{{/if}} from '../database';
+{{#if relationships}}
+import { ExpressionBuilder } from "kysely";
+import { jsonObjectFrom } from 'kysely/helpers/postgres'
+{{/if}}
 import { {{pascalCase name}}, {{pascalCase name}}Update, New{{pascalCase name}} } from "../database/{{snakeCase name}}";
 
-export async function create({{snakeCase name}}: {{pascalCase name}}, user_id: string): Promise<{{pascalCase name}} | undefined> {
+{{#each relationships}}
+function with{{pascalCase entity}}(eb: ExpressionBuilder<Database, '{{snakeCase ../name}}'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('{{snakeCase entity}}')
+        .selectAll()
+        .whereRef('{{snakeCase entity}}.id', '=', '{{snakeCase ../name}}.{{snakeCase entity}}_id')
+    ).as('{{snakeCase entity}}')
+}
+{{/each}}
+
+export async function create({{snakeCase name}}: New{{pascalCase name}}): Promise<{{pascalCase name}} | undefined> {
     return await db
         .insertInto('{{snakeCase name}}')
-        .values({
-            ...{{snakeCase name}},
-            created_date: new Date(),
-            created_by: user_id
-        })
+        .values({{snakeCase name}})
         .returningAll()
         .executeTakeFirst();
 }
 
-export async function update(id: number, update: {{pascalCase name}}Update, user_id: string): Promise<{{pascalCase name}} | undefined> {
+export async function update(id: number, {{snakeCase name}}: {{pascalCase name}}Update): Promise<{{pascalCase name}} | undefined> {
     return await db
         .updateTable('{{snakeCase name}}')
-        .set({
-            ...update,
-            modified_date: new Date(),
-            modified_by: user_id
-        })
+        .set({{snakeCase name}})
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -31,12 +37,17 @@ export async function update(id: number, update: {{pascalCase name}}Update, user
 export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {
     return await db
         .updateTable('{{snakeCase name}}')
-        .set({
-            deleted_date: new Date(),
-            deleted_by: user_id
-        })
+        .set({ deleted_date: new Date(), deleted_by: user_id })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
+        .returning(['id'])
+        .executeTakeFirst();
+}
+
+export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
+    return await db
+        .deleteFrom('{{snakeCase name}}')
+        .where('id', '=', id)
         .returning(['id'])
         .executeTakeFirst();
 }
@@ -53,20 +64,28 @@ export async function get(id: number): Promise<{{pascalCase name}} | undefined> 
     return await db
         .selectFrom("{{snakeCase name}}")
         .selectAll()
+        {{#each relationships}}
+        {{#if eager}}
+        .select((eb) => with{{pascalCase entity}}(eb))
+        {{else}}
+        // uncoment to enable eager loading
+        //.select((eb) => with{{pascalCase entity}}(eb))
+        {{/if}}
+        {{/each}}
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
 export async function findByCriteria(criteria: Partial<{{pascalCase name}}>) {
-  let query = db.selectFrom('{{snakeCase name}}')
+  let query = db.selectFrom('{{snakeCase name}}').where('deleted_by', 'is', null)
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
   }
 
 {{#each attributes}}
-{{#eq tsType "string"}}
+{{#when tsType 'eq' 'string'}}
   if (criteria.{{snakeCase attribute}} !== undefined) {
     query = query.where(
       '{{snakeCase attribute}}', 
@@ -74,22 +93,12 @@ export async function findByCriteria(criteria: Partial<{{pascalCase name}}>) {
       criteria.{{snakeCase attribute}}
     );
   }
-{{/eq}}
-{{#eq tsType "number"}}
+{{/when}}
+{{#when tsType 'neq' 'string'}}
   if (criteria.{{snakeCase attribute}}) {
     query = query.where('{{snakeCase attribute}}', '=', criteria.{{snakeCase attribute}});
   }
-{{/eq}}
-{{#eq tsType "Date"}}
-  if (criteria.{{snakeCase attribute}}) {
-    query = query.where('{{snakeCase attribute}}', '=', criteria.{{snakeCase attribute}});
-  }
-{{/eq}}
-{{#eq tsType "boolean"}}
-  if (criteria.{{snakeCase attribute}}) {
-    query = query.where('{{snakeCase attribute}}', '=', criteria.{{snakeCase attribute}});
-  }
-{{/eq}}
+{{/when}}
 {{/each}}
 
   if (criteria.created_by) {

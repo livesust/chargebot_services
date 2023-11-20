@@ -1,15 +1,18 @@
 import middy from "@middy/core";
-import validator from "@middy/validator";
+import warmup from "@middy/warmup";
 import httpErrorHandler from "@middy/http-error-handler";
 import jsonBodyParser from "@middy/http-json-body-parser";
-import { JsonResponseSchema } from "../shared/schemas";
-import { UpdateBotSchema } from "./bot.schema";
 import { Bot } from "@chargebot-services/core/services/bot";
+import auditUpdate from "../shared/middlewares/audit-update";
+import validator from "../shared/middlewares/joi-validator";
+import jsonBodySerializer from "../shared/middlewares/json-serializer";
+import { UpdateBotSchema, BotResponseSchema } from "./bot.schema";
+
+const isWarmingUp = (event: any) => event.isWarmingUp === true
 
 const handler = async (event: any) => {
     const id = +event.pathParameters!.id!;
-    const user_id = event.requestContext.authorizer.jwt.claims.sub;
-    const bot = await Bot.update(id, event.body, user_id);
+    const bot = await Bot.update(id, event.body);
 
     if (!bot) {
         return {
@@ -21,14 +24,17 @@ const handler = async (event: any) => {
     return {
         statusCode: 200,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(bot)
+        body: bot
     };
 };
 
 export const main = middy(handler)
+    // before
+    .use(warmup({ isWarmingUp }))
     .use(jsonBodyParser())
-    .use(validator({
-        eventSchema: UpdateBotSchema,
-        responseSchema: JsonResponseSchema
-    }))
-    .use(httpErrorHandler());
+    .use(auditUpdate())
+    .use(validator({ eventSchema: UpdateBotSchema }))
+    // after: inverse order execution
+    .use(httpErrorHandler())
+    .use(jsonBodySerializer())
+    .use(validator({ responseSchema: BotResponseSchema }));

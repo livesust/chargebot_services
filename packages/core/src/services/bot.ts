@@ -2,26 +2,19 @@ export * as Bot from "./bot";
 import db from '../database';
 import { Bot, BotUpdate, NewBot } from "../database/bot";
 
-export async function create(bot: NewBot, user_id: string): Promise<Bot | undefined> {
+
+export async function create(bot: NewBot): Promise<Bot | undefined> {
     return await db
         .insertInto('bot')
-        .values({
-            ...bot,
-            created_date: new Date(),
-            created_by: user_id
-        })
+        .values(bot)
         .returningAll()
         .executeTakeFirst();
 }
 
-export async function update(id: number, update: BotUpdate, user_id: string): Promise<Bot | undefined> {
+export async function update(id: number, bot: BotUpdate): Promise<Bot | undefined> {
     return await db
         .updateTable('bot')
-        .set({
-            ...update,
-            modified_date: new Date(),
-            modified_by: user_id
-        })
+        .set(bot)
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -31,12 +24,17 @@ export async function update(id: number, update: BotUpdate, user_id: string): Pr
 export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {
     return await db
         .updateTable('bot')
-        .set({
-            deleted_date: new Date(),
-            deleted_by: user_id
-        })
+        .set({ deleted_date: new Date(), deleted_by: user_id })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
+        .returning(['id'])
+        .executeTakeFirst();
+}
+
+export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
+    return await db
+        .deleteFrom('bot')
+        .where('id', '=', id)
         .returning(['id'])
         .executeTakeFirst();
 }
@@ -59,24 +57,19 @@ export async function get(id: number): Promise<Bot | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<Bot>) {
-  let query = db.selectFrom('bot').where('deleted_by', 'is', null);
+  let query = db.selectFrom('bot').where('deleted_by', 'is', null)
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
   }
 
-  if (criteria.bot_uuid) {
-    query = query.where('bot_uuid', '=', criteria.bot_uuid);
-  }
-
-  if (criteria.name !== undefined) {
+  if (criteria.bot_uuid !== undefined) {
     query = query.where(
-      'name', 
-      criteria.name === null ? 'is' : '=', 
-      criteria.name
+      'bot_uuid', 
+      criteria.bot_uuid === null ? 'is' : '=', 
+      criteria.bot_uuid
     );
   }
-
   if (criteria.initials !== undefined) {
     query = query.where(
       'initials', 
@@ -84,7 +77,13 @@ export async function findByCriteria(criteria: Partial<Bot>) {
       criteria.initials
     );
   }
-
+  if (criteria.name !== undefined) {
+    query = query.where(
+      'name', 
+      criteria.name === null ? 'is' : '=', 
+      criteria.name
+    );
+  }
   if (criteria.pin_color !== undefined) {
     query = query.where(
       'pin_color', 

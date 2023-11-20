@@ -1,6 +1,7 @@
 import recursive from 'inquirer-recursive';
+import pluralize from 'handlebars-helper-pluralize';
 import fs from "fs";
-import helpers from "handlebars-helpers";
+import yml from 'js-yaml';
 
 /*
 Plop Built-In Helpers:
@@ -19,20 +20,6 @@ Plop Built-In Helpers:
 
 export default function (plop) {
     plop.setPrompt('recursive', recursive);
-
-    // import handlebars helpers
-    for (const prop in helpers) {
-        // if it is not an already included "case" helper, than add the helper to plop
-        if (!prop.toLowerCase().includes("case")) {
-            plop.setHelper(prop, helpers[prop]);
-        }
-    }
-
-    // overwrite "raw" helper afterwards, because it's not able to
-    // avoid escaping of {{{{raw}}}} block content otherwise
-    plop.setHelper("raw", (options) => {
-        return options.fn(undefined);
-    });
 
     plop.setGenerator('crud', {
         description: 'A generator for Serverless API CRUD services',
@@ -68,8 +55,23 @@ export default function (plop) {
                         type: 'list',
                         name: 'type',
                         message: 'Database type:',
-                        choices: ['text', 'varchar(10)', 'varchar(50)', 'varchar(100)', 'varchar(255)', 'timestamp', 'timestamptz', 'boolean', 'integer', 'bigint', 'float', 'decimal', 'json'],
+                        choices: ['text', 'varchar', 'timestamp', 'timestamptz', 'boolean', 'integer', 'bigint', 'float', 'decimal', 'json'],
                         default: 'text'
+                    },
+                    {
+                        type: 'input',
+                        name: 'varchar_length',
+                        message: 'Varchar length (1-255):',
+                        default: '255',
+                        validate: function(value) {
+                            if (1 <= value <= 255) {
+                              return true;
+                            }
+                            return 'Please enter a valid length (1-255)';
+                        },
+                        when(answers) {
+                            return answers['type'] === 'varchar';
+                        },
                     },
                     {
                         type: 'list',
@@ -94,12 +96,37 @@ export default function (plop) {
                         },
                     }
                 ]
+            },
+            {
+                type: 'recursive',
+                name: 'relationships',
+                message: 'Add new relationship? (always from the Many side of a ManyToOne)',
+                default: false,
+                prompts: [
+                    {
+                        type: 'input',
+                        name: 'entity',
+                        message: 'Entity that represents the "One" side:',
+                        validate: function(value) {
+                            if (value) {
+                              return true;
+                            }
+                            return 'Please enter a valid entity name';
+                        }
+                    },
+                    {
+                        type: 'confirm',
+                        name: 'eager',
+                        message: 'Eager loading?',
+                        default: false
+                    }
+                ]
             }
         ],
         actions: [
             {
                 type: 'add',
-                path: 'services/migrations/0000000000001_create_{{pascalCase name}}_table.mjs',
+                path: 'services/migrations/{{timestamp}}_create_{{pascalCase name}}_table.mjs',
                 templateFile: '.plop_templates/services/create_table.mjs.hbs',
                 force: true
             },
@@ -143,7 +170,7 @@ export default function (plop) {
               const importPattern = plop.renderString('^((?!import \\{ {{pascalCase name}}Table \\} from \\"\\.\/{{snakeCase name}}\\";).)*$', answers);
               const importRegex = new RegExp(importPattern);
               
-              const entityPattern = plop.renderString('^((?!  {{snakeCase name}}: {{pascalCase name}}Table,\n).)*$', answers);
+              const entityPattern = plop.renderString('^((?!    {{snakeCase name}}: {{pascalCase name}}Table,\n).)*$', answers);
               const entityRegex = new RegExp(entityPattern);
 
               try {
@@ -176,7 +203,18 @@ export default function (plop) {
       
               const filePath = plop.getDestBasePath() + "/stacks/routes.ts";
             
-              const routeString = 'const {{snakeCase name}} = {\n"GET /{{snakeCase name}}": "packages/functions/src/{{snakeCase name}}/list.main",\n"GET /{{snakeCase name}}/{id}": "packages/functions/src/{{snakeCase name}}/get.main",\n"POST /{{snakeCase name}}": "packages/functions/src/{{snakeCase name}}/create.main",\n"POST /{{snakeCase name}}/search": "packages/functions/src/{{snakeCase name}}/find.main",\n"PATCH /{{snakeCase name}}/{id}": "packages/functions/src/{{snakeCase name}}/update.main",\n"DELETE /{{snakeCase name}}/{id}": "packages/functions/src/{{snakeCase name}}/remove.main",\n}$1';
+              const routeString = '\
+// {{pascalCase name}} routes -do not modify this plop comment-\n\
+const {{snakeCase name}} = {\n\
+    "GET /{{snakeCase name}}": "packages/functions/src/{{snakeCase name}}/list.main",\n\
+    "GET /{{snakeCase name}}/{id}": "packages/functions/src/{{snakeCase name}}/get.main",\n\
+    "POST /{{snakeCase name}}": "packages/functions/src/{{snakeCase name}}/create.main",\n\
+    "POST /{{snakeCase name}}/search": "packages/functions/src/{{snakeCase name}}/search.main",\n\
+    "PATCH /{{snakeCase name}}/{id}": "packages/functions/src/{{snakeCase name}}/update.main",\n\
+    "DELETE /{{snakeCase name}}/{id}": "packages/functions/src/{{snakeCase name}}/remove.main",\n\
+}\
+\n\n\
+$1';
               const routesDefinitionTemplate = plop.renderString(routeString, answers);
               const routeImportTemplate = plop.renderString('    ...{{snakeCase name}},\n$1', answers);
 
@@ -217,13 +255,13 @@ export default function (plop) {
       
               // custom function can be synchronous or async (by returning a promise)
               const dirPath = plop.getDestBasePath() + "/.entities";
-              const filePath = plop.renderString(dirPath + "/{{snakeCase name}}.json", answers);
+              const filePath = plop.renderString(dirPath + "/{{snakeCase name}}.yml", answers);
               
               try {
                 if (!fs.existsSync(dirPath)){
                     fs.mkdirSync(dirPath);
                 }
-                fs.writeFileSync(filePath, JSON.stringify(answers, null, 2), { encoding: 'utf8', flag: 'w' })
+                fs.writeFileSync(filePath, yml.dump(answers), { encoding: 'utf8', flag: 'w' })
               } catch (err) {
                 console.log(err);
               }
@@ -232,7 +270,38 @@ export default function (plop) {
     });
 
     // Helpers
+    plop.setHelper('pluralize', pluralize);
+
     plop.setHelper('timestamp', function (text) {
         return Date.now();
+    });
+
+    plop.setHelper('when', function(operand_1, operator, operand_2, options) {
+        var operators = {
+         'eq': function(l,r) { return l == r; },
+         'neq': function(l,r) { return l != r; },
+         'gt': function(l,r) { return Number(l) > Number(r); },
+         'lt': function(l,r) { return Number(l) < Number(r); },
+         'gte': function(l,r) { return Number(l) >= Number(r); },
+         'lte': function(l,r) { return Number(l) <= Number(r); },
+         'or': function(l,r) { return l || r; },
+         'and': function(l,r) { return l && r; },
+         '%': function(l,r) { return (l % r) === 0; }
+        }
+        , result = operators[operator](operand_1,operand_2);
+      
+        if (result) return options.fn(this);
+        else return options.inverse(this);
+    });
+
+    plop.setHelper('switch', function(value, options) {
+        this.switch_value = value;
+        return options.fn(this);
+    });
+    
+    plop.setHelper('case', function(value, options) {
+        if (value == this.switch_value) {
+            return options.fn(this);
+        }
     });
 }

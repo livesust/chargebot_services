@@ -1,12 +1,16 @@
 import middy from "@middy/core";
-import validator from "@middy/validator";
+import warmup from "@middy/warmup";
 import httpErrorHandler from "@middy/http-error-handler";
-import { IdPathParamSchema, JsonResponseSchema } from "../shared/schemas";
+import { IdPathParamSchema, SuccessResponseSchema } from "../shared/schemas";
+import validator from "../shared/middlewares/joi-validator";
+import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import { Customer } from "@chargebot-services/core/services/customer";
+
+const isWarmingUp = (event: any) => event.isWarmingUp === true
 
 const handler = async (event: any) => {
     const id = +event.pathParameters!.id!;
-    const user_id = event.requestContext.authorizer.jwt.claims.sub;
+    const user_id = event.requestContext?.authorizer?.jwt.claims.sub;
     const deleted = await Customer.remove(id, user_id);
 
     // @ts-ignore
@@ -19,13 +23,15 @@ const handler = async (event: any) => {
     return {
         statusCode: 200,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ "response": "success" }),
+        body: { "response": "success" },
     };
 };
 
 export const main = middy(handler)
-    .use(validator({
-        eventSchema: IdPathParamSchema,
-        responseSchema: JsonResponseSchema
-    }))
-    .use(httpErrorHandler());
+    // before
+    .use(warmup({ isWarmingUp }))
+    .use(validator({ eventSchema: IdPathParamSchema }))
+    // after: inverse order execution
+    .use(httpErrorHandler())
+    .use(jsonBodySerializer())
+    .use(validator({ responseSchema: SuccessResponseSchema }));
