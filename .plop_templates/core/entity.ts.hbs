@@ -3,17 +3,21 @@ import { AuditedEntity } from "./audited_entity";
 
 export interface {{pascalCase name}}Table extends AuditedEntity {
   {{#each attributes}}
-      {{#if unique}}
+  {{#if unique}}
   {{snakeCase attribute}}: {{tsType}};
-      {{else if not_null}}
+  {{else if not_null}}
   {{snakeCase attribute}}: {{tsType}};
-      {{else}}
+  {{else}}
   {{snakeCase attribute}}?: {{tsType}};
-      {{/if}}
+  {{/if}}
   {{/each}}
 
   {{#each relationships}}
+  {{#if not_null}}
+  {{snakeCase entity}}_id: number;
+  {{else}}
   {{snakeCase entity}}_id?: number;
+  {{/if}}
   {{/each}}
 }
 

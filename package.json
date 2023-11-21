@@ -21,6 +21,7 @@
     "aws-cdk-lib": "2.95.1",
     "constructs": "10.2.69",
     "fs": "^0.0.1-security",
+    "glob": "^10.3.10",
     "js-yaml": "^4.1.0",
     "snake-case": "^4.0.0",
     "sst": "^2.30.3",

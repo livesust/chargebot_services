@@ -51,24 +51,28 @@ export const Create{{pascalCase name}}Schema = Joi.object({
     // overwrite keys for required attributes
     {{#each attributes}}
     {{#when unique 'or' not_null}}
-    {{#switch tsType}} 
+    {{#switch tsType}}
         {{#case 'string'}}
     {{snakeCase attribute}}: Joi.string(){{#when varchar_length "gt" 0}}.max({{varchar_length}}){{/when}}.required(),
-        {{/case}} 
+        {{/case}}
         {{#case 'number'}}
     {{snakeCase attribute}}: Joi.number().required()
-        {{/case}} 
+        {{/case}}
         {{#case 'Date'}}
     {{snakeCase attribute}}: Joi.date().required(),
         {{/case}}
         {{#case 'boolean'}}
     {{snakeCase attribute}}: Joi.boolean().required(),
-        {{/case}} 
+        {{/case}}
     {{/switch}}
     {{/when}}
     {{/each}}
     {{#each relationships}}
+    {{#if not_null}}
+    {{snakeCase entity}}_id: Joi.number().required(),
+    {{else}}
     {{snakeCase entity}}_id: Joi.number(),
+    {{/if}}
     {{/each}}
 });;
 

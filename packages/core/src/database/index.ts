@@ -11,18 +11,6 @@ export interface Database {
   bot: BotTable,
   customer: CustomerTable,
   company: CompanyTable,
-  company: CompanyTable,
-  company: CompanyTable,
-  company: CompanyTable,
-  company: CompanyTable,
-  company: CompanyTable,
-  company: CompanyTable,
-  company: CompanyTable,
-  company: CompanyTable,
-  company: CompanyTable,
-  company: CompanyTable,
-  bot: BotTable,
-  customer: CustomerTable,
 // DO NOT REMOVE THIS LINE: PLOP ENTITY LIST
 }
 

@@ -4,9 +4,9 @@ import { AuditedEntity } from "./audited_entity";
 export interface CompanyTable extends AuditedEntity {
   name: string;
   emergency_phone?: string;
-        emergency_email?: string;
-      
-  customer_id?: number;
+  emergency_email?: string;
+  
+  customer_id: number;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

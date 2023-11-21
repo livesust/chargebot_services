@@ -23,7 +23,7 @@ export const CreateCompanySchema = Joi.object({
 }).keys({
     // overwrite keys for required attributes
     name: Joi.string().max(255).required(),
-    customer_id: Joi.number(),
+    customer_id: Joi.number().required(),
 });;
 
 export const UpdateCompanySchema = Joi.object({

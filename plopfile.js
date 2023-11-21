@@ -1,6 +1,7 @@
 import recursive from 'inquirer-recursive';
 import pluralize from 'handlebars-helper-pluralize';
 import fs from "fs";
+import { glob } from "glob";
 import yml from 'js-yaml';
 
 /*
@@ -83,13 +84,13 @@ export default function (plop) {
                     {
                         type: 'confirm',
                         name: 'unique',
-                        message: 'Is it UNIQUE?',
+                        message: 'Only allow unique values?',
                         default: false
                     },
                     {
                         type: 'confirm',
                         name: 'not_null',
-                        message: 'Is it NOT NULL?',
+                        message: 'Is it required?',
                         default: false,
                         when(answers) {
                             return answers['unique'] === false;
@@ -116,6 +117,12 @@ export default function (plop) {
                     },
                     {
                         type: 'confirm',
+                        name: 'not_null',
+                        message: 'Is it required?',
+                        default: false
+                    },
+                    {
+                        type: 'confirm',
                         name: 'eager',
                         message: 'Eager loading?',
                         default: false
@@ -128,7 +135,20 @@ export default function (plop) {
                 type: 'add',
                 path: 'services/migrations/{{timestamp}}_create_{{pascalCase name}}_table.mjs',
                 templateFile: '.plop_templates/services/create_table.mjs.hbs',
-                force: true
+                skip: function(answers) {
+                    //skips if file already exists
+                    process.chdir(plop.getPlopfilePath());
+                    const filePath = plop.getDestBasePath() + "/services/migrations/*_create_{{pascalCase name}}_table.mjs";
+                    const migrationFile = plop.renderString(filePath, answers);
+                    try {
+                        if (glob.sync(migrationFile).length > 0) {
+                            return "Migration file already exists. Write a new migration for changes or remove existent file.";
+                        }
+                    } catch (err) {
+                        // skip on error
+                        return true;
+                    }
+                }
             },
             {
                 type: 'add',
@@ -170,7 +190,7 @@ export default function (plop) {
               const importPattern = plop.renderString('^((?!import \\{ {{pascalCase name}}Table \\} from \\"\\.\/{{snakeCase name}}\\";).)*$', answers);
               const importRegex = new RegExp(importPattern);
               
-              const entityPattern = plop.renderString('^((?!    {{snakeCase name}}: {{pascalCase name}}Table,\n).)*$', answers);
+              const entityPattern = plop.renderString('^((?!{{snakeCase name}}: {{pascalCase name}}Table).)*$', answers);
               const entityRegex = new RegExp(entityPattern);
 
               try {
