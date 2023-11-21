@@ -6,7 +6,6 @@ export interface BotTable extends AuditedEntity {
   initials: string;
   name: string;
   pin_color?: string;
-      
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

@@ -5,7 +5,6 @@ export interface CompanyTable extends AuditedEntity {
   name: string;
   emergency_phone?: string;
   emergency_email?: string;
-  
   customer_id: number;
 }
 

@@ -11,7 +11,6 @@ export interface {{pascalCase name}}Table extends AuditedEntity {
   {{snakeCase attribute}}?: {{tsType}};
   {{/if}}
   {{/each}}
-
   {{#each relationships}}
   {{#if not_null}}
   {{snakeCase entity}}_id: number;

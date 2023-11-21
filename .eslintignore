@@ -1,0 +1,6 @@
+node_modules
+dist
+.entities
+.plop_templates
+.sst
+.vscode

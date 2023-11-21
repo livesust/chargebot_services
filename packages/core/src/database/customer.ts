@@ -4,8 +4,7 @@ import { AuditedEntity } from "./audited_entity";
 export interface CustomerTable extends AuditedEntity {
   name: string;
   email?: string;
-        first_order_date?: Date;
-      
+  first_order_date?: Date;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should
