@@ -1,14 +1,24 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 
+{{#each attributes}}
+{{#when type 'eq' 'enum'}}
+export enum {{pascalCase enum_name}} {
+  {{#each enum_values}}
+  {{constantCase this}} = "{{constantCase this}}"
+  {{/each}}
+}
+{{/when}}
+{{/each}}
+
 export interface {{pascalCase name}}Table extends AuditedEntity {
   {{#each attributes}}
   {{#if unique}}
-  {{snakeCase attribute}}: {{tsType}};
+  {{snakeCase attribute}}: {{#when type 'neq' 'enum'}}{{tsType}}{{/when}}{{#when type 'eq' 'enum'}}{{pascalCase enum_name}}{{/when}};
   {{else if not_null}}
-  {{snakeCase attribute}}: {{tsType}};
+  {{snakeCase attribute}}: {{#when type 'neq' 'enum'}}{{tsType}}{{/when}}{{#when type 'eq' 'enum'}}{{pascalCase enum_name}}{{/when}};
   {{else}}
-  {{snakeCase attribute}}?: {{tsType}};
+  {{snakeCase attribute}}?: {{#when type 'neq' 'enum'}}{{tsType}}{{/when}}{{#when type 'eq' 'enum'}}{{pascalCase enum_name}}{{/when}};
   {{/if}}
   {{/each}}
   {{#each relationships}}

@@ -1,0 +1,33 @@
+name: bot_alert
+attributes:
+  - attribute: message displayed
+    type: text
+    tsType: string
+  - attribute: push sent
+    type: boolean
+    tsType: boolean
+  - attribute: send time
+    type: timestampz
+    tsType: Date
+  - attribute: display time
+    type: timestampz
+    tsType: Date
+  - attribute: show
+    type: boolean
+    tsType: boolean
+  - attribute: dismissed
+    type: boolean
+    tsType: boolean
+  - attribute: active
+    type: boolean
+    tsType: boolean
+  - attribute: alert count
+    type: integer
+    tsType: number
+relationships:
+  - entity: alert_type
+    eager: true
+    not_null: true
+  - entity: bot
+    eager: false
+    not_null: true

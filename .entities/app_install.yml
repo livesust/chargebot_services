@@ -1,28 +1,29 @@
-name: bot
+name: app_install
 attributes:
-  - attribute: bot uuid
-    type: text
-    tsType: string
-    unique: true
-  - attribute: initials
-    type: varchar
-    varchar_length: '2'
-    tsType: string
-    unique: false
-    not_null: true
-  - attribute: name
+  - attribute: app_version
     type: varchar
     varchar_length: '255'
     tsType: string
     unique: false
     not_null: true
-  - attribute: pin color
+  - attribute: platform
     type: varchar
     varchar_length: '100'
     tsType: string
     unique: false
+    not_null: true
+  - attribute: os_version
+    type: varchar
+    varchar_length: '100'
+    tsType: string
+    unique: false
+    not_null: true
+  - attribute: description
+    type: text
+    tsType: string
+    unique: false
     not_null: false
 relationships:
-  - entity: bot_version
+  - entity: user
     eager: true
     not_null: true

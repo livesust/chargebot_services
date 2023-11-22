@@ -1,0 +1,20 @@
+name: outlet_type
+attributes:
+  - attribute: type
+    type: varchar
+    varchar_length: '255'
+    tsType: string
+    not_null: true
+  - attribute: outlet_amps
+    type: float
+    tsType: number
+  - attribute: outlet_volts
+    type: float
+    tsType: number
+  - attribute: connector
+    type: varchar
+    varchar_length: '100'
+    tsType: string
+  - attribute: description
+    type: text
+    tsType: string

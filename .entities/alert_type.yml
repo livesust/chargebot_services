@@ -1,0 +1,43 @@
+name: alert type
+attributes:
+  - attribute: name
+    type: varchar
+    varchar_length: '255'
+    tsType: string
+    unique: true
+  - attribute: description
+    type: text
+    tsType: string
+    unique: false
+    not_null: false
+  - attribute: priority
+    type: enum
+    enum_name: AlertPriority
+    enum_values:
+      - low
+      - medium
+      - high
+  - attribute: severity
+    type: enum
+    enum_name: AlertSeverity
+    enum_values:
+      - minor
+      - moderate
+      - critical
+  - attribute: color code
+    type: varchar
+    varchar_length: '100'
+    tsType: string
+    not_null: true
+  - attribute: send push
+    type: boolean
+    tsType: boolean
+  - attribute: alert text
+    type: varchar
+    varchar_length: '255'
+    tsType: string
+    not_null: true
+  - attribute: alert link
+    type: text
+    tsType: string
+relationships: []

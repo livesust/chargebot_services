@@ -1,20 +1,38 @@
-import { Kysely } from "kysely";
+import { Kysely, sql } from "kysely";
 
 /**
  * @param db {Kysely<any>}
  */
 export async function up(db) {
+  {{#each attributes}}
+  {{#when type 'eq' 'enum'}}
+  await db.schema
+    .createType("{{pascalCase enum_name}}")
+    .asEnum([{{#each enum_values}}"{{constantCase this}}",{{/each}}])
+    .execute();
+  {{/when}}
+  {{/each}}
+
   await db.schema
     .createTable("{{snakeCase name}}")
     .addColumn("id", "serial", (col) => col.primaryKey())
     {{#each attributes}}
-        {{#if unique}}
+        {{#when type 'eq' 'enum'}}
+            {{#if not_null}}
+    .addColumn("{{snakeCase attribute}}", sql`"{{pascalCase enum_name}}"`, (col) => col.notNull())
+            {{else}}
+    .addColumn("{{snakeCase attribute}}", sql`"{{pascalCase enum_name}}"`)
+            {{/if}}
+        {{/when}}
+        {{#when type 'neq' 'enum'}}
+            {{#if unique}}
     .addColumn("{{snakeCase attribute}}", "{{type}}{{#when type 'eq' 'varchar'}}({{varchar_length}}){{/when}}", (col) => col.notNull().unique())
-        {{else if not_null}}
+            {{else if not_null}}
     .addColumn("{{snakeCase attribute}}", "{{type}}{{#when type 'eq' 'varchar'}}({{varchar_length}}){{/when}}", (col) => col.notNull())
-        {{else}}
+            {{else}}
     .addColumn("{{snakeCase attribute}}", "{{type}}{{#when type 'eq' 'varchar'}}({{varchar_length}}){{/when}}")
-        {{/if}}
+            {{/if}}
+        {{/when}}
     {{/each}}
     {{#each relationships}}
     .addColumn("{{snakeCase entity}}_id", "integer", (col) => col.references('{{snakeCase entity}}.id').onDelete('set null'))

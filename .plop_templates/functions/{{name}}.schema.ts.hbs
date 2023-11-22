@@ -11,20 +11,18 @@ import { {{pascalCase entity}}Schema } from "../{{snakeCase entity}}/{{snakeCase
 
 const {{pascalCase name}}SchemaDef = {
     {{#each attributes}}
-    {{#switch tsType}} 
-        {{#case 'string'}}
+    {{#when tsType 'eq' 'string'}}
     {{snakeCase attribute}}: Joi.string(){{#when varchar_length "gt" 0}}.max({{varchar_length}}){{/when}},
-        {{/case}} 
-        {{#case 'number'}}
+    {{/when}}
+    {{#when tsType 'eq' 'number'}}
     {{snakeCase attribute}}: Joi.number(),
-        {{/case}} 
-        {{#case 'Date'}}
+    {{/when}}
+    {{#when tsType 'eq' 'Date'}}
     {{snakeCase attribute}}: Joi.date(),
-        {{/case}}
-        {{#case 'boolean'}}
+    {{/when}}
+    {{#when tsType 'eq' 'boolean'}}
     {{snakeCase attribute}}: Joi.boolean(),
-        {{/case}} 
-    {{/switch}}
+    {{/when}}
     {{/each}}
 };
 
@@ -51,20 +49,18 @@ export const Create{{pascalCase name}}Schema = Joi.object({
     // overwrite keys for required attributes
     {{#each attributes}}
     {{#when unique 'or' not_null}}
-    {{#switch tsType}}
-        {{#case 'string'}}
+    {{#when tsType 'eq' 'string'}}
     {{snakeCase attribute}}: Joi.string(){{#when varchar_length "gt" 0}}.max({{varchar_length}}){{/when}}.required(),
-        {{/case}}
-        {{#case 'number'}}
-    {{snakeCase attribute}}: Joi.number().required()
-        {{/case}}
-        {{#case 'Date'}}
+    {{/when}}
+    {{#when tsType 'eq' 'number'}}
+    {{snakeCase attribute}}: Joi.number().required(),
+    {{/when}}
+    {{#when tsType 'eq' 'Date'}}
     {{snakeCase attribute}}: Joi.date().required(),
-        {{/case}}
-        {{#case 'boolean'}}
+    {{/when}}
+    {{#when tsType 'eq' 'boolean'}}
     {{snakeCase attribute}}: Joi.boolean().required(),
-        {{/case}}
-    {{/switch}}
+    {{/when}}
     {{/when}}
     {{/each}}
     {{#each relationships}}

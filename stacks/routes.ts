@@ -35,6 +35,16 @@ const company = {
     "DELETE /company/{id}": "packages/functions/src/company/remove.main",
 }
 
+// AlertType routes -do not modify this plop comment-
+const alert_type = {
+    "GET /alert_type": "packages/functions/src/alert_type/list.main",
+    "GET /alert_type/{id}": "packages/functions/src/alert_type/get.main",
+    "POST /alert_type": "packages/functions/src/alert_type/create.main",
+    "POST /alert_type/search": "packages/functions/src/alert_type/search.main",
+    "PATCH /alert_type/{id}": "packages/functions/src/alert_type/update.main",
+    "DELETE /alert_type/{id}": "packages/functions/src/alert_type/remove.main",
+}
+
 // DO NOT REMOVE THIS LINE: PLOP ROUTE DEFINITION              
 
 export default {
@@ -42,6 +52,7 @@ export default {
     ...bot,
     ...customer,
     ...company,
+    ...alert_type,
 // DO NOT REMOVE THIS LINE: PLOP ROUTE IMPORT
     $default: "packages/functions/src/default.main",
 };

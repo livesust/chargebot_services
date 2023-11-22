@@ -56,8 +56,42 @@ export default function (plop) {
                         type: 'list',
                         name: 'type',
                         message: 'Database type:',
-                        choices: ['text', 'varchar', 'timestamp', 'timestamptz', 'boolean', 'integer', 'bigint', 'float', 'decimal', 'json'],
+                        choices: ['enum', 'text', 'varchar', 'timestamp', 'timestamptz', 'boolean', 'integer', 'bigint', 'float', 'decimal', 'json'],
                         default: 'text'
+                    },
+                    {
+                        type: 'input',
+                        name: 'enum_name',
+                        message: 'Enum Name:',
+                        validate: function(value) {
+                            if (value) {
+                              return true;
+                            }
+                            return 'Please enter a valid enum name';
+                        },
+                        when(answers) {
+                            return answers['type'] === 'enum';
+                        },
+                    },
+                    {
+                        type: 'input',
+                        name: 'enum_values',
+                        message: 'Enum Values (comma separated values):',
+                        validate: function(value) {
+                            if (value) {
+                              return true;
+                            }
+                            if (value.split(',').length > 1) {
+                              return true;
+                            }
+                            return 'Please enter valid enum values. For example: "One,Two,Three"';
+                        },
+                        when(answers) {
+                            return answers['type'] === 'enum';
+                        },
+                        filter(value) {
+                          return value.split(',');
+                        }
                     },
                     {
                         type: 'input',
@@ -79,13 +113,19 @@ export default function (plop) {
                         name: 'tsType',
                         message: 'Typescript type:',
                         choices: ['string', 'number', 'Date', 'boolean'],
-                        default: 'string'
+                        default: 'string',
+                        when(answers) {
+                            return answers['type'] !== 'enum';
+                        },
                     },
                     {
                         type: 'confirm',
                         name: 'unique',
                         message: 'Only allow unique values?',
-                        default: false
+                        default: false,
+                        when(answers) {
+                            return answers['type'] !== 'enum';
+                        },
                     },
                     {
                         type: 'confirm',
@@ -131,6 +171,23 @@ export default function (plop) {
             }
         ],
         actions: [
+            function dumpEntityDefinition(answers) {
+              // first all, save current answers into a yml file in case any of next actions fail
+              process.chdir(plop.getPlopfilePath());
+      
+              // custom function can be synchronous or async (by returning a promise)
+              const dirPath = plop.getDestBasePath() + "/.entities";
+              const filePath = plop.renderString(dirPath + "/{{snakeCase name}}.yml", answers);
+              
+              try {
+                if (!fs.existsSync(dirPath)){
+                    fs.mkdirSync(dirPath);
+                }
+                fs.writeFileSync(filePath, yml.dump(answers), { encoding: 'utf8', flag: 'w' })
+              } catch (err) {
+                console.log(err);
+              }
+            },
             {
                 type: 'add',
                 path: 'services/migrations/{{timestamp}}_create_{{pascalCase name}}_table.mjs',
@@ -267,32 +324,13 @@ $1';
                 console.log(err);
               }
             },
-            function dumpEntityDefinition(answers) {
-              // move the current working directory to the plop file path
-              // this allows this action to work even when the generator is
-              // executed from inside a subdirectory
-              process.chdir(plop.getPlopfilePath());
-      
-              // custom function can be synchronous or async (by returning a promise)
-              const dirPath = plop.getDestBasePath() + "/.entities";
-              const filePath = plop.renderString(dirPath + "/{{snakeCase name}}.yml", answers);
-              
-              try {
-                if (!fs.existsSync(dirPath)){
-                    fs.mkdirSync(dirPath);
-                }
-                fs.writeFileSync(filePath, yml.dump(answers), { encoding: 'utf8', flag: 'w' })
-              } catch (err) {
-                console.log(err);
-              }
-            },
         ],
     });
 
     // Helpers
     plop.setHelper('pluralize', pluralize);
 
-    plop.setHelper('timestamp', function (text) {
+    plop.setHelper('timestamp', function () {
         return Date.now();
     });
 
@@ -312,16 +350,5 @@ $1';
       
         if (result) return options.fn(this);
         else return options.inverse(this);
-    });
-
-    plop.setHelper('switch', function(value, options) {
-        this.switch_value = value;
-        return options.fn(this);
-    });
-    
-    plop.setHelper('case', function(value, options) {
-        if (value == this.switch_value) {
-            return options.fn(this);
-        }
     });
 }

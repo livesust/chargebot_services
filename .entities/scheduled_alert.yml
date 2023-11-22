@@ -1,0 +1,14 @@
+name: scheduled_alert
+attributes:
+  - attribute: name
+    type: varchar
+    varchar_length: '255'
+    tsType: string
+    unique: true
+    not_null: true
+  - attribute: description
+    type: text
+    tsType: string
+  - attribute: alert content
+    type: text
+    tsType: string

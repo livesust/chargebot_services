@@ -1,0 +1,28 @@
+name: outlet_schedule
+attributes:
+  - attribute: day of week
+    type: enum
+    enum_name: DayOfWeek
+    enum_values:
+      - sunday
+      - monday
+      - tuesday
+      - wednesday
+      - thursday
+      - friday
+      - saturday
+  - attribute: all day
+    type: boolean
+    tsType: boolean
+  - attribute: start time
+    type: timestamp
+    tsType: Date
+    not_null: true
+  - attribute: end time
+    type: timestamp
+    tsType: Date
+    not_null: true
+relationships:
+  - entity: outlet
+    eager: false
+    not_null: true

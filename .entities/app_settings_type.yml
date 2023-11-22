@@ -1,0 +1,13 @@
+name: app_settings_type
+attributes:
+  - attribute: setting_name
+    type: varchar
+    varchar_length: '100'
+    tsType: string
+    unique: true
+  - attribute: description
+    type: text
+    tsType: string
+    unique: false
+    not_null: false
+relationships: []

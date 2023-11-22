@@ -1,0 +1,13 @@
+name: role
+attributes:
+  - attribute: role
+    type: varchar
+    varchar_length: '255'
+    tsType: string
+    unique: true
+  - attribute: description
+    type: text
+    tsType: string
+    unique: false
+    not_null: false
+relationships: []

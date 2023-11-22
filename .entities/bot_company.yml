@@ -1,0 +1,13 @@
+name: bot_company
+attributes:
+  - attribute: acquire date
+    type: timestampz
+    tsType: Date
+    not_null: true
+relationships:
+  - entity: bot
+    eager: true
+    not_null: true
+  - entity: company
+    eager: true
+    not_null: true

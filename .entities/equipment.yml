@@ -1,0 +1,27 @@
+name: equipment
+attributes:
+  - attribute: name
+    type: varchar
+    varchar_length: '255'
+    tsType: string
+    not_null: true
+  - attribute: brand
+    type: varchar
+    varchar_length: '255'
+    tsType: string
+  - attribute: description
+    type: text
+    tsType: string
+  - attribute: voltage
+    type: float
+    tsType: number
+  - attribute: max charging amps
+    type: float
+    tsType: number
+relationships:
+  - entity: equipment_type
+    eager: true
+    not_null: true
+  - entity: customer
+    eager: false
+    not_null: true

@@ -1,0 +1,16 @@
+name: outlet
+attributes:
+  - attribute: pdu outlet number
+    type: integer
+    tsType: number
+    not_null: true
+  - attribute: notes
+    type: text
+    tsType: string
+relationships:
+  - entity: outlet_type
+    eager: true
+    not_null: true
+  - entity: bot
+    eager: false
+    not_null: true

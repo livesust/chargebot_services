@@ -1,0 +1,12 @@
+name: user_role
+attributes:
+  - attribute: all_bots
+    type: boolean
+    tsType: boolean
+relationships:
+  - entity: user
+    eager: false
+    not_null: true
+  - entity: role
+    eager: true
+    not_null: true

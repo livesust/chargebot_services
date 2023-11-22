@@ -1,0 +1,17 @@
+name: user_email
+attributes:
+  - attribute: email_address
+    type: text
+    tsType: string
+    unique: true
+    not_null: true
+  - attribute: verified
+    type: boolean
+    tsType: boolean
+  - attribute: primary
+    type: boolean
+    tsType: boolean
+relationships:
+  - entity: user
+    eager: false
+    not_null: true

@@ -1,0 +1,15 @@
+name: bot_scheduled_alerts
+attributes:
+  - attribute: alert status
+    type: boolean
+    tsType: boolean
+  - attribute: settings
+    type: json
+    tsType: string
+relationships:
+  - entity: scheduled_alert
+    eager: true
+    not_null: true
+  - entity: user
+    eager: false
+    not_null: true

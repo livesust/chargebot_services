@@ -1,0 +1,26 @@
+name: component
+attributes:
+  - attribute: name
+    type: varchar
+    varchar_length: '255'
+    tsType: string
+    unique: false
+    not_null: true
+  - attribute: version
+    type: varchar
+    varchar_length: '100'
+    tsType: string
+    not_null: false
+  - attribute: description
+    type: text
+    tsType: string
+  - attribute: specs
+    type: text
+    tsType: string
+  - attribute: location
+    type: varchar
+    varchar_length: '255'
+    tsType: string
+  - attribute: notes
+    type: text
+    tsType: string

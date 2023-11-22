@@ -1,0 +1,15 @@
+name: outlet_equipment
+attributes:
+  - attribute: notes
+    type: text
+    tsType: string
+relationships:
+  - entity: equipment
+    eager: true
+    not_null: true
+  - entity: outlet
+    eager: false
+    not_null: true
+  - entity: user
+    eager: false
+    not_null: true

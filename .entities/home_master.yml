@@ -1,0 +1,31 @@
+name: home_master
+attributes:
+  - attribute: address_line_1
+    type: text
+    tsType: string
+    not_null: true
+  - attribute: address_line_2
+    type: string
+    tsType: string
+  - attribute: city
+    type: varchar
+    varchar_length: '100'
+    tsType: string
+    not_null: true
+  - attribute: zip code
+    type: varchar
+    varchar_length: '100'
+    tsType: string
+    not_null: true
+  - attribute: latitude
+    type: float
+    tsType: number
+    not_null: true
+  - attribute: longitude
+    type: float
+    tsType: number
+    not_null: true
+relationships:
+  - entity: state_master
+    eager: true
+    not_null: true

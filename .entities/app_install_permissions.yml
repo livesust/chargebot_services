@@ -1,0 +1,12 @@
+name: app_install_permissions
+attributes:
+  - attribute: permission_status
+    type: boolean
+    tsType: boolean
+relationships:
+  - entity: app_install
+    eager: true
+    not_null: true
+  - entity: permission
+    eager: true
+    not_null: true

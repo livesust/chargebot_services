@@ -5,12 +5,14 @@ import { RDS } from "sst/node/rds";
 import { BotTable } from "./bot";
 import { CustomerTable } from "./customer";
 import { CompanyTable } from "./company";
+import { AlertTypeTable } from "./alert_type";
 // DO NOT REMOVE THIS LINE: PLOP ENTITY IMPORT
 
 export interface Database {
   bot: BotTable,
   customer: CustomerTable,
   company: CompanyTable,
+  alert_type: AlertTypeTable,
 // DO NOT REMOVE THIS LINE: PLOP ENTITY LIST
 }
 

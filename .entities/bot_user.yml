@@ -1,0 +1,9 @@
+name: bot_user
+attributes: []
+relationships:
+  - entity: bot
+    eager: false
+    not_null: true
+  - entity: user
+    eager: false
+    not_null: true

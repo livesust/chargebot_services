@@ -1,0 +1,34 @@
+name: bot_firmware
+attributes:
+  - attribute: inverter version
+    type: varchar
+    varchar_length: '255'
+    tsType: string
+    not_null: true
+  - attribute: pi version
+    type: varchar
+    varchar_length: '255'
+    tsType: string
+    not_null: true
+  - attribute: firmware version
+    type: varchar
+    varchar_length: '255'
+    tsType: string
+    not_null: true
+  - attribute: battery version
+    type: varchar
+    varchar_length: '255'
+    tsType: string
+    not_null: true
+  - attribute: pdu version
+    type: varchar
+    varchar_length: '255'
+    tsType: string
+    not_null: true
+  - attribute: notes
+    type: text
+    tsType: string
+relationships:
+  - entity: bot
+    eager: false
+    not_null: true
