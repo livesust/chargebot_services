@@ -11,6 +11,13 @@ function withCustomer(eb: ExpressionBuilder<Database, 'company'>) {
         .whereRef('customer.id', '=', 'company.customer_id')
     ).as('customer')
 }
+function withHomeMaster(eb: ExpressionBuilder<Database, 'company'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('home_master')
+        .selectAll()
+        .whereRef('home_master.id', '=', 'company.home_master_id')
+    ).as('home_master')
+}
 
 export async function create(company: NewCompany): Promise<Company | undefined> {
     return await db
@@ -62,6 +69,7 @@ export async function get(id: number): Promise<Company | undefined> {
         .selectAll()
         // uncoment to enable eager loading
         //.select((eb) => withCustomer(eb))
+        .select((eb) => withHomeMaster(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();

@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
+import { BotVersionSchema } from "../bot_version/bot_version.schema";
 
 const BotSchemaDef = {
     bot_uuid: Joi.string(),
@@ -11,6 +12,8 @@ const BotSchemaDef = {
 export const BotSchema = Joi.object({
     ...AuditedEntitySchemaDef,
     ...BotSchemaDef,
+    bot_version_id: Joi.number(),
+    bot_version: BotVersionSchema,
 });
 
 export const CreateBotSchema = Joi.object({
@@ -21,6 +24,7 @@ export const CreateBotSchema = Joi.object({
     bot_uuid: Joi.string().required(),
     initials: Joi.string().max(2).required(),
     name: Joi.string().max(255).required(),
+    bot_version_id: Joi.number().required(),
 });;
 
 export const UpdateBotSchema = Joi.object({

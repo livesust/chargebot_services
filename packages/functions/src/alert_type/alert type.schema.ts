@@ -4,6 +4,10 @@ import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEnti
 const AlertTypeSchemaDef = {
     name: Joi.string().max(255),
     description: Joi.string(),
+    color_code: Joi.string().max(100),
+    send_push: Joi.boolean(),
+    alert_text: Joi.string().max(255),
+    alert_link: Joi.string(),
 };
 
 export const AlertTypeSchema = Joi.object({
@@ -17,6 +21,8 @@ export const CreateAlertTypeSchema = Joi.object({
 }).keys({
     // overwrite keys for required attributes
     name: Joi.string().max(255).required(),
+    color_code: Joi.string().max(100).required(),
+    alert_text: Joi.string().max(255).required(),
 });;
 
 export const UpdateAlertTypeSchema = Joi.object({

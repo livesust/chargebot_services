@@ -1,79 +1,26 @@
-import { StackContext, Api, RDS, Cognito } from "sst/constructs";
-import { AccountRecovery, NumberAttribute, OAuthScope } from "aws-cdk-lib/aws-cognito";
+import { StackContext, Api, use, attachPermissionsToRole } from "sst/constructs";
+import { RDSStack } from "./RDSStack";
+import { CognitoStack } from "./CognitoStack";
 import routes from './routes';
+import { IRole, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 
-export function ChargebotStack({ app, stack }: StackContext) {
+export function ChargebotStack({ stack }: StackContext) {
+    const { rdsCluster } = use(RDSStack);
+    const { cognito } = use(CognitoStack);
 
-    // Create the Aurora DB cluster
-    const DATABASE = "chargebot";
-
-    const cluster = new RDS(stack, "RDSCluster", {
-        engine: "postgresql13.9",
-        defaultDatabaseName: DATABASE,
-        migrations: "services/migrations",
-        types: {
-            path: "backend/core/sql/types.ts",
-            camelCase: true
-        },
-        scaling: app.stage === "prod"
-            ? {
-                autoPause: false,
-                minCapacity: 'ACU_8',
-                maxCapacity: 'ACU_64',
-            }
-            : {
-                autoPause: true,
-                minCapacity: 'ACU_2',
-                maxCapacity: 'ACU_2',
+    // Create an IAM role
+    const iamRole: IRole = new Role(stack, "ApiRole", {
+        assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
+        managedPolicies: [
+            {
+                managedPolicyArn:
+                "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
             },
+        ],
     });
-
-    // Cognito user pool authentication
-    const cognito = new Cognito(stack, "Auth", {
-        login: ["email"],
-        cdk: {
-            userPool: {
-                selfSignUpEnabled: app.stage !== "prod",
-                autoVerify: {
-                    email: true
-                },
-                accountRecovery: AccountRecovery.PHONE_WITHOUT_MFA_AND_EMAIL,
-                userVerification: {
-                    emailSubject: "Verify your new Sust Pro account"
-                },
-                userInvitation: {
-                    emailSubject: "Your temporary Sust Pro password"
-                },
-                standardAttributes: {
-                    locale: { required: false, mutable: true },
-                    givenName: { required: false, mutable: true },
-                    familyName: { required: false, mutable: true },
-                    profilePicture: { required: false, mutable: true }
-                },
-                customAttributes: {
-                    customerId: new NumberAttribute({ mutable: false })
-                },
-            },
-            userPoolClient: {
-                authFlows: {
-                    adminUserPassword: true,
-                    userPassword: true,
-                    userSrp: true
-                },
-                oAuth: {
-                    flows: {
-                        authorizationCodeGrant: true
-                    },
-                    callbackUrls: ["https://chargebot.sust.pro"],
-                    logoutUrls: ["https://chargebot.sust.pro/login"],
-                    scopes: [OAuthScope.EMAIL]
-                },
-                preventUserExistenceErrors: true,
-                enableTokenRevocation: true,
-            }
-        }
-    });
-    cognito.cdk.userPool.addDomain("chargebot", { cognitoDomain: { domainPrefix: "chargebot" } })
+    // Attach permissions to role
+    // @ts-expect-error ignore error
+    //attachPermissionsToRole(iamRole, [rdsCluster, cognito]);
 
     // Create the HTTP API
     const api = new Api(stack, "Api", {
@@ -106,24 +53,22 @@ export function ChargebotStack({ app, stack }: StackContext) {
                 burst: 100,
             },
             function: {
-                bind: [cluster],
+                bind: [rdsCluster],
+                // @ts-expect-error ignore error
+                role: iamRole
             },
         },
-        // @ts-ignore
-        routes: routes,
     });
+
+    for (const route of routes) {
+        api.addRoutes(stack, route);
+    }
 
     // allowing authenticated users to access API
     cognito.attachPermissionsForAuthUsers(stack, [api]);
 
     stack.addOutputs({
         ApiEndpoint: api.url,
-        ApiDomainUrl: api.customDomainUrl,
-        CognitoUserPoolId: cognito.userPoolId,
-        CognitoIdentityPoolId: cognito.cognitoIdentityPoolId,
-        CognitoUserPoolClientId: cognito.userPoolClientId,
-        RDSSecretArn: cluster.secretArn,
-        RDSClusterEndpoint: JSON.stringify(cluster.clusterEndpoint),
-        RDSClusterIdentifier: cluster.clusterIdentifier,
+        ApiDomainUrl: api.customDomainUrl
     });
 }

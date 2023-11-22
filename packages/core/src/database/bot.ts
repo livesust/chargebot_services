@@ -1,11 +1,13 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 
+
 export interface BotTable extends AuditedEntity {
   bot_uuid: string;
   initials: string;
   name: string;
   pin_color?: string;
+    bot_version_id: number;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

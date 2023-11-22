@@ -80,6 +80,33 @@ export async function findByCriteria(criteria: Partial<AlertType>) {
   if (criteria.priority) {
     query = query.where('priority', '=', criteria.priority);
   }
+  if (criteria.severity) {
+    query = query.where('severity', '=', criteria.severity);
+  }
+  if (criteria.color_code !== undefined) {
+    query = query.where(
+      'color_code', 
+      criteria.color_code === null ? 'is' : '=', 
+      criteria.color_code
+    );
+  }
+  if (criteria.send_push) {
+    query = query.where('send_push', '=', criteria.send_push);
+  }
+  if (criteria.alert_text !== undefined) {
+    query = query.where(
+      'alert_text', 
+      criteria.alert_text === null ? 'is' : '=', 
+      criteria.alert_text
+    );
+  }
+  if (criteria.alert_link !== undefined) {
+    query = query.where(
+      'alert_link', 
+      criteria.alert_link === null ? 'is' : '=', 
+      criteria.alert_link
+    );
+  }
 
   if (criteria.created_by) {
     query = query.where('created_by', '=', criteria.created_by);

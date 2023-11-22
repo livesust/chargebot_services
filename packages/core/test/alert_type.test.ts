@@ -9,6 +9,11 @@ test("Create", async () => {
         "name": getRandom('varchar', 255),
         "description": getRandom('text'),
         "priority": getRandom('enum'),
+        "severity": getRandom('enum'),
+        "color_code": getRandom('varchar', 100),
+        "send_push": getRandom('boolean'),
+        "alert_text": getRandom('varchar', 255),
+        "alert_link": getRandom('text'),
     });
     expect(response).toBeDefined();
     expect(response!.id).toBeTruthy();

@@ -1,7 +1,16 @@
 export * as Bot from "./bot";
-import db from '../database';
+import db, { Database } from '../database';
+import { ExpressionBuilder } from "kysely";
+import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { Bot, BotUpdate, NewBot } from "../database/bot";
 
+function withBotVersion(eb: ExpressionBuilder<Database, 'bot'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('bot_version')
+        .selectAll()
+        .whereRef('bot_version.id', '=', 'bot.bot_version_id')
+    ).as('bot_version')
+}
 
 export async function create(bot: NewBot): Promise<Bot | undefined> {
     return await db
@@ -51,6 +60,7 @@ export async function get(id: number): Promise<Bot | undefined> {
     return await db
         .selectFrom("bot")
         .selectAll()
+        .select((eb) => withBotVersion(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();

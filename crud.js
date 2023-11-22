@@ -24,7 +24,9 @@ const generateEntity = async (filePath) => {
             answers = yml.load(config);
         }
         const result = await crud.runActions(answers);
-        console.log(result);
+        if (result.failures?.length > 0) {
+            console.log('ERROR', result);
+        }        
     } catch (err) {
         console.log(err);
     }

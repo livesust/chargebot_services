@@ -6,11 +6,21 @@ export enum AlertPriority {
   MEDIUM = "MEDIUM"
   HIGH = "HIGH"
 }
+export enum AlertSeverity {
+  MINOR = "MINOR"
+  MODERATE = "MODERATE"
+  CRITICAL = "CRITICAL"
+}
 
 export interface AlertTypeTable extends AuditedEntity {
   name: string;
   description?: string;
     priority?: AlertPriority;
+    severity?: AlertSeverity;
+    color_code: string;
+  send_push?: boolean;
+    alert_text: string;
+  alert_link?: string;
   }
 
 // You should not use the table schema interfaces directly. Instead, you should
