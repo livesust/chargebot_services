@@ -1,7 +1,7 @@
 name: bot_company
 attributes:
   - attribute: acquire date
-    type: timestampz
+    type: timestamptz
     tsType: Date
     not_null: true
 relationships:

@@ -1,11 +1,10 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 
-
 export interface BotComponentTable extends AuditedEntity {
   install_date: Date;
   component_serial?: string;
-    bot_id: number;
+  bot_id: number;
   component_id: number;
 }
 

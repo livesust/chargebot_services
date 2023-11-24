@@ -22,7 +22,9 @@ function withUser(eb: ExpressionBuilder<Database, 'bot_user'>) {
 export async function create(bot_user: NewBotUser): Promise<BotUser | undefined> {
     return await db
         .insertInto('bot_user')
-        .values(bot_user)
+        .values({
+            ...bot_user,
+        })
         .returningAll()
         .executeTakeFirst();
 }
@@ -47,11 +49,10 @@ export async function remove(id: number, user_id: string): Promise<{ id: number 
         .executeTakeFirst();
 }
 
-export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function hard_remove(id: number): Promise<void> {
+    await db
         .deleteFrom('bot_user')
         .where('id', '=', id)
-        .returning(['id'])
         .executeTakeFirst();
 }
 

@@ -1,59 +1,82 @@
-import { expect, test } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { ScheduledAlert } from "../src/services/scheduled_alert";
 import { getRandom } from './utils';
 
+
+// @ts-expect-error ignore any type error
 let entity_id;
 
-test("Create", async () => {
-    const response = await ScheduledAlert.create({
+export async function createAndSaveScheduledAlert() {
+    return ScheduledAlert.create(getScheduledAlertInstance());
+}
+
+export async function removeScheduledAlert(id: number) {
+    // run delete query to clean database
+    await ScheduledAlert.hard_remove(id);
+}
+
+function getScheduledAlertInstance() {
+    const instance = {
         "name": getRandom('varchar', 255),
         "description": getRandom('text'),
         "alert_content": getRandom('text'),
+    };
+    console.log('ScheduledAlert:', JSON.stringify(instance));
+    return instance;
+}
+
+describe('ScheduledAlert Tests', () => {
+
+    afterAll(async () => {
+        // @ts-expect-error ignore any type error
+        await removeScheduledAlert(entity_id);
+    })
+
+    it("Create", async () => {
+        const response = await createAndSaveScheduledAlert();
+        expect(response).toBeDefined();
+        expect(response!.id).toBeTruthy();
+        entity_id = response!.id;
     });
-    expect(response).toBeDefined();
-    expect(response!.id).toBeTruthy();
-    entity_id = response!.id;
-});
 
-test("Update", async () => {
-    const value = getRandom('varchar');
-    const response = await ScheduledAlert.update(
-        entity_id!,
-        { "name": value }
-    );
-    expect(response).toBeDefined();
-    expect(response!.name).toEqual(value);
-});
-
-test("List", async () => {
-    const response = await ScheduledAlert.list();
-    expect(response).toBeDefined();
-    expect(response.length).toBeGreaterThan(0);
-});
-
-test("Get by ID", async () => {
-    const response = await ScheduledAlert.get(entity_id!);
-    expect(response).toBeTruthy();
-    expect(response!.id).toEqual(entity_id!);
-});
-
-test("Search", async () => {
-    const response: any[] = await ScheduledAlert.findByCriteria({
-        "id": entity_id!
+    it("Update", async () => {
+        const response = await ScheduledAlert.update(
+            entity_id!,
+            { "name": getRandom('varchar') }
+        );
+        expect(response).toBeDefined();
+        expect(response!.id).toEqual(entity_id);
     });
-    expect(response).toBeTruthy();
-    expect(response).toHaveLength(1);
-    expect(response[0].id).toEqual(entity_id!);
-});
 
-test("Delete", async () => {
-    const response = await ScheduledAlert.list();
-    await ScheduledAlert.remove(entity_id!, "unit_test");
-    const list = await ScheduledAlert.list();
+    it("List", async () => {
+        const response = await ScheduledAlert.list();
+        expect(response).toBeDefined();
+        expect(response.length).toBeGreaterThan(0);
+    });
 
-    expect(response).toBeTruthy();
-    expect(list).toBeDefined();
+    it("Get by ID", async () => {
+        const response = await ScheduledAlert.get(entity_id!);
+        expect(response).toBeTruthy();
+        expect(response!.id).toEqual(entity_id!);
+    });
 
-    // force remove just to clean database
-    await ScheduledAlert.hard_remove(entity_id!);
+    it("Search", async () => {
+        // @ts-expect-error ignore any type error
+        const response: [] = await ScheduledAlert.findByCriteria({
+            "id": entity_id!
+        });
+        expect(response).toBeTruthy();
+        expect(response).toHaveLength(1);
+        // @ts-expect-error ignore possible undefined
+        expect(response[0].id).toEqual(entity_id!);
+    });
+
+    it("Delete", async () => {
+        const response = await ScheduledAlert.list();
+        await ScheduledAlert.remove(entity_id!, "unit_test");
+        const list = await ScheduledAlert.list();
+
+        expect(response).toBeTruthy();
+        expect(list).toBeDefined();
+    });
 });

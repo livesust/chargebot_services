@@ -8,6 +8,5 @@ attributes:
   - attribute: description
     type: text
     tsType: string
-    unique: false
     not_null: false
 relationships: []

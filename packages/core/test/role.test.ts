@@ -1,58 +1,81 @@
-import { expect, test } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { Role } from "../src/services/role";
 import { getRandom } from './utils';
 
+
+// @ts-expect-error ignore any type error
 let entity_id;
 
-test("Create", async () => {
-    const response = await Role.create({
+export async function createAndSaveRole() {
+    return Role.create(getRoleInstance());
+}
+
+export async function removeRole(id: number) {
+    // run delete query to clean database
+    await Role.hard_remove(id);
+}
+
+function getRoleInstance() {
+    const instance = {
         "role": getRandom('varchar', 255),
         "description": getRandom('text'),
+    };
+    console.log('Role:', JSON.stringify(instance));
+    return instance;
+}
+
+describe('Role Tests', () => {
+
+    afterAll(async () => {
+        // @ts-expect-error ignore any type error
+        await removeRole(entity_id);
+    })
+
+    it("Create", async () => {
+        const response = await createAndSaveRole();
+        expect(response).toBeDefined();
+        expect(response!.id).toBeTruthy();
+        entity_id = response!.id;
     });
-    expect(response).toBeDefined();
-    expect(response!.id).toBeTruthy();
-    entity_id = response!.id;
-});
 
-test("Update", async () => {
-    const value = getRandom('varchar');
-    const response = await Role.update(
-        entity_id!,
-        { "role": value }
-    );
-    expect(response).toBeDefined();
-    expect(response!.role).toEqual(value);
-});
-
-test("List", async () => {
-    const response = await Role.list();
-    expect(response).toBeDefined();
-    expect(response.length).toBeGreaterThan(0);
-});
-
-test("Get by ID", async () => {
-    const response = await Role.get(entity_id!);
-    expect(response).toBeTruthy();
-    expect(response!.id).toEqual(entity_id!);
-});
-
-test("Search", async () => {
-    const response: any[] = await Role.findByCriteria({
-        "id": entity_id!
+    it("Update", async () => {
+        const response = await Role.update(
+            entity_id!,
+            { "role": getRandom('varchar') }
+        );
+        expect(response).toBeDefined();
+        expect(response!.id).toEqual(entity_id);
     });
-    expect(response).toBeTruthy();
-    expect(response).toHaveLength(1);
-    expect(response[0].id).toEqual(entity_id!);
-});
 
-test("Delete", async () => {
-    const response = await Role.list();
-    await Role.remove(entity_id!, "unit_test");
-    const list = await Role.list();
+    it("List", async () => {
+        const response = await Role.list();
+        expect(response).toBeDefined();
+        expect(response.length).toBeGreaterThan(0);
+    });
 
-    expect(response).toBeTruthy();
-    expect(list).toBeDefined();
+    it("Get by ID", async () => {
+        const response = await Role.get(entity_id!);
+        expect(response).toBeTruthy();
+        expect(response!.id).toEqual(entity_id!);
+    });
 
-    // force remove just to clean database
-    await Role.hard_remove(entity_id!);
+    it("Search", async () => {
+        // @ts-expect-error ignore any type error
+        const response: [] = await Role.findByCriteria({
+            "id": entity_id!
+        });
+        expect(response).toBeTruthy();
+        expect(response).toHaveLength(1);
+        // @ts-expect-error ignore possible undefined
+        expect(response[0].id).toEqual(entity_id!);
+    });
+
+    it("Delete", async () => {
+        const response = await Role.list();
+        await Role.remove(entity_id!, "unit_test");
+        const list = await Role.list();
+
+        expect(response).toBeTruthy();
+        expect(list).toBeDefined();
+    });
 });

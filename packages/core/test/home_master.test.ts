@@ -1,62 +1,93 @@
-import { expect, test } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { HomeMaster } from "../src/services/home_master";
 import { getRandom } from './utils';
+import { createAndSaveStateMaster, removeStateMaster } from "./state_master.test";
 
+
+// @ts-expect-error ignore any type error
 let entity_id;
+// @ts-expect-error ignore any type error
+let state_master;
 
-test("Create", async () => {
-    const response = await HomeMaster.create({
+export async function createAndSaveHomeMaster() {
+    state_master = await createAndSaveStateMaster();
+    return HomeMaster.create(getHomeMasterInstance());
+}
+
+export async function removeHomeMaster(id: number) {
+    // run delete query to clean database
+    await HomeMaster.hard_remove(id);
+    // @ts-expect-error ignore any type error
+    await removeStateMaster(state_master.id);
+}
+
+function getHomeMasterInstance() {
+    const instance = {
         "address_line_1": getRandom('text'),
-        "address_line_2": getRandom('string'),
+        "address_line_2": getRandom('text'),
         "city": getRandom('varchar', 100),
         "zip_code": getRandom('varchar', 100),
         "latitude": getRandom('float'),
         "longitude": getRandom('float'),
+        // @ts-expect-error ignore any type error
+        "state_master_id": state_master.id,
+    };
+    console.log('HomeMaster:', JSON.stringify(instance));
+    return instance;
+}
+
+describe('HomeMaster Tests', () => {
+
+    afterAll(async () => {
+        // @ts-expect-error ignore any type error
+        await removeHomeMaster(entity_id);
+    })
+
+    it("Create", async () => {
+        const response = await createAndSaveHomeMaster();
+        expect(response).toBeDefined();
+        expect(response!.id).toBeTruthy();
+        entity_id = response!.id;
     });
-    expect(response).toBeDefined();
-    expect(response!.id).toBeTruthy();
-    entity_id = response!.id;
-});
 
-test("Update", async () => {
-    const value = getRandom('text');
-    const response = await HomeMaster.update(
-        entity_id!,
-        { "address_line_1": value }
-    );
-    expect(response).toBeDefined();
-    expect(response!.address_line_1).toEqual(value);
-});
-
-test("List", async () => {
-    const response = await HomeMaster.list();
-    expect(response).toBeDefined();
-    expect(response.length).toBeGreaterThan(0);
-});
-
-test("Get by ID", async () => {
-    const response = await HomeMaster.get(entity_id!);
-    expect(response).toBeTruthy();
-    expect(response!.id).toEqual(entity_id!);
-});
-
-test("Search", async () => {
-    const response: any[] = await HomeMaster.findByCriteria({
-        "id": entity_id!
+    it("Update", async () => {
+        const response = await HomeMaster.update(
+            entity_id!,
+            { "address_line_1": getRandom('text') }
+        );
+        expect(response).toBeDefined();
+        expect(response!.id).toEqual(entity_id);
     });
-    expect(response).toBeTruthy();
-    expect(response).toHaveLength(1);
-    expect(response[0].id).toEqual(entity_id!);
-});
 
-test("Delete", async () => {
-    const response = await HomeMaster.list();
-    await HomeMaster.remove(entity_id!, "unit_test");
-    const list = await HomeMaster.list();
+    it("List", async () => {
+        const response = await HomeMaster.list();
+        expect(response).toBeDefined();
+        expect(response.length).toBeGreaterThan(0);
+    });
 
-    expect(response).toBeTruthy();
-    expect(list).toBeDefined();
+    it("Get by ID", async () => {
+        const response = await HomeMaster.get(entity_id!);
+        expect(response).toBeTruthy();
+        expect(response!.id).toEqual(entity_id!);
+    });
 
-    // force remove just to clean database
-    await HomeMaster.hard_remove(entity_id!);
+    it("Search", async () => {
+        // @ts-expect-error ignore any type error
+        const response: [] = await HomeMaster.findByCriteria({
+            "id": entity_id!
+        });
+        expect(response).toBeTruthy();
+        expect(response).toHaveLength(1);
+        // @ts-expect-error ignore possible undefined
+        expect(response[0].id).toEqual(entity_id!);
+    });
+
+    it("Delete", async () => {
+        const response = await HomeMaster.list();
+        await HomeMaster.remove(entity_id!, "unit_test");
+        const list = await HomeMaster.list();
+
+        expect(response).toBeTruthy();
+        expect(list).toBeDefined();
+    });
 });

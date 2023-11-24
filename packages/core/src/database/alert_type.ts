@@ -1,27 +1,16 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 
-export enum AlertPriority {
-  LOW = "LOW"
-  MEDIUM = "MEDIUM"
-  HIGH = "HIGH"
-}
-export enum AlertSeverity {
-  MINOR = "MINOR"
-  MODERATE = "MODERATE"
-  CRITICAL = "CRITICAL"
-}
-
 export interface AlertTypeTable extends AuditedEntity {
-  name: string;
+  name?: string;
   description?: string;
-    priority?: AlertPriority;
-    severity?: AlertSeverity;
-    color_code: string;
+  priority?: string;
+  severity?: string;
+  color_code: string;
   send_push?: boolean;
-    alert_text: string;
+  alert_text: string;
   alert_link?: string;
-  }
+}
 
 // You should not use the table schema interfaces directly. Instead, you should
 // use the `Selectable`, `Insertable` and `Updateable` wrappers. These wrappers

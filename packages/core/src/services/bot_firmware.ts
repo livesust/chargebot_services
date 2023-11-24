@@ -15,7 +15,9 @@ function withBot(eb: ExpressionBuilder<Database, 'bot_firmware'>) {
 export async function create(bot_firmware: NewBotFirmware): Promise<BotFirmware | undefined> {
     return await db
         .insertInto('bot_firmware')
-        .values(bot_firmware)
+        .values({
+            ...bot_firmware,
+        })
         .returningAll()
         .executeTakeFirst();
 }
@@ -40,11 +42,10 @@ export async function remove(id: number, user_id: string): Promise<{ id: number 
         .executeTakeFirst();
 }
 
-export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function hard_remove(id: number): Promise<void> {
+    await db
         .deleteFrom('bot_firmware')
         .where('id', '=', id)
-        .returning(['id'])
         .executeTakeFirst();
 }
 

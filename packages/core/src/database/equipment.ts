@@ -1,14 +1,13 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 
-
 export interface EquipmentTable extends AuditedEntity {
   name: string;
   brand?: string;
-    description?: string;
-    voltage?: number;
-    max_charging_amps?: number;
-    equipment_type_id: number;
+  description?: string;
+  voltage?: number;
+  max_charging_amps?: number;
+  equipment_type_id: number;
   customer_id: number;
 }
 

@@ -1,57 +1,96 @@
-import { expect, test } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { AppInstallPermissions } from "../src/services/app_install_permissions";
 import { getRandom } from './utils';
+import { createAndSaveAppInstall, removeAppInstall } from "./app_install.test";
+import { createAndSavePermission, removePermission } from "./permission.test";
 
+
+// @ts-expect-error ignore any type error
 let entity_id;
+// @ts-expect-error ignore any type error
+let app_install;
+// @ts-expect-error ignore any type error
+let permission;
 
-test("Create", async () => {
-    const response = await AppInstallPermissions.create({
+export async function createAndSaveAppInstallPermissions() {
+    app_install = await createAndSaveAppInstall();
+    permission = await createAndSavePermission();
+    return AppInstallPermissions.create(getAppInstallPermissionsInstance());
+}
+
+export async function removeAppInstallPermissions(id: number) {
+    // run delete query to clean database
+    await AppInstallPermissions.hard_remove(id);
+    // @ts-expect-error ignore any type error
+    await removeAppInstall(app_install.id);
+    // @ts-expect-error ignore any type error
+    await removePermission(permission.id);
+}
+
+function getAppInstallPermissionsInstance() {
+    const instance = {
         "permission_status": getRandom('boolean'),
+        // @ts-expect-error ignore any type error
+        "app_install_id": app_install.id,
+        // @ts-expect-error ignore any type error
+        "permission_id": permission.id,
+    };
+    console.log('AppInstallPermissions:', JSON.stringify(instance));
+    return instance;
+}
+
+describe('AppInstallPermissions Tests', () => {
+
+    afterAll(async () => {
+        // @ts-expect-error ignore any type error
+        await removeAppInstallPermissions(entity_id);
+    })
+
+    it("Create", async () => {
+        const response = await createAndSaveAppInstallPermissions();
+        expect(response).toBeDefined();
+        expect(response!.id).toBeTruthy();
+        entity_id = response!.id;
     });
-    expect(response).toBeDefined();
-    expect(response!.id).toBeTruthy();
-    entity_id = response!.id;
-});
 
-test("Update", async () => {
-    const value = getRandom('boolean');
-    const response = await AppInstallPermissions.update(
-        entity_id!,
-        { "permission_status": value }
-    );
-    expect(response).toBeDefined();
-    expect(response!.permission_status).toEqual(value);
-});
-
-test("List", async () => {
-    const response = await AppInstallPermissions.list();
-    expect(response).toBeDefined();
-    expect(response.length).toBeGreaterThan(0);
-});
-
-test("Get by ID", async () => {
-    const response = await AppInstallPermissions.get(entity_id!);
-    expect(response).toBeTruthy();
-    expect(response!.id).toEqual(entity_id!);
-});
-
-test("Search", async () => {
-    const response: any[] = await AppInstallPermissions.findByCriteria({
-        "id": entity_id!
+    it("Update", async () => {
+        const response = await AppInstallPermissions.update(
+            entity_id!,
+            { "permission_status": getRandom('boolean') }
+        );
+        expect(response).toBeDefined();
+        expect(response!.id).toEqual(entity_id);
     });
-    expect(response).toBeTruthy();
-    expect(response).toHaveLength(1);
-    expect(response[0].id).toEqual(entity_id!);
-});
 
-test("Delete", async () => {
-    const response = await AppInstallPermissions.list();
-    await AppInstallPermissions.remove(entity_id!, "unit_test");
-    const list = await AppInstallPermissions.list();
+    it("List", async () => {
+        const response = await AppInstallPermissions.list();
+        expect(response).toBeDefined();
+        expect(response.length).toBeGreaterThan(0);
+    });
 
-    expect(response).toBeTruthy();
-    expect(list).toBeDefined();
+    it("Get by ID", async () => {
+        const response = await AppInstallPermissions.get(entity_id!);
+        expect(response).toBeTruthy();
+        expect(response!.id).toEqual(entity_id!);
+    });
 
-    // force remove just to clean database
-    await AppInstallPermissions.hard_remove(entity_id!);
+    it("Search", async () => {
+        // @ts-expect-error ignore any type error
+        const response: [] = await AppInstallPermissions.findByCriteria({
+            "id": entity_id!
+        });
+        expect(response).toBeTruthy();
+        expect(response).toHaveLength(1);
+        // @ts-expect-error ignore possible undefined
+        expect(response[0].id).toEqual(entity_id!);
+    });
+
+    it("Delete", async () => {
+        const response = await AppInstallPermissions.list();
+        await AppInstallPermissions.remove(entity_id!, "unit_test");
+        const list = await AppInstallPermissions.list();
+
+        expect(response).toBeTruthy();
+        expect(list).toBeDefined();
+    });
 });

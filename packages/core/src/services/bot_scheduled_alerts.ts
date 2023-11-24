@@ -1,5 +1,5 @@
 export * as BotScheduledAlerts from "./bot_scheduled_alerts";
-import db, { Database } from '../database';
+import db, { Database, json } from '../database';
 import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { BotScheduledAlerts, BotScheduledAlertsUpdate, NewBotScheduledAlerts } from "../database/bot_scheduled_alerts";
@@ -22,7 +22,10 @@ function withUser(eb: ExpressionBuilder<Database, 'bot_scheduled_alerts'>) {
 export async function create(bot_scheduled_alerts: NewBotScheduledAlerts): Promise<BotScheduledAlerts | undefined> {
     return await db
         .insertInto('bot_scheduled_alerts')
-        .values(bot_scheduled_alerts)
+        .values({
+            ...bot_scheduled_alerts,
+            settings: json(bot_scheduled_alerts.settings),
+        })
         .returningAll()
         .executeTakeFirst();
 }
@@ -47,11 +50,10 @@ export async function remove(id: number, user_id: string): Promise<{ id: number 
         .executeTakeFirst();
 }
 
-export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function hard_remove(id: number): Promise<void> {
+    await db
         .deleteFrom('bot_scheduled_alerts')
         .where('id', '=', id)
-        .returning(['id'])
         .executeTakeFirst();
 }
 
@@ -85,12 +87,8 @@ export async function findByCriteria(criteria: Partial<BotScheduledAlerts>) {
   if (criteria.alert_status) {
     query = query.where('alert_status', '=', criteria.alert_status);
   }
-  if (criteria.settings !== undefined) {
-    query = query.where(
-      'settings', 
-      criteria.settings === null ? 'is' : '=', 
-      criteria.settings
-    );
+  if (criteria.settings) {
+    query = query.where('settings', '=', criteria.settings);
   }
 
   if (criteria.created_by) {

@@ -13,9 +13,22 @@ function withBotVersion(eb: ExpressionBuilder<Database, 'bot'>) {
 }
 
 export async function create(bot: NewBot): Promise<Bot | undefined> {
+//    const exists = await db
+//        .selectFrom('bot')
+//        .select(['id'])
+//        .where((eb) => eb.or([
+//            eb('bot_uuid', '=', bot.bot_uuid),
+//        ]))
+//        .where('deleted_by', 'is', null)
+//        .executeTakeFirst();
+//    if (exists) {
+//        throw Error('Entity already exists with unique values');
+//    }
     return await db
         .insertInto('bot')
-        .values(bot)
+        .values({
+            ...bot,
+        })
         .returningAll()
         .executeTakeFirst();
 }
@@ -40,11 +53,10 @@ export async function remove(id: number, user_id: string): Promise<{ id: number 
         .executeTakeFirst();
 }
 
-export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function hard_remove(id: number): Promise<void> {
+    await db
         .deleteFrom('bot')
         .where('id', '=', id)
-        .returning(['id'])
         .executeTakeFirst();
 }
 

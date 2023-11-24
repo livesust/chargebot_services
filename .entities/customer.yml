@@ -3,15 +3,12 @@ attributes:
   - attribute: name
     type: text
     tsType: string
-    unique: false
     not_null: true
   - attribute: email
     type: text
     tsType: string
-    unique: false
     not_null: false
   - attribute: first order date
     type: timestamptz
     tsType: Date
-    unique: false
     not_null: false

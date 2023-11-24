@@ -6,7 +6,9 @@ import { Customer, CustomerUpdate, NewCustomer } from "../database/customer";
 export async function create(customer: NewCustomer): Promise<Customer | undefined> {
     return await db
         .insertInto('customer')
-        .values(customer)
+        .values({
+            ...customer,
+        })
         .returningAll()
         .executeTakeFirst();
 }
@@ -31,11 +33,10 @@ export async function remove(id: number, user_id: string): Promise<{ id: number 
         .executeTakeFirst();
 }
 
-export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function hard_remove(id: number): Promise<void> {
+    await db
         .deleteFrom('customer')
         .where('id', '=', id)
-        .returning(['id'])
         .executeTakeFirst();
 }
 

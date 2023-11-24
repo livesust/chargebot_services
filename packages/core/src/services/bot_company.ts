@@ -22,7 +22,9 @@ function withCompany(eb: ExpressionBuilder<Database, 'bot_company'>) {
 export async function create(bot_company: NewBotCompany): Promise<BotCompany | undefined> {
     return await db
         .insertInto('bot_company')
-        .values(bot_company)
+        .values({
+            ...bot_company,
+        })
         .returningAll()
         .executeTakeFirst();
 }
@@ -47,11 +49,10 @@ export async function remove(id: number, user_id: string): Promise<{ id: number 
         .executeTakeFirst();
 }
 
-export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function hard_remove(id: number): Promise<void> {
+    await db
         .deleteFrom('bot_company')
         .where('id', '=', id)
-        .returning(['id'])
         .executeTakeFirst();
 }
 

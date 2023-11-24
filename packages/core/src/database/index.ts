@@ -1,4 +1,4 @@
-import { Kysely, ParseJSONResultsPlugin } from "kysely";
+import { Kysely, ParseJSONResultsPlugin, RawBuilder, sql } from "kysely";
 import { DataApiDialect } from "kysely-data-api";
 import { RDSData } from "@aws-sdk/client-rds-data";
 import { RDS } from "sst/node/rds";
@@ -36,6 +36,9 @@ import { AppInstallTable } from "./app_install";
 import { BotUserTable } from "./bot_user";
 // DO NOT REMOVE THIS LINE: PLOP ENTITY IMPORT
 
+export function json<T>(value: T): RawBuilder<T> {
+    return sql`CAST(${JSON.stringify(value)} AS JSONB)`
+}
 export interface Database {
   bot: BotTable,
   customer: CustomerTable,

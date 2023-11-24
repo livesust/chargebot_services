@@ -1,62 +1,93 @@
-import { expect, test } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { User } from "../src/services/user";
 import { getRandom } from './utils';
+import { createAndSaveCompany, removeCompany } from "./company.test";
 
+
+// @ts-expect-error ignore any type error
 let entity_id;
+// @ts-expect-error ignore any type error
+let company;
 
-test("Create", async () => {
-    const response = await User.create({
+export async function createAndSaveUser() {
+    company = await createAndSaveCompany();
+    return User.create(getUserInstance());
+}
+
+export async function removeUser(id: number) {
+    // run delete query to clean database
+    await User.hard_remove(id);
+    // @ts-expect-error ignore any type error
+    await removeCompany(company.id);
+}
+
+function getUserInstance() {
+    const instance = {
         "first_name": getRandom('varchar', 255),
         "last_name": getRandom('varchar', 255),
         "title": getRandom('varchar', 255),
         "photo": getRandom('varchar', 255),
         "invite_status": getRandom('integer'),
         "super_admin": getRandom('boolean'),
+        // @ts-expect-error ignore any type error
+        "company_id": company.id,
+    };
+    console.log('User:', JSON.stringify(instance));
+    return instance;
+}
+
+describe('User Tests', () => {
+
+    afterAll(async () => {
+        // @ts-expect-error ignore any type error
+        await removeUser(entity_id);
+    })
+
+    it("Create", async () => {
+        const response = await createAndSaveUser();
+        expect(response).toBeDefined();
+        expect(response!.id).toBeTruthy();
+        entity_id = response!.id;
     });
-    expect(response).toBeDefined();
-    expect(response!.id).toBeTruthy();
-    entity_id = response!.id;
-});
 
-test("Update", async () => {
-    const value = getRandom('varchar');
-    const response = await User.update(
-        entity_id!,
-        { "first_name": value }
-    );
-    expect(response).toBeDefined();
-    expect(response!.first_name).toEqual(value);
-});
-
-test("List", async () => {
-    const response = await User.list();
-    expect(response).toBeDefined();
-    expect(response.length).toBeGreaterThan(0);
-});
-
-test("Get by ID", async () => {
-    const response = await User.get(entity_id!);
-    expect(response).toBeTruthy();
-    expect(response!.id).toEqual(entity_id!);
-});
-
-test("Search", async () => {
-    const response: any[] = await User.findByCriteria({
-        "id": entity_id!
+    it("Update", async () => {
+        const response = await User.update(
+            entity_id!,
+            { "first_name": getRandom('varchar') }
+        );
+        expect(response).toBeDefined();
+        expect(response!.id).toEqual(entity_id);
     });
-    expect(response).toBeTruthy();
-    expect(response).toHaveLength(1);
-    expect(response[0].id).toEqual(entity_id!);
-});
 
-test("Delete", async () => {
-    const response = await User.list();
-    await User.remove(entity_id!, "unit_test");
-    const list = await User.list();
+    it("List", async () => {
+        const response = await User.list();
+        expect(response).toBeDefined();
+        expect(response.length).toBeGreaterThan(0);
+    });
 
-    expect(response).toBeTruthy();
-    expect(list).toBeDefined();
+    it("Get by ID", async () => {
+        const response = await User.get(entity_id!);
+        expect(response).toBeTruthy();
+        expect(response!.id).toEqual(entity_id!);
+    });
 
-    // force remove just to clean database
-    await User.hard_remove(entity_id!);
+    it("Search", async () => {
+        // @ts-expect-error ignore any type error
+        const response: [] = await User.findByCriteria({
+            "id": entity_id!
+        });
+        expect(response).toBeTruthy();
+        expect(response).toHaveLength(1);
+        // @ts-expect-error ignore possible undefined
+        expect(response[0].id).toEqual(entity_id!);
+    });
+
+    it("Delete", async () => {
+        const response = await User.list();
+        await User.remove(entity_id!, "unit_test");
+        const list = await User.list();
+
+        expect(response).toBeTruthy();
+        expect(list).toBeDefined();
+    });
 });

@@ -7,10 +7,10 @@ attributes:
     type: boolean
     tsType: boolean
   - attribute: send time
-    type: timestampz
+    type: timestamptz
     tsType: Date
   - attribute: display time
-    type: timestampz
+    type: timestamptz
     tsType: Date
   - attribute: show
     type: boolean

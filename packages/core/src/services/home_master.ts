@@ -15,7 +15,9 @@ function withStateMaster(eb: ExpressionBuilder<Database, 'home_master'>) {
 export async function create(home_master: NewHomeMaster): Promise<HomeMaster | undefined> {
     return await db
         .insertInto('home_master')
-        .values(home_master)
+        .values({
+            ...home_master,
+        })
         .returningAll()
         .executeTakeFirst();
 }
@@ -40,11 +42,10 @@ export async function remove(id: number, user_id: string): Promise<{ id: number 
         .executeTakeFirst();
 }
 
-export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function hard_remove(id: number): Promise<void> {
+    await db
         .deleteFrom('home_master')
         .where('id', '=', id)
-        .returning(['id'])
         .executeTakeFirst();
 }
 

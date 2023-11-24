@@ -4,9 +4,22 @@ import { AppSettingsType, AppSettingsTypeUpdate, NewAppSettingsType } from "../d
 
 
 export async function create(app_settings_type: NewAppSettingsType): Promise<AppSettingsType | undefined> {
+//    const exists = await db
+//        .selectFrom('app_settings_type')
+//        .select(['id'])
+//        .where((eb) => eb.or([
+//            eb('setting_name', '=', app_settings_type.setting_name),
+//        ]))
+//        .where('deleted_by', 'is', null)
+//        .executeTakeFirst();
+//    if (exists) {
+//        throw Error('Entity already exists with unique values');
+//    }
     return await db
         .insertInto('app_settings_type')
-        .values(app_settings_type)
+        .values({
+            ...app_settings_type,
+        })
         .returningAll()
         .executeTakeFirst();
 }
@@ -31,11 +44,10 @@ export async function remove(id: number, user_id: string): Promise<{ id: number 
         .executeTakeFirst();
 }
 
-export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function hard_remove(id: number): Promise<void> {
+    await db
         .deleteFrom('app_settings_type')
         .where('id', '=', id)
-        .returning(['id'])
         .executeTakeFirst();
 }
 

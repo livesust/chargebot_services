@@ -4,9 +4,22 @@ import { AlertType, AlertTypeUpdate, NewAlertType } from "../database/alert_type
 
 
 export async function create(alert_type: NewAlertType): Promise<AlertType | undefined> {
+//    const exists = await db
+//        .selectFrom('alert_type')
+//        .select(['id'])
+//        .where((eb) => eb.or([
+//            eb('name', '=', alert_type.name),
+//        ]))
+//        .where('deleted_by', 'is', null)
+//        .executeTakeFirst();
+//    if (exists) {
+//        throw Error('Entity already exists with unique values');
+//    }
     return await db
         .insertInto('alert_type')
-        .values(alert_type)
+        .values({
+            ...alert_type,
+        })
         .returningAll()
         .executeTakeFirst();
 }
@@ -31,11 +44,10 @@ export async function remove(id: number, user_id: string): Promise<{ id: number 
         .executeTakeFirst();
 }
 
-export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function hard_remove(id: number): Promise<void> {
+    await db
         .deleteFrom('alert_type')
         .where('id', '=', id)
-        .returning(['id'])
         .executeTakeFirst();
 }
 
@@ -77,11 +89,19 @@ export async function findByCriteria(criteria: Partial<AlertType>) {
       criteria.description
     );
   }
-  if (criteria.priority) {
-    query = query.where('priority', '=', criteria.priority);
+  if (criteria.priority !== undefined) {
+    query = query.where(
+      'priority', 
+      criteria.priority === null ? 'is' : '=', 
+      criteria.priority
+    );
   }
-  if (criteria.severity) {
-    query = query.where('severity', '=', criteria.severity);
+  if (criteria.severity !== undefined) {
+    query = query.where(
+      'severity', 
+      criteria.severity === null ? 'is' : '=', 
+      criteria.severity
+    );
   }
   if (criteria.color_code !== undefined) {
     query = query.where(

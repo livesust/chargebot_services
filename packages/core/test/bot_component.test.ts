@@ -1,58 +1,97 @@
-import { expect, test } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { BotComponent } from "../src/services/bot_component";
 import { getRandom } from './utils';
+import { createAndSaveBot, removeBot } from "./bot.test";
+import { createAndSaveComponent, removeComponent } from "./component.test";
 
+
+// @ts-expect-error ignore any type error
 let entity_id;
+// @ts-expect-error ignore any type error
+let bot;
+// @ts-expect-error ignore any type error
+let component;
 
-test("Create", async () => {
-    const response = await BotComponent.create({
-        "install_date": getRandom('timestampz'),
+export async function createAndSaveBotComponent() {
+    bot = await createAndSaveBot();
+    component = await createAndSaveComponent();
+    return BotComponent.create(getBotComponentInstance());
+}
+
+export async function removeBotComponent(id: number) {
+    // run delete query to clean database
+    await BotComponent.hard_remove(id);
+    // @ts-expect-error ignore any type error
+    await removeBot(bot.id);
+    // @ts-expect-error ignore any type error
+    await removeComponent(component.id);
+}
+
+function getBotComponentInstance() {
+    const instance = {
+        "install_date": getRandom('timestamptz'),
         "component_serial": getRandom('varchar', 255),
+        // @ts-expect-error ignore any type error
+        "bot_id": bot.id,
+        // @ts-expect-error ignore any type error
+        "component_id": component.id,
+    };
+    console.log('BotComponent:', JSON.stringify(instance));
+    return instance;
+}
+
+describe('BotComponent Tests', () => {
+
+    afterAll(async () => {
+        // @ts-expect-error ignore any type error
+        await removeBotComponent(entity_id);
+    })
+
+    it("Create", async () => {
+        const response = await createAndSaveBotComponent();
+        expect(response).toBeDefined();
+        expect(response!.id).toBeTruthy();
+        entity_id = response!.id;
     });
-    expect(response).toBeDefined();
-    expect(response!.id).toBeTruthy();
-    entity_id = response!.id;
-});
 
-test("Update", async () => {
-    const value = getRandom('timestampz');
-    const response = await BotComponent.update(
-        entity_id!,
-        { "install_date": value }
-    );
-    expect(response).toBeDefined();
-    expect(response!.install_date).toEqual(value);
-});
-
-test("List", async () => {
-    const response = await BotComponent.list();
-    expect(response).toBeDefined();
-    expect(response.length).toBeGreaterThan(0);
-});
-
-test("Get by ID", async () => {
-    const response = await BotComponent.get(entity_id!);
-    expect(response).toBeTruthy();
-    expect(response!.id).toEqual(entity_id!);
-});
-
-test("Search", async () => {
-    const response: any[] = await BotComponent.findByCriteria({
-        "id": entity_id!
+    it("Update", async () => {
+        const response = await BotComponent.update(
+            entity_id!,
+            { "install_date": getRandom('timestamptz') }
+        );
+        expect(response).toBeDefined();
+        expect(response!.id).toEqual(entity_id);
     });
-    expect(response).toBeTruthy();
-    expect(response).toHaveLength(1);
-    expect(response[0].id).toEqual(entity_id!);
-});
 
-test("Delete", async () => {
-    const response = await BotComponent.list();
-    await BotComponent.remove(entity_id!, "unit_test");
-    const list = await BotComponent.list();
+    it("List", async () => {
+        const response = await BotComponent.list();
+        expect(response).toBeDefined();
+        expect(response.length).toBeGreaterThan(0);
+    });
 
-    expect(response).toBeTruthy();
-    expect(list).toBeDefined();
+    it("Get by ID", async () => {
+        const response = await BotComponent.get(entity_id!);
+        expect(response).toBeTruthy();
+        expect(response!.id).toEqual(entity_id!);
+    });
 
-    // force remove just to clean database
-    await BotComponent.hard_remove(entity_id!);
+    it("Search", async () => {
+        // @ts-expect-error ignore any type error
+        const response: [] = await BotComponent.findByCriteria({
+            "id": entity_id!
+        });
+        expect(response).toBeTruthy();
+        expect(response).toHaveLength(1);
+        // @ts-expect-error ignore possible undefined
+        expect(response[0].id).toEqual(entity_id!);
+    });
+
+    it("Delete", async () => {
+        const response = await BotComponent.list();
+        await BotComponent.remove(entity_id!, "unit_test");
+        const list = await BotComponent.list();
+
+        expect(response).toBeTruthy();
+        expect(list).toBeDefined();
+    });
 });

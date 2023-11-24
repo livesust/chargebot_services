@@ -1,10 +1,9 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 
-
 export interface AppInstallPermissionsTable extends AuditedEntity {
   permission_status?: boolean;
-    app_install_id: number;
+  app_install_id: number;
   permission_id: number;
 }
 

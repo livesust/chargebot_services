@@ -1,7 +1,7 @@
 name: bot_component
 attributes:
   - attribute: install date
-    type: timestampz
+    type: timestamptz
     tsType: Date
     not_null: true
   - attribute: component serial

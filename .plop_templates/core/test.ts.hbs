@@ -1,59 +1,110 @@
-import { expect, test } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { {{pascalCase name}} } from "../src/services/{{snakeCase name}}";
 import { getRandom } from './utils';
+{{#each relationships}}
+    {{#if not_null}}
+import { createAndSave{{pascalCase entity}}, remove{{pascalCase entity}} } from "./{{snakeCase entity}}.test";
+    {{/if}}
+{{/each}}
 
+
+// @ts-expect-error ignore any type error
 let entity_id;
+{{#each relationships}}
+    {{#if not_null}}
+// @ts-expect-error ignore any type error
+let {{snakeCase entity}};
+    {{/if}}
+{{/each}}
 
-test("Create", async () => {
-    const response = await {{pascalCase name}}.create({
+export async function createAndSave{{pascalCase name}}() {
+    {{#each relationships}}
+        {{#if not_null}}
+    {{snakeCase entity}} = await createAndSave{{pascalCase entity}}();
+        {{/if}}
+    {{/each}}
+    return {{pascalCase name}}.create(get{{pascalCase name}}Instance());
+}
+
+export async function remove{{pascalCase name}}(id: number) {
+    // run delete query to clean database
+    await {{pascalCase name}}.hard_remove(id);
+    {{#each relationships}}
+        {{#if not_null}}
+    // @ts-expect-error ignore any type error
+    await remove{{pascalCase entity}}({{snakeCase entity}}.id);
+        {{/if}}
+    {{/each}}
+}
+
+function get{{pascalCase name}}Instance() {
+    const instance = {
         {{#each attributes}}
         "{{snakeCase attribute}}": getRandom('{{type}}'{{#when type 'eq' 'varchar'}}, {{varchar_length}}{{/when}}),
         {{/each}}
+        {{#each relationships}}
+            {{#if not_null}}
+        // @ts-expect-error ignore any type error
+        "{{snakeCase entity}}_id": {{snakeCase entity}}.id,
+            {{/if}}
+        {{/each}}
+    };
+    console.log('{{pascalCase name}}:', JSON.stringify(instance));
+    return instance;
+}
+
+describe('{{pascalCase name}} Tests', () => {
+
+    afterAll(async () => {
+        // @ts-expect-error ignore any type error
+        await remove{{pascalCase name}}(entity_id);
+    })
+
+    it("Create", async () => {
+        const response = await createAndSave{{pascalCase name}}();
+        expect(response).toBeDefined();
+        expect(response!.id).toBeTruthy();
+        entity_id = response!.id;
     });
-    expect(response).toBeDefined();
-    expect(response!.id).toBeTruthy();
-    entity_id = response!.id;
-});
 
-test("Update", async () => {
-    const value = getRandom('{{attributes.0.type}}');
-    const response = await {{pascalCase name}}.update(
-        entity_id!,
-        { "{{snakeCase attributes.0.attribute}}": value }
-    );
-    expect(response).toBeDefined();
-    expect(response!.{{snakeCase attributes.0.attribute}}).toEqual(value);
-});
-
-test("List", async () => {
-    const response = await {{pascalCase name}}.list();
-    expect(response).toBeDefined();
-    expect(response.length).toBeGreaterThan(0);
-});
-
-test("Get by ID", async () => {
-    const response = await {{pascalCase name}}.get(entity_id!);
-    expect(response).toBeTruthy();
-    expect(response!.id).toEqual(entity_id!);
-});
-
-test("Search", async () => {
-    const response: any[] = await {{pascalCase name}}.findByCriteria({
-        "id": entity_id!
+    it("Update", async () => {
+        const response = await {{pascalCase name}}.update(
+            entity_id!,
+            { "{{snakeCase attributes.0.attribute}}": getRandom('{{attributes.0.type}}') }
+        );
+        expect(response).toBeDefined();
+        expect(response!.id).toEqual(entity_id);
     });
-    expect(response).toBeTruthy();
-    expect(response).toHaveLength(1);
-    expect(response[0].id).toEqual(entity_id!);
-});
 
-test("Delete", async () => {
-    const response = await {{pascalCase name}}.list();
-    await {{pascalCase name}}.remove(entity_id!, "unit_test");
-    const list = await {{pascalCase name}}.list();
+    it("List", async () => {
+        const response = await {{pascalCase name}}.list();
+        expect(response).toBeDefined();
+        expect(response.length).toBeGreaterThan(0);
+    });
 
-    expect(response).toBeTruthy();
-    expect(list).toBeDefined();
+    it("Get by ID", async () => {
+        const response = await {{pascalCase name}}.get(entity_id!);
+        expect(response).toBeTruthy();
+        expect(response!.id).toEqual(entity_id!);
+    });
 
-    // force remove just to clean database
-    await {{pascalCase name}}.hard_remove(entity_id!);
+    it("Search", async () => {
+        // @ts-expect-error ignore any type error
+        const response: [] = await {{pascalCase name}}.findByCriteria({
+            "id": entity_id!
+        });
+        expect(response).toBeTruthy();
+        expect(response).toHaveLength(1);
+        // @ts-expect-error ignore possible undefined
+        expect(response[0].id).toEqual(entity_id!);
+    });
+
+    it("Delete", async () => {
+        const response = await {{pascalCase name}}.list();
+        await {{pascalCase name}}.remove(entity_id!, "unit_test");
+        const list = await {{pascalCase name}}.list();
+
+        expect(response).toBeTruthy();
+        expect(list).toBeDefined();
+    });
 });

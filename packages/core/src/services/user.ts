@@ -15,7 +15,9 @@ function withCompany(eb: ExpressionBuilder<Database, 'user'>) {
 export async function create(user: NewUser): Promise<User | undefined> {
     return await db
         .insertInto('user')
-        .values(user)
+        .values({
+            ...user,
+        })
         .returningAll()
         .executeTakeFirst();
 }
@@ -40,11 +42,10 @@ export async function remove(id: number, user_id: string): Promise<{ id: number 
         .executeTakeFirst();
 }
 
-export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function hard_remove(id: number): Promise<void> {
+    await db
         .deleteFrom('user')
         .where('id', '=', id)
-        .returning(['id'])
         .executeTakeFirst();
 }
 

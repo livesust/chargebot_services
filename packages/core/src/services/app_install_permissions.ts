@@ -22,7 +22,9 @@ function withPermission(eb: ExpressionBuilder<Database, 'app_install_permissions
 export async function create(app_install_permissions: NewAppInstallPermissions): Promise<AppInstallPermissions | undefined> {
     return await db
         .insertInto('app_install_permissions')
-        .values(app_install_permissions)
+        .values({
+            ...app_install_permissions,
+        })
         .returningAll()
         .executeTakeFirst();
 }
@@ -47,11 +49,10 @@ export async function remove(id: number, user_id: string): Promise<{ id: number 
         .executeTakeFirst();
 }
 
-export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function hard_remove(id: number): Promise<void> {
+    await db
         .deleteFrom('app_install_permissions')
         .where('id', '=', id)
-        .returning(['id'])
         .executeTakeFirst();
 }
 

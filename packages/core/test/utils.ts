@@ -5,9 +5,9 @@ export const getRandom = (type: string, lenght = 10): any => {
     if (['text', 'varchar'].includes(type)) {
         return faker.lorem.word(lenght);
     } else if (['integer', 'bigint'].includes(type)) {
-        return faker.number.bigInt();
+        return faker.number.int({ min: 1, max: 100 });
     } else if (['float', 'decimal'].includes(type)) {
-        return faker.number.float();
+        return faker.number.float({ min: 1, max: 100, precision: 2 });
     } else if (['timestamp', 'timestamptz'].includes(type)) {
         return faker.date.past();
     } else if (type === 'uuid') {

@@ -6,7 +6,9 @@ import { EquipmentType, EquipmentTypeUpdate, NewEquipmentType } from "../databas
 export async function create(equipment_type: NewEquipmentType): Promise<EquipmentType | undefined> {
     return await db
         .insertInto('equipment_type')
-        .values(equipment_type)
+        .values({
+            ...equipment_type,
+        })
         .returningAll()
         .executeTakeFirst();
 }
@@ -31,11 +33,10 @@ export async function remove(id: number, user_id: string): Promise<{ id: number 
         .executeTakeFirst();
 }
 
-export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function hard_remove(id: number): Promise<void> {
+    await db
         .deleteFrom('equipment_type')
         .where('id', '=', id)
-        .returning(['id'])
         .executeTakeFirst();
 }
 

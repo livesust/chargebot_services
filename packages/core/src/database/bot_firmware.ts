@@ -1,7 +1,6 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 
-
 export interface BotFirmwareTable extends AuditedEntity {
   inverter_version: string;
   pi_version: string;
@@ -9,7 +8,7 @@ export interface BotFirmwareTable extends AuditedEntity {
   battery_version: string;
   pdu_version: string;
   notes?: string;
-    bot_id: number;
+  bot_id: number;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

@@ -4,9 +4,22 @@ import { ScheduledAlert, ScheduledAlertUpdate, NewScheduledAlert } from "../data
 
 
 export async function create(scheduled_alert: NewScheduledAlert): Promise<ScheduledAlert | undefined> {
+//    const exists = await db
+//        .selectFrom('scheduled_alert')
+//        .select(['id'])
+//        .where((eb) => eb.or([
+//            eb('name', '=', scheduled_alert.name),
+//        ]))
+//        .where('deleted_by', 'is', null)
+//        .executeTakeFirst();
+//    if (exists) {
+//        throw Error('Entity already exists with unique values');
+//    }
     return await db
         .insertInto('scheduled_alert')
-        .values(scheduled_alert)
+        .values({
+            ...scheduled_alert,
+        })
         .returningAll()
         .executeTakeFirst();
 }
@@ -31,11 +44,10 @@ export async function remove(id: number, user_id: string): Promise<{ id: number 
         .executeTakeFirst();
 }
 
-export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function hard_remove(id: number): Promise<void> {
+    await db
         .deleteFrom('scheduled_alert')
         .where('id', '=', id)
-        .returning(['id'])
         .executeTakeFirst();
 }
 

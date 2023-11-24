@@ -1,10 +1,9 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 
-
 export interface OutletEquipmentTable extends AuditedEntity {
   notes?: string;
-    equipment_id: number;
+  equipment_id: number;
   outlet_id: number;
   user_id: number;
 }

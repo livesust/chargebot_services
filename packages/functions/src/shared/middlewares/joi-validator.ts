@@ -6,6 +6,8 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 export interface Options {
     eventSchema?: Joi.AnySchema | undefined;
     eventValidationOptions?: ValidationOptions | undefined;
+    pathParametersSchema?: Joi.AnySchema | undefined;
+    pathParametersValidationOptions?: ValidationOptions | undefined;
     headersSchema?: Joi.AnySchema | undefined;
     headersValidationOptions?: ValidationOptions | undefined;
     responseSchema?: Joi.AnySchema | undefined;
@@ -19,9 +21,11 @@ const defaultOptions: Options = {
 }
 
 const middleware = (options: Options): middy.MiddlewareObj<APIGatewayProxyEvent, APIGatewayProxyResult> => {
-    let {
+    const {
         eventSchema,
         eventValidationOptions,
+        pathParametersSchema,
+        pathParametersValidationOptions,
         headersSchema,
         headersValidationOptions,
         responseSchema,
@@ -53,6 +57,16 @@ const middleware = (options: Options): middy.MiddlewareObj<APIGatewayProxyEvent,
             }
             request.event.body = value;
         }
+        if (pathParametersSchema) {
+            const { error: validationError } = pathParametersSchema.validate(request.event.pathParameters, pathParametersValidationOptions);
+            if (validationError) {
+                // Bad Request
+                const error = createError(400, validationError.message);
+                const errorDetails = validationError.details.map(detail => detail.message);
+                error.details = errorDetails;
+                throw error;
+            }
+        }
     }
 
     const onAfter: middy.MiddlewareFn<APIGatewayProxyEvent, APIGatewayProxyResult> = async (
@@ -71,7 +85,7 @@ const middleware = (options: Options): middy.MiddlewareObj<APIGatewayProxyEvent,
     }
 
     return {
-        before: (eventSchema || headersSchema) ? onBefore : undefined,
+        before: (eventSchema || headersSchema || pathParametersSchema) ? onBefore : undefined,
         after: responseSchema ? onAfter : undefined
     }
 }

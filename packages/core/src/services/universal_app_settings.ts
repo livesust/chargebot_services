@@ -13,9 +13,22 @@ function withAppSettingsType(eb: ExpressionBuilder<Database, 'universal_app_sett
 }
 
 export async function create(universal_app_settings: NewUniversalAppSettings): Promise<UniversalAppSettings | undefined> {
+//    const exists = await db
+//        .selectFrom('universal_app_settings')
+//        .select(['id'])
+//        .where((eb) => eb.or([
+//            eb('setting_value', '=', universal_app_settings.setting_value),
+//        ]))
+//        .where('deleted_by', 'is', null)
+//        .executeTakeFirst();
+//    if (exists) {
+//        throw Error('Entity already exists with unique values');
+//    }
     return await db
         .insertInto('universal_app_settings')
-        .values(universal_app_settings)
+        .values({
+            ...universal_app_settings,
+        })
         .returningAll()
         .executeTakeFirst();
 }
@@ -40,11 +53,10 @@ export async function remove(id: number, user_id: string): Promise<{ id: number 
         .executeTakeFirst();
 }
 
-export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function hard_remove(id: number): Promise<void> {
+    await db
         .deleteFrom('universal_app_settings')
         .where('id', '=', id)
-        .returning(['id'])
         .executeTakeFirst();
 }
 

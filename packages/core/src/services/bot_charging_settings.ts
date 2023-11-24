@@ -15,7 +15,9 @@ function withBot(eb: ExpressionBuilder<Database, 'bot_charging_settings'>) {
 export async function create(bot_charging_settings: NewBotChargingSettings): Promise<BotChargingSettings | undefined> {
     return await db
         .insertInto('bot_charging_settings')
-        .values(bot_charging_settings)
+        .values({
+            ...bot_charging_settings,
+        })
         .returningAll()
         .executeTakeFirst();
 }
@@ -40,11 +42,10 @@ export async function remove(id: number, user_id: string): Promise<{ id: number 
         .executeTakeFirst();
 }
 
-export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function hard_remove(id: number): Promise<void> {
+    await db
         .deleteFrom('bot_charging_settings')
         .where('id', '=', id)
-        .returning(['id'])
         .executeTakeFirst();
 }
 
@@ -74,8 +75,12 @@ export async function findByCriteria(criteria: Partial<BotChargingSettings>) {
     query = query.where('id', '=', criteria.id);
   }
 
-  if (criteria.day_of_week) {
-    query = query.where('day_of_week', '=', criteria.day_of_week);
+  if (criteria.day_of_week !== undefined) {
+    query = query.where(
+      'day_of_week', 
+      criteria.day_of_week === null ? 'is' : '=', 
+      criteria.day_of_week
+    );
   }
   if (criteria.all_day) {
     query = query.where('all_day', '=', criteria.all_day);

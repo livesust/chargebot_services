@@ -1,11 +1,10 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 
-
 export interface HomeMasterTable extends AuditedEntity {
   address_line_1: string;
   address_line_2?: string;
-    city: string;
+  city: string;
   zip_code: string;
   latitude: number;
   longitude: number;

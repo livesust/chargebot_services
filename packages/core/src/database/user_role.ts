@@ -1,10 +1,9 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 
-
 export interface UserRoleTable extends AuditedEntity {
   all_bots?: boolean;
-    user_id: number;
+  user_id: number;
   role_id: number;
 }
 

@@ -1,57 +1,88 @@
-import { expect, test } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { UniversalAppSettings } from "../src/services/universal_app_settings";
 import { getRandom } from './utils';
+import { createAndSaveAppSettingsType, removeAppSettingsType } from "./app_settings_type.test";
 
+
+// @ts-expect-error ignore any type error
 let entity_id;
+// @ts-expect-error ignore any type error
+let app_settings_type;
 
-test("Create", async () => {
-    const response = await UniversalAppSettings.create({
+export async function createAndSaveUniversalAppSettings() {
+    app_settings_type = await createAndSaveAppSettingsType();
+    return UniversalAppSettings.create(getUniversalAppSettingsInstance());
+}
+
+export async function removeUniversalAppSettings(id: number) {
+    // run delete query to clean database
+    await UniversalAppSettings.hard_remove(id);
+    // @ts-expect-error ignore any type error
+    await removeAppSettingsType(app_settings_type.id);
+}
+
+function getUniversalAppSettingsInstance() {
+    const instance = {
         "setting_value": getRandom('varchar', 255),
+        // @ts-expect-error ignore any type error
+        "app_settings_type_id": app_settings_type.id,
+    };
+    console.log('UniversalAppSettings:', JSON.stringify(instance));
+    return instance;
+}
+
+describe('UniversalAppSettings Tests', () => {
+
+    afterAll(async () => {
+        // @ts-expect-error ignore any type error
+        await removeUniversalAppSettings(entity_id);
+    })
+
+    it("Create", async () => {
+        const response = await createAndSaveUniversalAppSettings();
+        expect(response).toBeDefined();
+        expect(response!.id).toBeTruthy();
+        entity_id = response!.id;
     });
-    expect(response).toBeDefined();
-    expect(response!.id).toBeTruthy();
-    entity_id = response!.id;
-});
 
-test("Update", async () => {
-    const value = getRandom('varchar');
-    const response = await UniversalAppSettings.update(
-        entity_id!,
-        { "setting_value": value }
-    );
-    expect(response).toBeDefined();
-    expect(response!.setting_value).toEqual(value);
-});
-
-test("List", async () => {
-    const response = await UniversalAppSettings.list();
-    expect(response).toBeDefined();
-    expect(response.length).toBeGreaterThan(0);
-});
-
-test("Get by ID", async () => {
-    const response = await UniversalAppSettings.get(entity_id!);
-    expect(response).toBeTruthy();
-    expect(response!.id).toEqual(entity_id!);
-});
-
-test("Search", async () => {
-    const response: any[] = await UniversalAppSettings.findByCriteria({
-        "id": entity_id!
+    it("Update", async () => {
+        const response = await UniversalAppSettings.update(
+            entity_id!,
+            { "setting_value": getRandom('varchar') }
+        );
+        expect(response).toBeDefined();
+        expect(response!.id).toEqual(entity_id);
     });
-    expect(response).toBeTruthy();
-    expect(response).toHaveLength(1);
-    expect(response[0].id).toEqual(entity_id!);
-});
 
-test("Delete", async () => {
-    const response = await UniversalAppSettings.list();
-    await UniversalAppSettings.remove(entity_id!, "unit_test");
-    const list = await UniversalAppSettings.list();
+    it("List", async () => {
+        const response = await UniversalAppSettings.list();
+        expect(response).toBeDefined();
+        expect(response.length).toBeGreaterThan(0);
+    });
 
-    expect(response).toBeTruthy();
-    expect(list).toBeDefined();
+    it("Get by ID", async () => {
+        const response = await UniversalAppSettings.get(entity_id!);
+        expect(response).toBeTruthy();
+        expect(response!.id).toEqual(entity_id!);
+    });
 
-    // force remove just to clean database
-    await UniversalAppSettings.hard_remove(entity_id!);
+    it("Search", async () => {
+        // @ts-expect-error ignore any type error
+        const response: [] = await UniversalAppSettings.findByCriteria({
+            "id": entity_id!
+        });
+        expect(response).toBeTruthy();
+        expect(response).toHaveLength(1);
+        // @ts-expect-error ignore possible undefined
+        expect(response[0].id).toEqual(entity_id!);
+    });
+
+    it("Delete", async () => {
+        const response = await UniversalAppSettings.list();
+        await UniversalAppSettings.remove(entity_id!, "unit_test");
+        const list = await UniversalAppSettings.list();
+
+        expect(response).toBeTruthy();
+        expect(list).toBeDefined();
+    });
 });

@@ -1,7 +1,7 @@
 name: bot_user
 attributes:
   - attribute: assignment date
-    type: timestampz
+    type: timestamptz
     tsType: Date
     not_null: true
 relationships:

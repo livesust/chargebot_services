@@ -5,7 +5,7 @@ attributes:
     tsType: string
     not_null: true
   - attribute: address_line_2
-    type: string
+    type: text
     tsType: string
   - attribute: city
     type: varchar

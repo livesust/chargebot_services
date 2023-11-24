@@ -56,42 +56,8 @@ export default function (plop) {
                         type: 'list',
                         name: 'type',
                         message: 'Database type:',
-                        choices: ['enum', 'text', 'varchar', 'timestamp', 'timestamptz', 'boolean', 'integer', 'bigint', 'float', 'decimal', 'json'],
+                        choices: ['text', 'varchar', 'timestamp', 'timestamptz', 'boolean', 'integer', 'bigint', 'float', 'decimal', 'json'],
                         default: 'text'
-                    },
-                    {
-                        type: 'input',
-                        name: 'enum_name',
-                        message: 'Enum Name:',
-                        validate: function(value) {
-                            if (value) {
-                              return true;
-                            }
-                            return 'Please enter a valid enum name';
-                        },
-                        when(answers) {
-                            return answers['type'] === 'enum';
-                        },
-                    },
-                    {
-                        type: 'input',
-                        name: 'enum_values',
-                        message: 'Enum Values (comma separated values):',
-                        validate: function(value) {
-                            if (value) {
-                              return true;
-                            }
-                            if (value.split(',').length > 1) {
-                              return true;
-                            }
-                            return 'Please enter valid enum values. For example: "One,Two,Three"';
-                        },
-                        when(answers) {
-                            return answers['type'] === 'enum';
-                        },
-                        filter(value) {
-                          return value.split(',');
-                        }
                     },
                     {
                         type: 'input',
@@ -112,29 +78,20 @@ export default function (plop) {
                         type: 'list',
                         name: 'tsType',
                         message: 'Typescript type:',
-                        choices: ['string', 'number', 'Date', 'boolean'],
+                        choices: ['string', 'number', 'Date', 'boolean', 'object'],
                         default: 'string',
-                        when(answers) {
-                            return answers['type'] !== 'enum';
-                        },
                     },
                     {
                         type: 'confirm',
                         name: 'unique',
-                        message: 'Only allow unique values?',
-                        default: false,
-                        when(answers) {
-                            return answers['type'] !== 'enum';
-                        },
+                        message: 'Only allow unique values on insert/update?',
+                        default: false
                     },
                     {
                         type: 'confirm',
                         name: 'not_null',
                         message: 'Is it required?',
-                        default: false,
-                        when(answers) {
-                            return answers['unique'] === false;
-                        },
+                        default: false
                     }
                 ]
             },
@@ -209,6 +166,28 @@ export default function (plop) {
             },
             {
                 type: 'add',
+                path: 'services/migrations/{{timestamp_future 10}}_alter_{{pascalCase name}}_table_fk.mjs',
+                templateFile: '.plop_templates/services/alter_table_foreign_key.mjs.hbs',
+                skip: function(answers) {
+                    if (!answers.relationships || answers.relationships.length === 0) {
+                        return "No need to FK migration, no relationships exist."
+                    }
+                    //skips if file already exists
+                    process.chdir(plop.getPlopfilePath());
+                    const filePath = plop.getDestBasePath() + "/services/migrations/*_alter_{{pascalCase name}}_table_fk.mjs";
+                    const migrationFile = plop.renderString(filePath, answers);
+                    try {
+                        if (glob.sync(migrationFile).length > 0) {
+                            return "Migration file already exists. Write a new migration for changes or remove existent file.";
+                        }
+                    } catch (err) {
+                        // skip on error
+                        return true;
+                    }
+                }
+            },
+            {
+                type: 'add',
                 path: 'packages/core/src/database/{{snakeCase name}}.ts',
                 templateFile: '.plop_templates/core/entity.ts.hbs',
                 force: true
@@ -226,11 +205,90 @@ export default function (plop) {
                 force: true
             },
             {
-                type: 'addMany',
-                destination: 'packages/functions/src/{{snakeCase name}}',
-                base: `.plop_templates/functions/`,
-                templateFiles: '.plop_templates/functions/*',
+                type: 'add',
+                path: 'packages/functions/src/schemas/{{snakeCase name}}.schema.ts',
+                templateFile: '.plop_templates/functions/schema.ts.hbs',
                 force: true
+            },
+            function modifySchemasIndex(answers) {
+              // move the current working directory to the plop file path
+              // this allows this action to work even when the generator is
+              // executed from inside a subdirectory
+              process.chdir(plop.getPlopfilePath());
+      
+              const filePath = plop.getDestBasePath() + "/packages/functions/src/schemas/index.ts";
+
+              const importTemplate = plop.renderString('import * as {{pascalCase name}} from "./{{snakeCase name}}.schema";\n$1', answers);
+              const entityTemplate = plop.renderString('    if ("{{snakeCase name}}" === entity_name) { schema = {{pascalCase name}}; }\n$1', answers);
+
+              // The regex are to match that entry must NOT exists
+              const importPattern = plop.renderString('^((?!import \\* as {{pascalCase name}} from \\"\\.\\/{{snakeCase name}}\\.schema\\";).)*$', answers);
+              const importRegex = new RegExp(importPattern);
+              
+              const ifBlockPattern = plop.renderString('^((?!if \\(\\"{{snakeCase name}}\\" === entity_name\\) \\{).)*$', answers);
+              const ifBlockRegex = new RegExp(ifBlockPattern);
+
+              try {
+                let contents = fs.readFileSync(filePath, 'utf-8');
+
+                // check any line on the file match regex, in that case it does not exist and we add it
+                const importMatch = contents.split("\n").every(line => importRegex.test(line));
+                if (importMatch) {
+                    contents = contents.replace(/(\/\/ DO NOT REMOVE THIS LINE: PLOP SCHEMA IMPORT)/g, importTemplate);
+                }
+
+                const ifBlockMatch = contents.split("\n").every(line => ifBlockRegex.test(line));
+                if (ifBlockMatch) {
+                    contents = contents.replace(/(\/\/ DO NOT REMOVE THIS LINE: PLOP SCHEMA IF)/g, entityTemplate);
+                }
+
+                // if file content was modified, write the file
+                if (importMatch || ifBlockMatch) {
+                    fs.writeFileSync(filePath, contents);
+                }
+              } catch (err) {
+                console.log(err);
+              }
+            },
+            function modifyServicesIndex(answers) {
+              // move the current working directory to the plop file path
+              // this allows this action to work even when the generator is
+              // executed from inside a subdirectory
+              process.chdir(plop.getPlopfilePath());
+      
+              const filePath = plop.getDestBasePath() + "/packages/core/src/services/index.ts";
+
+              const importTemplate = plop.renderString('import { {{pascalCase name}} } from "./{{snakeCase name}}";\n$1', answers);
+              const entityTemplate = plop.renderString('    if ("{{snakeCase name}}" === entity_name) { service = {{pascalCase name}}; }\n$1', answers);
+
+              // The regex are to match that entry must NOT exists
+              const importPattern = plop.renderString('^((?!import \\{ {{pascalCase name}} \\} from \\"\\.\\/{{snakeCase name}}\\";).)*$', answers);
+              const importRegex = new RegExp(importPattern);
+              
+              const ifBlockPattern = plop.renderString('^((?!if \\(\\"{{snakeCase name}}\\" === entity_name\\) \\{).)*$', answers);
+              const ifBlockRegex = new RegExp(ifBlockPattern);
+
+              try {
+                let contents = fs.readFileSync(filePath, 'utf-8');
+
+                // check any line on the file match regex, in that case it does not exist and we add it
+                const importMatch = contents.split("\n").every(line => importRegex.test(line));
+                if (importMatch) {
+                    contents = contents.replace(/(\/\/ DO NOT REMOVE THIS LINE: PLOP SERVICE IMPORT)/g, importTemplate);
+                }
+
+                const ifBlockMatch = contents.split("\n").every(line => ifBlockRegex.test(line));
+                if (ifBlockMatch) {
+                    contents = contents.replace(/(\/\/ DO NOT REMOVE THIS LINE: PLOP SERVICE IF)/g, entityTemplate);
+                }
+
+                // if file content was modified, write the file
+                if (importMatch || ifBlockMatch) {
+                    fs.writeFileSync(filePath, contents);
+                }
+              } catch (err) {
+                console.log(err);
+              }
             },
             function modifyDatabaseIndex(answers) {
               // move the current working directory to the plop file path
@@ -244,7 +302,7 @@ export default function (plop) {
               const entityTemplate = plop.renderString('  {{snakeCase name}}: {{pascalCase name}}Table,\n$1', answers);
 
               // The regex are to match that entry must NOT exists
-              const importPattern = plop.renderString('^((?!import \\{ {{pascalCase name}}Table \\} from \\"\\.\/{{snakeCase name}}\\";).)*$', answers);
+              const importPattern = plop.renderString('^((?!import \\{ {{pascalCase name}}Table \\} from \\"\\.\\/{{snakeCase name}}\\";).)*$', answers);
               const importRegex = new RegExp(importPattern);
               
               const entityPattern = plop.renderString('^((?!{{snakeCase name}}: {{pascalCase name}}Table).)*$', answers);
@@ -272,58 +330,6 @@ export default function (plop) {
                 console.log(err);
               }
             },
-            function modifyRoutes(answers) {
-              // move the current working directory to the plop file path
-              // this allows this action to work even when the generator is
-              // executed from inside a subdirectory
-              process.chdir(plop.getPlopfilePath());
-      
-              const filePath = plop.getDestBasePath() + "/stacks/routes.ts";
-            
-              const routeString = '\
-// {{pascalCase name}} routes -do not modify this plop comment-\n\
-const {{snakeCase name}} = {\n\
-    "GET /{{snakeCase name}}": "packages/functions/src/{{snakeCase name}}/list.main",\n\
-    "GET /{{snakeCase name}}/{id}": "packages/functions/src/{{snakeCase name}}/get.main",\n\
-    "POST /{{snakeCase name}}": "packages/functions/src/{{snakeCase name}}/create.main",\n\
-    "POST /{{snakeCase name}}/search": "packages/functions/src/{{snakeCase name}}/search.main",\n\
-    "PATCH /{{snakeCase name}}/{id}": "packages/functions/src/{{snakeCase name}}/update.main",\n\
-    "DELETE /{{snakeCase name}}/{id}": "packages/functions/src/{{snakeCase name}}/remove.main",\n\
-}\
-\n\n\
-$1';
-              const routesDefinitionTemplate = plop.renderString(routeString, answers);
-              const routeImportTemplate = plop.renderString('    ...{{snakeCase name}},\n$1', answers);
-
-              // The regex are to match that entry must NOT exists
-              const routesDefinitionPattern = plop.renderString('^((?!\\/\\/ {{pascalCase name}} routes -do not modify this plop comment-).)*$', answers);
-              const routesDefinitionRegex = new RegExp(routesDefinitionPattern);
-              
-              const routeImportPattern = plop.renderString('^((?!\\.\\.\\.{{snakeCase name}},).)*$', answers);
-              const routeImportRegex = new RegExp(routeImportPattern);
-
-              try {
-                let contents = fs.readFileSync(filePath, 'utf-8');
-
-                // check any line on the file match regex, in that case it does not exist and we add it
-                const definitionMatch = contents.split("\n").every(line => routesDefinitionRegex.test(line));
-                if (definitionMatch) {
-                    contents = contents.replace(/(\/\/ DO NOT REMOVE THIS LINE: PLOP ROUTE DEFINITION)/g, routesDefinitionTemplate);
-                }
-
-                const importMatch = contents.split("\n").every(line => routeImportRegex.test(line));
-                if (importMatch) {
-                    contents = contents.replace(/(\/\/ DO NOT REMOVE THIS LINE: PLOP ROUTE IMPORT)/g, routeImportTemplate);
-                }
-
-                // if file content was modified, write the file
-                if (definitionMatch || importMatch) {
-                    fs.writeFileSync(filePath, contents);
-                }
-              } catch (err) {
-                console.log(err);
-              }
-            },
         ],
     });
 
@@ -334,7 +340,11 @@ $1';
         return Date.now();
     });
 
-    plop.setHelper('when', function(operand_1, operator, operand_2, options) {
+    plop.setHelper('timestamp_future', function (minutes) {
+        return Date.now() + minutes * 60 * 1000;
+    });
+
+    plop.setHelper('when', function(attribute, operator, value, options) {
         var operators = {
          'eq': function(l,r) { return l == r; },
          'neq': function(l,r) { return l != r; },
@@ -346,8 +356,31 @@ $1';
          'and': function(l,r) { return l && r; },
          '%': function(l,r) { return (l % r) === 0; }
         }
-        , result = operators[operator](operand_1,operand_2);
+        , result = operators[operator](attribute,value);
       
+        if (result) return options.fn(this);
+        else return options.inverse(this);
+    });
+
+    plop.setHelper('any', function(list, attribute, operator, value, options) {
+        var operators = {
+         'eq': function(l,r) { return l == r; },
+         'neq': function(l,r) { return l != r; },
+         'gt': function(l,r) { return Number(l) > Number(r); },
+         'lt': function(l,r) { return Number(l) < Number(r); },
+         'gte': function(l,r) { return Number(l) >= Number(r); },
+         'lte': function(l,r) { return Number(l) <= Number(r); },
+         'or': function(l,r) { return l || r; },
+         'and': function(l,r) { return l && r; },
+         '%': function(l,r) { return (l % r) === 0; }
+        };
+        var result = false;
+        for (var each of list) {
+            if (operators[operator](each[attribute], value)) {
+                result = true;
+                break;
+            }
+        }
         if (result) return options.fn(this);
         else return options.inverse(this);
     });

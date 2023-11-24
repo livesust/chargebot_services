@@ -1,0 +1,93 @@
+import Joi from 'joi';
+import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
+{{#each relationships}}
+{{#if eager}}
+import { EntitySchema as {{pascalCase entity}}Schema } from "./{{snakeCase entity}}.schema";
+{{else}}
+// uncoment to enable eager loading
+//import { EntitySchema as {{pascalCase entity}}Schema } from "./{{snakeCase entity}}.schema";
+{{/if}}
+{{/each}}
+
+const {{pascalCase name}}SchemaDef = {
+    {{#each attributes}}
+    {{#when tsType 'eq' 'string'}}
+    {{snakeCase attribute}}: Joi.string(){{#when varchar_length "gt" 0}}.max({{varchar_length}}){{/when}}{{#when not_null 'eq' false}}.allow(null){{/when}},
+    {{/when}}
+    {{#when tsType 'eq' 'number'}}
+    {{snakeCase attribute}}: Joi.number(){{#when not_null 'eq' false}}.allow(null){{/when}},
+    {{/when}}
+    {{#when tsType 'eq' 'Date'}}
+    {{snakeCase attribute}}: Joi.date(){{#when not_null 'eq' false}}.allow(null){{/when}},
+    {{/when}}
+    {{#when tsType 'eq' 'boolean'}}
+    {{snakeCase attribute}}: Joi.boolean(){{#when not_null 'eq' false}}.allow(null){{/when}},
+    {{/when}}
+    {{/each}}
+};
+
+export const EntitySchema = Joi.object({
+    ...AuditedEntitySchemaDef,
+    ...{{pascalCase name}}SchemaDef,
+    {{#each relationships}}
+    {{snakeCase entity}}_id: Joi.number(),
+    {{/each}}
+    {{#each relationships}}
+    {{#if eager}}
+    {{snakeCase entity}}: {{pascalCase entity}}Schema,
+    {{else}}
+    // uncoment to enable eager loading
+    //{{snakeCase entity}}: {{pascalCase entity}}Schema,
+    {{/if}}
+    {{/each}}
+});
+
+export const CreateSchema = Joi.object({
+    ...AuditedEntityCreateSchemaDef,
+    ...{{pascalCase name}}SchemaDef
+}).keys({
+    // overwrite keys for required attributes
+    {{#each attributes}}
+    {{#if not_null}}
+        {{#when tsType 'eq' 'string'}}
+    {{snakeCase attribute}}: Joi.string(){{#when varchar_length "gt" 0}}.max({{varchar_length}}){{/when}}.required(),
+        {{/when}}
+        {{#when tsType 'eq' 'number'}}
+    {{snakeCase attribute}}: Joi.number().required(),
+        {{/when}}
+        {{#when tsType 'eq' 'Date'}}
+    {{snakeCase attribute}}: Joi.date().required(),
+        {{/when}}
+        {{#when tsType 'eq' 'boolean'}}
+    {{snakeCase attribute}}: Joi.boolean().required(),
+        {{/when}}
+    {{/if}}
+    {{/each}}
+    {{#each relationships}}
+    {{#if not_null}}
+    {{snakeCase entity}}_id: Joi.number().required(),
+    {{else}}
+    {{snakeCase entity}}_id: Joi.number(),
+    {{/if}}
+    {{/each}}
+});
+
+export const UpdateSchema = Joi.object({
+    ...AuditedEntityUpdateSchemaDef,
+    ...{{pascalCase name}}SchemaDef
+});
+
+export const SearchSchema = Joi.object({
+    id: Joi.number(),
+    ...{{pascalCase name}}SchemaDef
+});
+
+export const ResponseSchema = Joi.object({
+    ...JsonResponseSchemaDef,
+    body: EntitySchema
+});
+
+export const ArrayResponseSchema = Joi.object({
+    ...JsonResponseSchemaDef,
+    body: Joi.array().items(EntitySchema)
+});

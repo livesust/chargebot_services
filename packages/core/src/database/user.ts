@@ -1,15 +1,14 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 
-
 export interface UserTable extends AuditedEntity {
   first_name: string;
   last_name: string;
   title?: string;
-    photo?: string;
-    invite_status?: number;
-    super_admin?: boolean;
-    company_id: number;
+  photo?: string;
+  invite_status?: number;
+  super_admin?: boolean;
+  company_id: number;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

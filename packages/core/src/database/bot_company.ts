@@ -1,7 +1,6 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 
-
 export interface BotCompanyTable extends AuditedEntity {
   acquire_date: Date;
   bot_id: number;

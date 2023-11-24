@@ -8,19 +8,16 @@ attributes:
     type: varchar
     varchar_length: '2'
     tsType: string
-    unique: false
     not_null: true
   - attribute: name
     type: varchar
     varchar_length: '255'
     tsType: string
-    unique: false
     not_null: true
   - attribute: pin color
     type: varchar
     varchar_length: '100'
     tsType: string
-    unique: false
     not_null: false
 relationships:
   - entity: bot_version

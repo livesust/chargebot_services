@@ -15,7 +15,9 @@ function withUser(eb: ExpressionBuilder<Database, 'app_install'>) {
 export async function create(app_install: NewAppInstall): Promise<AppInstall | undefined> {
     return await db
         .insertInto('app_install')
-        .values(app_install)
+        .values({
+            ...app_install,
+        })
         .returningAll()
         .executeTakeFirst();
 }
@@ -40,11 +42,10 @@ export async function remove(id: number, user_id: string): Promise<{ id: number 
         .executeTakeFirst();
 }
 
-export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function hard_remove(id: number): Promise<void> {
+    await db
         .deleteFrom('app_install')
         .where('id', '=', id)
-        .returning(['id'])
         .executeTakeFirst();
 }
 

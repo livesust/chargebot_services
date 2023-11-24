@@ -15,7 +15,9 @@ function withOutlet(eb: ExpressionBuilder<Database, 'outlet_schedule'>) {
 export async function create(outlet_schedule: NewOutletSchedule): Promise<OutletSchedule | undefined> {
     return await db
         .insertInto('outlet_schedule')
-        .values(outlet_schedule)
+        .values({
+            ...outlet_schedule,
+        })
         .returningAll()
         .executeTakeFirst();
 }
@@ -40,11 +42,10 @@ export async function remove(id: number, user_id: string): Promise<{ id: number 
         .executeTakeFirst();
 }
 
-export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function hard_remove(id: number): Promise<void> {
+    await db
         .deleteFrom('outlet_schedule')
         .where('id', '=', id)
-        .returning(['id'])
         .executeTakeFirst();
 }
 
@@ -74,8 +75,12 @@ export async function findByCriteria(criteria: Partial<OutletSchedule>) {
     query = query.where('id', '=', criteria.id);
   }
 
-  if (criteria.day_of_week) {
-    query = query.where('day_of_week', '=', criteria.day_of_week);
+  if (criteria.day_of_week !== undefined) {
+    query = query.where(
+      'day_of_week', 
+      criteria.day_of_week === null ? 'is' : '=', 
+      criteria.day_of_week
+    );
   }
   if (criteria.all_day) {
     query = query.where('all_day', '=', criteria.all_day);

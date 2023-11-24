@@ -4,9 +4,23 @@ import { BotVersion, BotVersionUpdate, NewBotVersion } from "../database/bot_ver
 
 
 export async function create(bot_version: NewBotVersion): Promise<BotVersion | undefined> {
+//    const exists = await db
+//        .selectFrom('bot_version')
+//        .select(['id'])
+//        .where((eb) => eb.or([
+//            eb('version_number', '=', bot_version.version_number),
+//            eb('version_name', '=', bot_version.version_name),
+//        ]))
+//        .where('deleted_by', 'is', null)
+//        .executeTakeFirst();
+//    if (exists) {
+//        throw Error('Entity already exists with unique values');
+//    }
     return await db
         .insertInto('bot_version')
-        .values(bot_version)
+        .values({
+            ...bot_version,
+        })
         .returningAll()
         .executeTakeFirst();
 }
@@ -31,11 +45,10 @@ export async function remove(id: number, user_id: string): Promise<{ id: number 
         .executeTakeFirst();
 }
 
-export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function hard_remove(id: number): Promise<void> {
+    await db
         .deleteFrom('bot_version')
         .where('id', '=', id)
-        .returning(['id'])
         .executeTakeFirst();
 }
 

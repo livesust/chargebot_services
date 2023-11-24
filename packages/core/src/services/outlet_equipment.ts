@@ -29,7 +29,9 @@ function withUser(eb: ExpressionBuilder<Database, 'outlet_equipment'>) {
 export async function create(outlet_equipment: NewOutletEquipment): Promise<OutletEquipment | undefined> {
     return await db
         .insertInto('outlet_equipment')
-        .values(outlet_equipment)
+        .values({
+            ...outlet_equipment,
+        })
         .returningAll()
         .executeTakeFirst();
 }
@@ -54,11 +56,10 @@ export async function remove(id: number, user_id: string): Promise<{ id: number 
         .executeTakeFirst();
 }
 
-export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function hard_remove(id: number): Promise<void> {
+    await db
         .deleteFrom('outlet_equipment')
         .where('id', '=', id)
-        .returning(['id'])
         .executeTakeFirst();
 }
 

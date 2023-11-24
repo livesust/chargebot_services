@@ -1,12 +1,11 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 
-
 export interface UserEmailTable extends AuditedEntity {
   email_address: string;
   verified?: boolean;
-    primary?: boolean;
-    user_id: number;
+  primary?: boolean;
+  user_id: number;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

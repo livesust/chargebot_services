@@ -22,7 +22,9 @@ function withRole(eb: ExpressionBuilder<Database, 'user_role'>) {
 export async function create(user_role: NewUserRole): Promise<UserRole | undefined> {
     return await db
         .insertInto('user_role')
-        .values(user_role)
+        .values({
+            ...user_role,
+        })
         .returningAll()
         .executeTakeFirst();
 }
@@ -47,11 +49,10 @@ export async function remove(id: number, user_id: string): Promise<{ id: number 
         .executeTakeFirst();
 }
 
-export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function hard_remove(id: number): Promise<void> {
+    await db
         .deleteFrom('user_role')
         .where('id', '=', id)
-        .returning(['id'])
         .executeTakeFirst();
 }
 

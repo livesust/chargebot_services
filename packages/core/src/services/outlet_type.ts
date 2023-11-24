@@ -6,7 +6,9 @@ import { OutletType, OutletTypeUpdate, NewOutletType } from "../database/outlet_
 export async function create(outlet_type: NewOutletType): Promise<OutletType | undefined> {
     return await db
         .insertInto('outlet_type')
-        .values(outlet_type)
+        .values({
+            ...outlet_type,
+        })
         .returningAll()
         .executeTakeFirst();
 }
@@ -31,11 +33,10 @@ export async function remove(id: number, user_id: string): Promise<{ id: number 
         .executeTakeFirst();
 }
 
-export async function hard_remove(id: number): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function hard_remove(id: number): Promise<void> {
+    await db
         .deleteFrom('outlet_type')
         .where('id', '=', id)
-        .returning(['id'])
         .executeTakeFirst();
 }
 

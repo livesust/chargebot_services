@@ -5,7 +5,7 @@ attributes:
     tsType: boolean
   - attribute: settings
     type: json
-    tsType: string
+    tsType: object
 relationships:
   - entity: scheduled_alert
     eager: true

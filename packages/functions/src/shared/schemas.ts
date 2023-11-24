@@ -34,7 +34,16 @@ export const JsonResponseSchemaDef = {
 };
 
 export const IdPathParamSchema = Joi.object({
-    pathParameters: Joi.object({ id: Joi.number().required() }).required()
+    id: Joi.number().required()
+});
+
+export const EntityPathParamSchema = Joi.object({
+    entity: Joi.string().required(),
+});
+
+export const EntityAndIdPathParamSchema = Joi.object({
+    entity: Joi.string().required(),
+    id: Joi.number().required()
 });
 
 export const SuccessResponseSchema = Joi.object({

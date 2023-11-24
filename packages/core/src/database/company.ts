@@ -1,12 +1,11 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 
-
 export interface CompanyTable extends AuditedEntity {
   name: string;
   emergency_phone?: string;
-    emergency_email?: string;
-    customer_id: number;
+  emergency_email?: string;
+  customer_id: number;
   home_master_id: number;
 }
 

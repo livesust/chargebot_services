@@ -1,4 +1,4 @@
-import { StackContext, Api, use, attachPermissionsToRole } from "sst/constructs";
+import { StackContext, Api, use } from "sst/constructs";
 import { RDSStack } from "./RDSStack";
 import { CognitoStack } from "./CognitoStack";
 import routes from './routes';
@@ -18,9 +18,6 @@ export function ChargebotStack({ stack }: StackContext) {
             },
         ],
     });
-    // Attach permissions to role
-    // @ts-expect-error ignore error
-    //attachPermissionsToRole(iamRole, [rdsCluster, cognito]);
 
     // Create the HTTP API
     const api = new Api(stack, "Api", {

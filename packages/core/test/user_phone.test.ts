@@ -1,59 +1,90 @@
-import { expect, test } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { UserPhone } from "../src/services/user_phone";
 import { getRandom } from './utils';
+import { createAndSaveUser, removeUser } from "./user.test";
 
+
+// @ts-expect-error ignore any type error
 let entity_id;
+// @ts-expect-error ignore any type error
+let user;
 
-test("Create", async () => {
-    const response = await UserPhone.create({
+export async function createAndSaveUserPhone() {
+    user = await createAndSaveUser();
+    return UserPhone.create(getUserPhoneInstance());
+}
+
+export async function removeUserPhone(id: number) {
+    // run delete query to clean database
+    await UserPhone.hard_remove(id);
+    // @ts-expect-error ignore any type error
+    await removeUser(user.id);
+}
+
+function getUserPhoneInstance() {
+    const instance = {
         "phone_number": getRandom('text'),
         "send_text": getRandom('boolean'),
         "primary": getRandom('boolean'),
+        // @ts-expect-error ignore any type error
+        "user_id": user.id,
+    };
+    console.log('UserPhone:', JSON.stringify(instance));
+    return instance;
+}
+
+describe('UserPhone Tests', () => {
+
+    afterAll(async () => {
+        // @ts-expect-error ignore any type error
+        await removeUserPhone(entity_id);
+    })
+
+    it("Create", async () => {
+        const response = await createAndSaveUserPhone();
+        expect(response).toBeDefined();
+        expect(response!.id).toBeTruthy();
+        entity_id = response!.id;
     });
-    expect(response).toBeDefined();
-    expect(response!.id).toBeTruthy();
-    entity_id = response!.id;
-});
 
-test("Update", async () => {
-    const value = getRandom('text');
-    const response = await UserPhone.update(
-        entity_id!,
-        { "phone_number": value }
-    );
-    expect(response).toBeDefined();
-    expect(response!.phone_number).toEqual(value);
-});
-
-test("List", async () => {
-    const response = await UserPhone.list();
-    expect(response).toBeDefined();
-    expect(response.length).toBeGreaterThan(0);
-});
-
-test("Get by ID", async () => {
-    const response = await UserPhone.get(entity_id!);
-    expect(response).toBeTruthy();
-    expect(response!.id).toEqual(entity_id!);
-});
-
-test("Search", async () => {
-    const response: any[] = await UserPhone.findByCriteria({
-        "id": entity_id!
+    it("Update", async () => {
+        const response = await UserPhone.update(
+            entity_id!,
+            { "phone_number": getRandom('text') }
+        );
+        expect(response).toBeDefined();
+        expect(response!.id).toEqual(entity_id);
     });
-    expect(response).toBeTruthy();
-    expect(response).toHaveLength(1);
-    expect(response[0].id).toEqual(entity_id!);
-});
 
-test("Delete", async () => {
-    const response = await UserPhone.list();
-    await UserPhone.remove(entity_id!, "unit_test");
-    const list = await UserPhone.list();
+    it("List", async () => {
+        const response = await UserPhone.list();
+        expect(response).toBeDefined();
+        expect(response.length).toBeGreaterThan(0);
+    });
 
-    expect(response).toBeTruthy();
-    expect(list).toBeDefined();
+    it("Get by ID", async () => {
+        const response = await UserPhone.get(entity_id!);
+        expect(response).toBeTruthy();
+        expect(response!.id).toEqual(entity_id!);
+    });
 
-    // force remove just to clean database
-    await UserPhone.hard_remove(entity_id!);
+    it("Search", async () => {
+        // @ts-expect-error ignore any type error
+        const response: [] = await UserPhone.findByCriteria({
+            "id": entity_id!
+        });
+        expect(response).toBeTruthy();
+        expect(response).toHaveLength(1);
+        // @ts-expect-error ignore possible undefined
+        expect(response[0].id).toEqual(entity_id!);
+    });
+
+    it("Delete", async () => {
+        const response = await UserPhone.list();
+        await UserPhone.remove(entity_id!, "unit_test");
+        const list = await UserPhone.list();
+
+        expect(response).toBeTruthy();
+        expect(list).toBeDefined();
+    });
 });

@@ -1,0 +1,25 @@
+import { Kysely, sql } from "kysely";
+
+/**
+ * @param db {Kysely<any>}
+ */
+export async function up(db) {
+  await db.schema
+    .alterTable("{{snakeCase name}}")
+    {{#each relationships}}
+    .addColumn("{{snakeCase entity}}_id", "integer", (col) => col.references('{{snakeCase entity}}.id').onDelete('set null'))
+    {{/each}}
+    .execute();
+}
+
+/**
+ * @param db {Kysely<any>}
+ */
+export async function down(db) {
+  await db.schema
+    .alterTable("{{snakeCase name}}")
+    {{#each relationships}}
+    .dropColumn("{{snakeCase entity}}_id")
+    {{/each}}
+    .execute();
+}

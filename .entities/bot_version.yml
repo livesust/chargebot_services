@@ -15,11 +15,9 @@ attributes:
   - attribute: notes
     type: text
     tsType: string
-    unique: false
     not_null: false
   - attribute: active date
-    type: timestampz
+    type: timestamptz
     tsType: Date
-    unique: false
     not_null: false
 relationships: []
