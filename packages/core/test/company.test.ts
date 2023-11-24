@@ -15,6 +15,7 @@ let home_master;
 export async function createAndSaveCompany() {
     customer = await createAndSaveCustomer();
     home_master = await createAndSaveHomeMaster();
+    // @ts-expect-error ignore error
     return Company.create(getCompanyInstance());
 }
 
@@ -28,7 +29,7 @@ export async function removeCompany(id: number) {
 }
 
 function getCompanyInstance() {
-    const instance = {
+    return {
         "name": getRandom('varchar', 255),
         "emergency_phone": getRandom('varchar', 255),
         "emergency_email": getRandom('varchar', 255),
@@ -37,8 +38,6 @@ function getCompanyInstance() {
         // @ts-expect-error ignore any type error
         "home_master_id": home_master.id,
     };
-    console.log('Company:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('Company Tests', () => {

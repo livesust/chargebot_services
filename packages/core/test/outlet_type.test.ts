@@ -7,6 +7,7 @@ import { getRandom } from './utils';
 let entity_id;
 
 export async function createAndSaveOutletType() {
+    // @ts-expect-error ignore error
     return OutletType.create(getOutletTypeInstance());
 }
 
@@ -16,15 +17,13 @@ export async function removeOutletType(id: number) {
 }
 
 function getOutletTypeInstance() {
-    const instance = {
+    return {
         "type": getRandom('varchar', 255),
         "outlet_amps": getRandom('float'),
         "outlet_volts": getRandom('float'),
         "connector": getRandom('varchar', 100),
         "description": getRandom('text'),
     };
-    console.log('OutletType:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('OutletType Tests', () => {

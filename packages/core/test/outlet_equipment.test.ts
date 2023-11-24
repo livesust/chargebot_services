@@ -19,6 +19,7 @@ export async function createAndSaveOutletEquipment() {
     equipment = await createAndSaveEquipment();
     outlet = await createAndSaveOutlet();
     user = await createAndSaveUser();
+    // @ts-expect-error ignore error
     return OutletEquipment.create(getOutletEquipmentInstance());
 }
 
@@ -34,7 +35,7 @@ export async function removeOutletEquipment(id: number) {
 }
 
 function getOutletEquipmentInstance() {
-    const instance = {
+    return {
         "notes": getRandom('text'),
         // @ts-expect-error ignore any type error
         "equipment_id": equipment.id,
@@ -43,8 +44,6 @@ function getOutletEquipmentInstance() {
         // @ts-expect-error ignore any type error
         "user_id": user.id,
     };
-    console.log('OutletEquipment:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('OutletEquipment Tests', () => {

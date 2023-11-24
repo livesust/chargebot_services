@@ -15,6 +15,7 @@ let role;
 export async function createAndSaveUserRole() {
     user = await createAndSaveUser();
     role = await createAndSaveRole();
+    // @ts-expect-error ignore error
     return UserRole.create(getUserRoleInstance());
 }
 
@@ -28,15 +29,13 @@ export async function removeUserRole(id: number) {
 }
 
 function getUserRoleInstance() {
-    const instance = {
+    return {
         "all_bots": getRandom('boolean'),
         // @ts-expect-error ignore any type error
         "user_id": user.id,
         // @ts-expect-error ignore any type error
         "role_id": role.id,
     };
-    console.log('UserRole:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('UserRole Tests', () => {

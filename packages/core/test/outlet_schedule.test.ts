@@ -11,6 +11,7 @@ let outlet;
 
 export async function createAndSaveOutletSchedule() {
     outlet = await createAndSaveOutlet();
+    // @ts-expect-error ignore error
     return OutletSchedule.create(getOutletScheduleInstance());
 }
 
@@ -22,7 +23,7 @@ export async function removeOutletSchedule(id: number) {
 }
 
 function getOutletScheduleInstance() {
-    const instance = {
+    return {
         "day_of_week": getRandom('varchar', 255),
         "all_day": getRandom('boolean'),
         "start_time": getRandom('timestamp'),
@@ -30,8 +31,6 @@ function getOutletScheduleInstance() {
         // @ts-expect-error ignore any type error
         "outlet_id": outlet.id,
     };
-    console.log('OutletSchedule:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('OutletSchedule Tests', () => {

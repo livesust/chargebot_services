@@ -7,6 +7,7 @@ import { getRandom } from './utils';
 let entity_id;
 
 export async function createAndSaveAlertType() {
+    // @ts-expect-error ignore error
     return AlertType.create(getAlertTypeInstance());
 }
 
@@ -16,7 +17,7 @@ export async function removeAlertType(id: number) {
 }
 
 function getAlertTypeInstance() {
-    const instance = {
+    return {
         "name": getRandom('varchar', 255),
         "description": getRandom('text'),
         "priority": getRandom('varchar', 255),
@@ -26,8 +27,6 @@ function getAlertTypeInstance() {
         "alert_text": getRandom('varchar', 255),
         "alert_link": getRandom('text'),
     };
-    console.log('AlertType:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('AlertType Tests', () => {

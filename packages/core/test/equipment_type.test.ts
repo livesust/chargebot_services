@@ -7,6 +7,7 @@ import { getRandom } from './utils';
 let entity_id;
 
 export async function createAndSaveEquipmentType() {
+    // @ts-expect-error ignore error
     return EquipmentType.create(getEquipmentTypeInstance());
 }
 
@@ -16,12 +17,10 @@ export async function removeEquipmentType(id: number) {
 }
 
 function getEquipmentTypeInstance() {
-    const instance = {
+    return {
         "type": getRandom('varchar', 255),
         "description": getRandom('text'),
     };
-    console.log('EquipmentType:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('EquipmentType Tests', () => {

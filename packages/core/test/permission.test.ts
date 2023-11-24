@@ -7,6 +7,7 @@ import { getRandom } from './utils';
 let entity_id;
 
 export async function createAndSavePermission() {
+    // @ts-expect-error ignore error
     return Permission.create(getPermissionInstance());
 }
 
@@ -16,12 +17,10 @@ export async function removePermission(id: number) {
 }
 
 function getPermissionInstance() {
-    const instance = {
+    return {
         "permission_name": getRandom('varchar', 255),
         "description": getRandom('text'),
     };
-    console.log('Permission:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('Permission Tests', () => {

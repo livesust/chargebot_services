@@ -7,6 +7,7 @@ import { getRandom } from './utils';
 let entity_id;
 
 export async function createAndSaveCustomer() {
+    // @ts-expect-error ignore error
     return Customer.create(getCustomerInstance());
 }
 
@@ -16,13 +17,11 @@ export async function removeCustomer(id: number) {
 }
 
 function getCustomerInstance() {
-    const instance = {
+    return {
         "name": getRandom('text'),
         "email": getRandom('text'),
         "first_order_date": getRandom('timestamptz'),
     };
-    console.log('Customer:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('Customer Tests', () => {

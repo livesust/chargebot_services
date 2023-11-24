@@ -4,18 +4,18 @@ import { BotVersion, BotVersionUpdate, NewBotVersion } from "../database/bot_ver
 
 
 export async function create(bot_version: NewBotVersion): Promise<BotVersion | undefined> {
-//    const exists = await db
-//        .selectFrom('bot_version')
-//        .select(['id'])
-//        .where((eb) => eb.or([
-//            eb('version_number', '=', bot_version.version_number),
-//            eb('version_name', '=', bot_version.version_name),
-//        ]))
-//        .where('deleted_by', 'is', null)
-//        .executeTakeFirst();
-//    if (exists) {
-//        throw Error('Entity already exists with unique values');
-//    }
+    const exists = await db
+        .selectFrom('bot_version')
+        .select(['id'])
+        .where((eb) => eb.or([
+            eb('version_number', '=', bot_version.version_number),
+            eb('version_name', '=', bot_version.version_name),
+        ]))
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+    if (exists) {
+        throw Error('Entity already exists with unique values');
+    }
     return await db
         .insertInto('bot_version')
         .values({

@@ -11,6 +11,7 @@ let user;
 
 export async function createAndSaveUserPhone() {
     user = await createAndSaveUser();
+    // @ts-expect-error ignore error
     return UserPhone.create(getUserPhoneInstance());
 }
 
@@ -22,15 +23,13 @@ export async function removeUserPhone(id: number) {
 }
 
 function getUserPhoneInstance() {
-    const instance = {
+    return {
         "phone_number": getRandom('text'),
         "send_text": getRandom('boolean'),
         "primary": getRandom('boolean'),
         // @ts-expect-error ignore any type error
         "user_id": user.id,
     };
-    console.log('UserPhone:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('UserPhone Tests', () => {

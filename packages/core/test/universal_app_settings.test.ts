@@ -11,6 +11,7 @@ let app_settings_type;
 
 export async function createAndSaveUniversalAppSettings() {
     app_settings_type = await createAndSaveAppSettingsType();
+    // @ts-expect-error ignore error
     return UniversalAppSettings.create(getUniversalAppSettingsInstance());
 }
 
@@ -22,13 +23,11 @@ export async function removeUniversalAppSettings(id: number) {
 }
 
 function getUniversalAppSettingsInstance() {
-    const instance = {
+    return {
         "setting_value": getRandom('varchar', 255),
         // @ts-expect-error ignore any type error
         "app_settings_type_id": app_settings_type.id,
     };
-    console.log('UniversalAppSettings:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('UniversalAppSettings Tests', () => {

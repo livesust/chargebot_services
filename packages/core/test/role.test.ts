@@ -7,6 +7,7 @@ import { getRandom } from './utils';
 let entity_id;
 
 export async function createAndSaveRole() {
+    // @ts-expect-error ignore error
     return Role.create(getRoleInstance());
 }
 
@@ -16,12 +17,10 @@ export async function removeRole(id: number) {
 }
 
 function getRoleInstance() {
-    const instance = {
+    return {
         "role": getRandom('varchar', 255),
         "description": getRandom('text'),
     };
-    console.log('Role:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('Role Tests', () => {

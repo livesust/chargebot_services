@@ -4,17 +4,17 @@ import { Permission, PermissionUpdate, NewPermission } from "../database/permiss
 
 
 export async function create(permission: NewPermission): Promise<Permission | undefined> {
-//    const exists = await db
-//        .selectFrom('permission')
-//        .select(['id'])
-//        .where((eb) => eb.or([
-//            eb('permission_name', '=', permission.permission_name),
-//        ]))
-//        .where('deleted_by', 'is', null)
-//        .executeTakeFirst();
-//    if (exists) {
-//        throw Error('Entity already exists with unique values');
-//    }
+    const exists = await db
+        .selectFrom('permission')
+        .select(['id'])
+        .where((eb) => eb.or([
+            eb('permission_name', '=', permission.permission_name),
+        ]))
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+    if (exists) {
+        throw Error('Entity already exists with unique values');
+    }
     return await db
         .insertInto('permission')
         .values({

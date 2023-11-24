@@ -4,17 +4,17 @@ import { ScheduledAlert, ScheduledAlertUpdate, NewScheduledAlert } from "../data
 
 
 export async function create(scheduled_alert: NewScheduledAlert): Promise<ScheduledAlert | undefined> {
-//    const exists = await db
-//        .selectFrom('scheduled_alert')
-//        .select(['id'])
-//        .where((eb) => eb.or([
-//            eb('name', '=', scheduled_alert.name),
-//        ]))
-//        .where('deleted_by', 'is', null)
-//        .executeTakeFirst();
-//    if (exists) {
-//        throw Error('Entity already exists with unique values');
-//    }
+    const exists = await db
+        .selectFrom('scheduled_alert')
+        .select(['id'])
+        .where((eb) => eb.or([
+            eb('name', '=', scheduled_alert.name),
+        ]))
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+    if (exists) {
+        throw Error('Entity already exists with unique values');
+    }
     return await db
         .insertInto('scheduled_alert')
         .values({

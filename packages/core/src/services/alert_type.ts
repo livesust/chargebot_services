@@ -4,17 +4,17 @@ import { AlertType, AlertTypeUpdate, NewAlertType } from "../database/alert_type
 
 
 export async function create(alert_type: NewAlertType): Promise<AlertType | undefined> {
-//    const exists = await db
-//        .selectFrom('alert_type')
-//        .select(['id'])
-//        .where((eb) => eb.or([
-//            eb('name', '=', alert_type.name),
-//        ]))
-//        .where('deleted_by', 'is', null)
-//        .executeTakeFirst();
-//    if (exists) {
-//        throw Error('Entity already exists with unique values');
-//    }
+    const exists = await db
+        .selectFrom('alert_type')
+        .select(['id'])
+        .where((eb) => eb.or([
+            eb('name', '=', alert_type.name),
+        ]))
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+    if (exists) {
+        throw Error('Entity already exists with unique values');
+    }
     return await db
         .insertInto('alert_type')
         .values({

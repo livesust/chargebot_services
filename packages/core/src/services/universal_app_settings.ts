@@ -13,17 +13,17 @@ function withAppSettingsType(eb: ExpressionBuilder<Database, 'universal_app_sett
 }
 
 export async function create(universal_app_settings: NewUniversalAppSettings): Promise<UniversalAppSettings | undefined> {
-//    const exists = await db
-//        .selectFrom('universal_app_settings')
-//        .select(['id'])
-//        .where((eb) => eb.or([
-//            eb('setting_value', '=', universal_app_settings.setting_value),
-//        ]))
-//        .where('deleted_by', 'is', null)
-//        .executeTakeFirst();
-//    if (exists) {
-//        throw Error('Entity already exists with unique values');
-//    }
+    const exists = await db
+        .selectFrom('universal_app_settings')
+        .select(['id'])
+        .where((eb) => eb.or([
+            eb('setting_value', '=', universal_app_settings.setting_value),
+        ]))
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+    if (exists) {
+        throw Error('Entity already exists with unique values');
+    }
     return await db
         .insertInto('universal_app_settings')
         .values({

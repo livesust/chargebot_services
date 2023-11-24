@@ -7,6 +7,7 @@ import { getRandom } from './utils';
 let entity_id;
 
 export async function createAndSaveStateMaster() {
+    // @ts-expect-error ignore error
     return StateMaster.create(getStateMasterInstance());
 }
 
@@ -16,13 +17,11 @@ export async function removeStateMaster(id: number) {
 }
 
 function getStateMasterInstance() {
-    const instance = {
+    return {
         "name": getRandom('varchar', 100),
         "abbreviation": getRandom('varchar', 45),
         "country": getRandom('varchar', 255),
     };
-    console.log('StateMaster:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('StateMaster Tests', () => {

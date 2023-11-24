@@ -15,6 +15,7 @@ let company;
 export async function createAndSaveBotCompany() {
     bot = await createAndSaveBot();
     company = await createAndSaveCompany();
+    // @ts-expect-error ignore error
     return BotCompany.create(getBotCompanyInstance());
 }
 
@@ -28,15 +29,13 @@ export async function removeBotCompany(id: number) {
 }
 
 function getBotCompanyInstance() {
-    const instance = {
+    return {
         "acquire_date": getRandom('timestamptz'),
         // @ts-expect-error ignore any type error
         "bot_id": bot.id,
         // @ts-expect-error ignore any type error
         "company_id": company.id,
     };
-    console.log('BotCompany:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('BotCompany Tests', () => {

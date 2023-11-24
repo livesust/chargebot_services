@@ -15,6 +15,7 @@ let customer;
 export async function createAndSaveEquipment() {
     equipment_type = await createAndSaveEquipmentType();
     customer = await createAndSaveCustomer();
+    // @ts-expect-error ignore error
     return Equipment.create(getEquipmentInstance());
 }
 
@@ -28,7 +29,7 @@ export async function removeEquipment(id: number) {
 }
 
 function getEquipmentInstance() {
-    const instance = {
+    return {
         "name": getRandom('varchar', 255),
         "brand": getRandom('varchar', 255),
         "description": getRandom('text'),
@@ -39,8 +40,6 @@ function getEquipmentInstance() {
         // @ts-expect-error ignore any type error
         "customer_id": customer.id,
     };
-    console.log('Equipment:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('Equipment Tests', () => {

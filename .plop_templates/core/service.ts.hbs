@@ -18,21 +18,21 @@ function with{{pascalCase entity}}(eb: ExpressionBuilder<Database, '{{snakeCase 
 
 export async function create({{snakeCase name}}: New{{pascalCase name}}): Promise<{{pascalCase name}} | undefined> {
     {{#any attributes 'unique' 'eq' true}}
-//    const exists = await db
-//        .selectFrom('{{snakeCase name}}')
-//        .select(['id'])
-//        .where((eb) => eb.or([
+    const exists = await db
+        .selectFrom('{{snakeCase name}}')
+        .select(['id'])
+        .where((eb) => eb.or([
         {{#each attributes}}
             {{#if unique}}
-//            eb('{{snakeCase attribute}}', '=', {{snakeCase ../name}}.{{snakeCase attribute}}),
+            eb('{{snakeCase attribute}}', '=', {{snakeCase ../name}}.{{snakeCase attribute}}),
             {{/if}}
         {{/each}}
-//        ]))
-//        .where('deleted_by', 'is', null)
-//        .executeTakeFirst();
-//    if (exists) {
-//        throw Error('Entity already exists with unique values');
-//    }
+        ]))
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+    if (exists) {
+        throw Error('Entity already exists with unique values');
+    }
     {{/any}}
     return await db
         .insertInto('{{snakeCase name}}')

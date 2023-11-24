@@ -11,6 +11,7 @@ let user;
 
 export async function createAndSaveUserEmail() {
     user = await createAndSaveUser();
+    // @ts-expect-error ignore error
     return UserEmail.create(getUserEmailInstance());
 }
 
@@ -22,15 +23,13 @@ export async function removeUserEmail(id: number) {
 }
 
 function getUserEmailInstance() {
-    const instance = {
+    return {
         "email_address": getRandom('text'),
         "verified": getRandom('boolean'),
         "primary": getRandom('boolean'),
         // @ts-expect-error ignore any type error
         "user_id": user.id,
     };
-    console.log('UserEmail:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('UserEmail Tests', () => {

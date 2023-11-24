@@ -15,6 +15,7 @@ let user;
 export async function createAndSaveBotScheduledAlerts() {
     scheduled_alert = await createAndSaveScheduledAlert();
     user = await createAndSaveUser();
+    // @ts-expect-error ignore error
     return BotScheduledAlerts.create(getBotScheduledAlertsInstance());
 }
 
@@ -28,7 +29,7 @@ export async function removeBotScheduledAlerts(id: number) {
 }
 
 function getBotScheduledAlertsInstance() {
-    const instance = {
+    return {
         "alert_status": getRandom('boolean'),
         "settings": getRandom('json'),
         // @ts-expect-error ignore any type error
@@ -36,8 +37,6 @@ function getBotScheduledAlertsInstance() {
         // @ts-expect-error ignore any type error
         "user_id": user.id,
     };
-    console.log('BotScheduledAlerts:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('BotScheduledAlerts Tests', () => {

@@ -7,6 +7,7 @@ import { getRandom } from './utils';
 let entity_id;
 
 export async function createAndSaveBotVersion() {
+    // @ts-expect-error ignore error
     return BotVersion.create(getBotVersionInstance());
 }
 
@@ -16,14 +17,12 @@ export async function removeBotVersion(id: number) {
 }
 
 function getBotVersionInstance() {
-    const instance = {
+    return {
         "version_number": getRandom('varchar', 255),
         "version_name": getRandom('varchar', 255),
         "notes": getRandom('text'),
         "active_date": getRandom('timestamptz'),
     };
-    console.log('BotVersion:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('BotVersion Tests', () => {

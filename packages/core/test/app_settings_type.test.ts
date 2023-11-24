@@ -7,6 +7,7 @@ import { getRandom } from './utils';
 let entity_id;
 
 export async function createAndSaveAppSettingsType() {
+    // @ts-expect-error ignore error
     return AppSettingsType.create(getAppSettingsTypeInstance());
 }
 
@@ -16,12 +17,10 @@ export async function removeAppSettingsType(id: number) {
 }
 
 function getAppSettingsTypeInstance() {
-    const instance = {
+    return {
         "setting_name": getRandom('varchar', 100),
         "description": getRandom('text'),
     };
-    console.log('AppSettingsType:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('AppSettingsType Tests', () => {

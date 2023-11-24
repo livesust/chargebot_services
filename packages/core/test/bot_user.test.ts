@@ -15,6 +15,7 @@ let user;
 export async function createAndSaveBotUser() {
     bot = await createAndSaveBot();
     user = await createAndSaveUser();
+    // @ts-expect-error ignore error
     return BotUser.create(getBotUserInstance());
 }
 
@@ -28,15 +29,13 @@ export async function removeBotUser(id: number) {
 }
 
 function getBotUserInstance() {
-    const instance = {
+    return {
         "assignment_date": getRandom('timestamptz'),
         // @ts-expect-error ignore any type error
         "bot_id": bot.id,
         // @ts-expect-error ignore any type error
         "user_id": user.id,
     };
-    console.log('BotUser:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('BotUser Tests', () => {

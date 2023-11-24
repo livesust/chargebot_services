@@ -11,6 +11,7 @@ let bot;
 
 export async function createAndSaveBotFirmware() {
     bot = await createAndSaveBot();
+    // @ts-expect-error ignore error
     return BotFirmware.create(getBotFirmwareInstance());
 }
 
@@ -22,7 +23,7 @@ export async function removeBotFirmware(id: number) {
 }
 
 function getBotFirmwareInstance() {
-    const instance = {
+    return {
         "inverter_version": getRandom('varchar', 255),
         "pi_version": getRandom('varchar', 255),
         "firmware_version": getRandom('varchar', 255),
@@ -32,8 +33,6 @@ function getBotFirmwareInstance() {
         // @ts-expect-error ignore any type error
         "bot_id": bot.id,
     };
-    console.log('BotFirmware:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('BotFirmware Tests', () => {

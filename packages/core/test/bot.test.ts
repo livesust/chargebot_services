@@ -11,6 +11,7 @@ let bot_version;
 
 export async function createAndSaveBot() {
     bot_version = await createAndSaveBotVersion();
+    // @ts-expect-error ignore error
     return Bot.create(getBotInstance());
 }
 
@@ -22,7 +23,7 @@ export async function removeBot(id: number) {
 }
 
 function getBotInstance() {
-    const instance = {
+    return {
         "bot_uuid": getRandom('text'),
         "initials": getRandom('varchar', 2),
         "name": getRandom('varchar', 255),
@@ -30,8 +31,6 @@ function getBotInstance() {
         // @ts-expect-error ignore any type error
         "bot_version_id": bot_version.id,
     };
-    console.log('Bot:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('Bot Tests', () => {

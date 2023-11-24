@@ -11,6 +11,7 @@ let bot;
 
 export async function createAndSaveBotChargingSettings() {
     bot = await createAndSaveBot();
+    // @ts-expect-error ignore error
     return BotChargingSettings.create(getBotChargingSettingsInstance());
 }
 
@@ -22,7 +23,7 @@ export async function removeBotChargingSettings(id: number) {
 }
 
 function getBotChargingSettingsInstance() {
-    const instance = {
+    return {
         "day_of_week": getRandom('varchar', 255),
         "all_day": getRandom('boolean'),
         "start_time": getRandom('timestamp'),
@@ -30,8 +31,6 @@ function getBotChargingSettingsInstance() {
         // @ts-expect-error ignore any type error
         "bot_id": bot.id,
     };
-    console.log('BotChargingSettings:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('BotChargingSettings Tests', () => {

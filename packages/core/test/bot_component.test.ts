@@ -15,6 +15,7 @@ let component;
 export async function createAndSaveBotComponent() {
     bot = await createAndSaveBot();
     component = await createAndSaveComponent();
+    // @ts-expect-error ignore error
     return BotComponent.create(getBotComponentInstance());
 }
 
@@ -28,7 +29,7 @@ export async function removeBotComponent(id: number) {
 }
 
 function getBotComponentInstance() {
-    const instance = {
+    return {
         "install_date": getRandom('timestamptz'),
         "component_serial": getRandom('varchar', 255),
         // @ts-expect-error ignore any type error
@@ -36,8 +37,6 @@ function getBotComponentInstance() {
         // @ts-expect-error ignore any type error
         "component_id": component.id,
     };
-    console.log('BotComponent:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('BotComponent Tests', () => {

@@ -11,6 +11,7 @@ let company;
 
 export async function createAndSaveUser() {
     company = await createAndSaveCompany();
+    // @ts-expect-error ignore error
     return User.create(getUserInstance());
 }
 
@@ -22,7 +23,7 @@ export async function removeUser(id: number) {
 }
 
 function getUserInstance() {
-    const instance = {
+    return {
         "first_name": getRandom('varchar', 255),
         "last_name": getRandom('varchar', 255),
         "title": getRandom('varchar', 255),
@@ -32,8 +33,6 @@ function getUserInstance() {
         // @ts-expect-error ignore any type error
         "company_id": company.id,
     };
-    console.log('User:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('User Tests', () => {

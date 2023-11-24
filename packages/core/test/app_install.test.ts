@@ -11,6 +11,7 @@ let user;
 
 export async function createAndSaveAppInstall() {
     user = await createAndSaveUser();
+    // @ts-expect-error ignore error
     return AppInstall.create(getAppInstallInstance());
 }
 
@@ -22,7 +23,7 @@ export async function removeAppInstall(id: number) {
 }
 
 function getAppInstallInstance() {
-    const instance = {
+    return {
         "app_version": getRandom('varchar', 255),
         "platform": getRandom('varchar', 100),
         "os_version": getRandom('varchar', 100),
@@ -30,8 +31,6 @@ function getAppInstallInstance() {
         // @ts-expect-error ignore any type error
         "user_id": user.id,
     };
-    console.log('AppInstall:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('AppInstall Tests', () => {

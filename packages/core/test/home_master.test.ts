@@ -11,6 +11,7 @@ let state_master;
 
 export async function createAndSaveHomeMaster() {
     state_master = await createAndSaveStateMaster();
+    // @ts-expect-error ignore error
     return HomeMaster.create(getHomeMasterInstance());
 }
 
@@ -22,7 +23,7 @@ export async function removeHomeMaster(id: number) {
 }
 
 function getHomeMasterInstance() {
-    const instance = {
+    return {
         "address_line_1": getRandom('text'),
         "address_line_2": getRandom('text'),
         "city": getRandom('varchar', 100),
@@ -32,8 +33,6 @@ function getHomeMasterInstance() {
         // @ts-expect-error ignore any type error
         "state_master_id": state_master.id,
     };
-    console.log('HomeMaster:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('HomeMaster Tests', () => {

@@ -1,9 +1,9 @@
 
 import { faker } from '@faker-js/faker';
 
-export const getRandom = (type: string, lenght = 10): any => {
+export const getRandom = (type: string, length = 10) => {
     if (['text', 'varchar'].includes(type)) {
-        return faker.lorem.word(lenght);
+        return faker.string.alpha({ length: { min: 1, max: length } });
     } else if (['integer', 'bigint'].includes(type)) {
         return faker.number.int({ min: 1, max: 100 });
     } else if (['float', 'decimal'].includes(type)) {

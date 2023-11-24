@@ -7,6 +7,7 @@ import { getRandom } from './utils';
 let entity_id;
 
 export async function createAndSaveComponent() {
+    // @ts-expect-error ignore error
     return Component.create(getComponentInstance());
 }
 
@@ -16,7 +17,7 @@ export async function removeComponent(id: number) {
 }
 
 function getComponentInstance() {
-    const instance = {
+    return {
         "name": getRandom('varchar', 255),
         "version": getRandom('varchar', 100),
         "description": getRandom('text'),
@@ -24,8 +25,6 @@ function getComponentInstance() {
         "location": getRandom('varchar', 255),
         "notes": getRandom('text'),
     };
-    console.log('Component:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('Component Tests', () => {

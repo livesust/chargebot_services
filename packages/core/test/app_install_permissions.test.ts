@@ -15,6 +15,7 @@ let permission;
 export async function createAndSaveAppInstallPermissions() {
     app_install = await createAndSaveAppInstall();
     permission = await createAndSavePermission();
+    // @ts-expect-error ignore error
     return AppInstallPermissions.create(getAppInstallPermissionsInstance());
 }
 
@@ -28,15 +29,13 @@ export async function removeAppInstallPermissions(id: number) {
 }
 
 function getAppInstallPermissionsInstance() {
-    const instance = {
+    return {
         "permission_status": getRandom('boolean'),
         // @ts-expect-error ignore any type error
         "app_install_id": app_install.id,
         // @ts-expect-error ignore any type error
         "permission_id": permission.id,
     };
-    console.log('AppInstallPermissions:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('AppInstallPermissions Tests', () => {

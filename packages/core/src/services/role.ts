@@ -4,17 +4,17 @@ import { Role, RoleUpdate, NewRole } from "../database/role";
 
 
 export async function create(role: NewRole): Promise<Role | undefined> {
-//    const exists = await db
-//        .selectFrom('role')
-//        .select(['id'])
-//        .where((eb) => eb.or([
-//            eb('role', '=', role.role),
-//        ]))
-//        .where('deleted_by', 'is', null)
-//        .executeTakeFirst();
-//    if (exists) {
-//        throw Error('Entity already exists with unique values');
-//    }
+    const exists = await db
+        .selectFrom('role')
+        .select(['id'])
+        .where((eb) => eb.or([
+            eb('role', '=', role.role),
+        ]))
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+    if (exists) {
+        throw Error('Entity already exists with unique values');
+    }
     return await db
         .insertInto('role')
         .values({

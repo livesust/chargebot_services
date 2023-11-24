@@ -4,17 +4,17 @@ import { AppSettingsType, AppSettingsTypeUpdate, NewAppSettingsType } from "../d
 
 
 export async function create(app_settings_type: NewAppSettingsType): Promise<AppSettingsType | undefined> {
-//    const exists = await db
-//        .selectFrom('app_settings_type')
-//        .select(['id'])
-//        .where((eb) => eb.or([
-//            eb('setting_name', '=', app_settings_type.setting_name),
-//        ]))
-//        .where('deleted_by', 'is', null)
-//        .executeTakeFirst();
-//    if (exists) {
-//        throw Error('Entity already exists with unique values');
-//    }
+    const exists = await db
+        .selectFrom('app_settings_type')
+        .select(['id'])
+        .where((eb) => eb.or([
+            eb('setting_name', '=', app_settings_type.setting_name),
+        ]))
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+    if (exists) {
+        throw Error('Entity already exists with unique values');
+    }
     return await db
         .insertInto('app_settings_type')
         .values({

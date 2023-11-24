@@ -15,6 +15,7 @@ let bot;
 export async function createAndSaveOutlet() {
     outlet_type = await createAndSaveOutletType();
     bot = await createAndSaveBot();
+    // @ts-expect-error ignore error
     return Outlet.create(getOutletInstance());
 }
 
@@ -28,7 +29,7 @@ export async function removeOutlet(id: number) {
 }
 
 function getOutletInstance() {
-    const instance = {
+    return {
         "pdu_outlet_number": getRandom('integer'),
         "notes": getRandom('text'),
         // @ts-expect-error ignore any type error
@@ -36,8 +37,6 @@ function getOutletInstance() {
         // @ts-expect-error ignore any type error
         "bot_id": bot.id,
     };
-    console.log('Outlet:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('Outlet Tests', () => {

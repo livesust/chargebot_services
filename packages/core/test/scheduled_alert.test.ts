@@ -7,6 +7,7 @@ import { getRandom } from './utils';
 let entity_id;
 
 export async function createAndSaveScheduledAlert() {
+    // @ts-expect-error ignore error
     return ScheduledAlert.create(getScheduledAlertInstance());
 }
 
@@ -16,13 +17,11 @@ export async function removeScheduledAlert(id: number) {
 }
 
 function getScheduledAlertInstance() {
-    const instance = {
+    return {
         "name": getRandom('varchar', 255),
         "description": getRandom('text'),
         "alert_content": getRandom('text'),
     };
-    console.log('ScheduledAlert:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('ScheduledAlert Tests', () => {

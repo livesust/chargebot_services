@@ -23,6 +23,7 @@ export async function createAndSave{{pascalCase name}}() {
     {{snakeCase entity}} = await createAndSave{{pascalCase entity}}();
         {{/if}}
     {{/each}}
+    // @ts-expect-error ignore error
     return {{pascalCase name}}.create(get{{pascalCase name}}Instance());
 }
 
@@ -38,7 +39,7 @@ export async function remove{{pascalCase name}}(id: number) {
 }
 
 function get{{pascalCase name}}Instance() {
-    const instance = {
+    return {
         {{#each attributes}}
         "{{snakeCase attribute}}": getRandom('{{type}}'{{#when type 'eq' 'varchar'}}, {{varchar_length}}{{/when}}),
         {{/each}}
@@ -49,8 +50,6 @@ function get{{pascalCase name}}Instance() {
             {{/if}}
         {{/each}}
     };
-    console.log('{{pascalCase name}}:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('{{pascalCase name}} Tests', () => {

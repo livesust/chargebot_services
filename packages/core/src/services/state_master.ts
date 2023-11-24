@@ -4,18 +4,18 @@ import { StateMaster, StateMasterUpdate, NewStateMaster } from "../database/stat
 
 
 export async function create(state_master: NewStateMaster): Promise<StateMaster | undefined> {
-//    const exists = await db
-//        .selectFrom('state_master')
-//        .select(['id'])
-//        .where((eb) => eb.or([
-//            eb('name', '=', state_master.name),
-//            eb('abbreviation', '=', state_master.abbreviation),
-//        ]))
-//        .where('deleted_by', 'is', null)
-//        .executeTakeFirst();
-//    if (exists) {
-//        throw Error('Entity already exists with unique values');
-//    }
+    const exists = await db
+        .selectFrom('state_master')
+        .select(['id'])
+        .where((eb) => eb.or([
+            eb('name', '=', state_master.name),
+            eb('abbreviation', '=', state_master.abbreviation),
+        ]))
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+    if (exists) {
+        throw Error('Entity already exists with unique values');
+    }
     return await db
         .insertInto('state_master')
         .values({

@@ -15,6 +15,7 @@ let bot;
 export async function createAndSaveBotAlert() {
     alert_type = await createAndSaveAlertType();
     bot = await createAndSaveBot();
+    // @ts-expect-error ignore error
     return BotAlert.create(getBotAlertInstance());
 }
 
@@ -28,7 +29,7 @@ export async function removeBotAlert(id: number) {
 }
 
 function getBotAlertInstance() {
-    const instance = {
+    return {
         "message_displayed": getRandom('text'),
         "push_sent": getRandom('boolean'),
         "send_time": getRandom('timestamptz'),
@@ -42,8 +43,6 @@ function getBotAlertInstance() {
         // @ts-expect-error ignore any type error
         "bot_id": bot.id,
     };
-    console.log('BotAlert:', JSON.stringify(instance));
-    return instance;
 }
 
 describe('BotAlert Tests', () => {

@@ -13,17 +13,17 @@ function withUser(eb: ExpressionBuilder<Database, 'user_phone'>) {
 }
 
 export async function create(user_phone: NewUserPhone): Promise<UserPhone | undefined> {
-//    const exists = await db
-//        .selectFrom('user_phone')
-//        .select(['id'])
-//        .where((eb) => eb.or([
-//            eb('phone_number', '=', user_phone.phone_number),
-//        ]))
-//        .where('deleted_by', 'is', null)
-//        .executeTakeFirst();
-//    if (exists) {
-//        throw Error('Entity already exists with unique values');
-//    }
+    const exists = await db
+        .selectFrom('user_phone')
+        .select(['id'])
+        .where((eb) => eb.or([
+            eb('phone_number', '=', user_phone.phone_number),
+        ]))
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+    if (exists) {
+        throw Error('Entity already exists with unique values');
+    }
     return await db
         .insertInto('user_phone')
         .values({

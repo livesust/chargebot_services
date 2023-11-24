@@ -13,17 +13,17 @@ function withBotVersion(eb: ExpressionBuilder<Database, 'bot'>) {
 }
 
 export async function create(bot: NewBot): Promise<Bot | undefined> {
-//    const exists = await db
-//        .selectFrom('bot')
-//        .select(['id'])
-//        .where((eb) => eb.or([
-//            eb('bot_uuid', '=', bot.bot_uuid),
-//        ]))
-//        .where('deleted_by', 'is', null)
-//        .executeTakeFirst();
-//    if (exists) {
-//        throw Error('Entity already exists with unique values');
-//    }
+    const exists = await db
+        .selectFrom('bot')
+        .select(['id'])
+        .where((eb) => eb.or([
+            eb('bot_uuid', '=', bot.bot_uuid),
+        ]))
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+    if (exists) {
+        throw Error('Entity already exists with unique values');
+    }
     return await db
         .insertInto('bot')
         .values({
