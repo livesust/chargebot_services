@@ -1,4 +1,4 @@
-import { StackContext, Api, use } from "sst/constructs";
+import { StackContext, Config, Api, use } from "sst/constructs";
 import { RDSStack } from "./RDSStack";
 import { CognitoStack } from "./CognitoStack";
 import routes from './routes';
@@ -7,6 +7,12 @@ import { IRole, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 export function ChargebotStack({ stack }: StackContext) {
     const { rdsCluster } = use(RDSStack);
     const { cognito } = use(CognitoStack);
+
+    const TIMESCALE_HOST = new Config.Secret(stack, "TIMESCALE_HOST");
+    const TIMESCALE_USER = new Config.Secret(stack, "TIMESCALE_USER");
+    const TIMESCALE_PASSWORD = new Config.Secret(stack, "TIMESCALE_PASSWORD");
+    const TIMESCALE_PORT = new Config.Secret(stack, "TIMESCALE_PORT");
+    const TIMESCALE_DATABASE = new Config.Secret(stack, "TIMESCALE_DATABASE");
 
     // Create an IAM role
     const iamRole: IRole = new Role(stack, "ApiRole", {
@@ -50,7 +56,7 @@ export function ChargebotStack({ stack }: StackContext) {
                 burst: 100,
             },
             function: {
-                bind: [rdsCluster],
+                bind: [rdsCluster, TIMESCALE_HOST, TIMESCALE_USER, TIMESCALE_PASSWORD, TIMESCALE_PORT, TIMESCALE_DATABASE],
                 // @ts-expect-error ignore error
                 role: iamRole
             },

@@ -8,6 +8,11 @@ const crud = {
     "DELETE /{entity}/{id}": "packages/functions/src/crud/remove.main",
 }
 
+const gps = {
+    "GET /gps/{bot_uuid}": "packages/functions/src/analytics/gps.main",
+}
+
 export default [
     crud,
+    gps,
 ];

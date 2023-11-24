@@ -41,6 +41,10 @@ export const EntityPathParamSchema = Joi.object({
     entity: Joi.string().required(),
 });
 
+export const BotUUIDPathParamSchema = Joi.object({
+    bot_uuid: Joi.string().uuid().required()
+});
+
 export const EntityAndIdPathParamSchema = Joi.object({
     entity: Joi.string().required(),
     id: Joi.number().required()

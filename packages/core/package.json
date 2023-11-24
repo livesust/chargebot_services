@@ -7,11 +7,13 @@
     "typecheck": "tsc -noEmit"
   },
   "devDependencies": {
-    "vitest": "^0.34.6",
     "@types/node": "^20.8.7",
-    "sst": "^2.30.3"
+    "@types/pg": "^8.10.9",
+    "sst": "^2.30.3",
+    "vitest": "^0.34.6"
   },
   "dependencies": {
+    "pg": "^8.11.3",
     "zod": "^3.22.4"
   }
 }
