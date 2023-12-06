@@ -1,4 +1,4 @@
-import { StackContext, Cognito } from "sst/constructs";
+import { StackContext, Cognito, toCdkDuration } from "sst/constructs";
 import { AccountRecovery, NumberAttribute, OAuthScope } from "aws-cdk-lib/aws-cognito";
 
 export function CognitoStack({ app, stack }: StackContext) {
@@ -33,7 +33,8 @@ export function CognitoStack({ app, stack }: StackContext) {
                 authFlows: {
                     adminUserPassword: true,
                     userPassword: true,
-                    userSrp: true
+                    userSrp: true,
+                    custom: true
                 },
                 oAuth: {
                     flows: {
@@ -45,6 +46,7 @@ export function CognitoStack({ app, stack }: StackContext) {
                 },
                 preventUserExistenceErrors: true,
                 enableTokenRevocation: true,
+                refreshTokenValidity: toCdkDuration('180 days'),
             }
         }
     });
