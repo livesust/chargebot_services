@@ -8,7 +8,7 @@ export interface AnalyticsDatabase {
 }
 
 // Configs secrets are set with the following command
-// pnpm sst secrets set TIMESCALE_HOST hostname
+// npx sst secrets --stage stage-name set TIMESCALE_HOST hostname
 const psqlDialect = new PostgresDialect({
     pool: new Pool({
         database: Config.TIMESCALE_DATABASE,

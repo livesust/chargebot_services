@@ -5,6 +5,7 @@ import httpErrorHandler from "@middy/http-error-handler";
 import { EntityPathParamSchema } from "../shared/schemas";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
+import { dateReviver } from "../shared/middlewares/json-date-parser";
 import { createSuccessResponse, validateSearchBody, validateArrayResponse, isWarmingUp } from "../shared/rest_utils";
 import { loadService } from "@chargebot-services/core/services";
 import jsonBodyParser from "@middy/http-json-body-parser";
@@ -40,7 +41,7 @@ export const main = middy(handler)
     // before
     .use(warmup({ isWarmingUp }))
     .use(validator({ pathParametersSchema: EntityPathParamSchema }))
-    .use(jsonBodyParser())
+    .use(jsonBodyParser({reviver: dateReviver}))
     // after: inverse order execution
     .use(jsonBodySerializer())
     // httpErrorHandler must be the last error handler attached, first to execute.

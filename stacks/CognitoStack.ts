@@ -40,8 +40,20 @@ export function CognitoStack({ app, stack }: StackContext) {
                     flows: {
                         authorizationCodeGrant: true
                     },
-                    callbackUrls: ["https://chargebot.sust.pro"],
-                    logoutUrls: ["https://chargebot.sust.pro/login"],
+                    callbackUrls: app.stage == "prod"
+                      ? ["https://chargebot.sust.pro"]
+                      : (
+                        app.stage == "dev"
+                        ? ["https://chargebotdev.sust.pro"]
+                        : ["https://chargebotstaging.sust.pro"]
+                        ),
+                    logoutUrls: app.stage == "prod"
+                      ? ["https://chargebot.sust.pro/login"]
+                      : (
+                        app.stage == "dev"
+                        ? ["https://chargebotdev.sust.pro/login"]
+                        : ["https://chargebotstaging.sust.pro/login"]
+                        ),
                     scopes: [OAuthScope.EMAIL]
                 },
                 preventUserExistenceErrors: true,
@@ -50,7 +62,13 @@ export function CognitoStack({ app, stack }: StackContext) {
             }
         }
     });
-    cognito.cdk.userPool.addDomain("chargebot", { cognitoDomain: { domainPrefix: "chargebot" } })
+    if (app.stage == "prod") {
+      cognito.cdk.userPool.addDomain("chargebot", { cognitoDomain: { domainPrefix: "chargebot" } })
+    } else if (app.stage == "staging") {
+      cognito.cdk.userPool.addDomain("chargebotstaging", { cognitoDomain: { domainPrefix: "chargebotstaging" } })
+    } else if (app.stage == "dev") {
+      cognito.cdk.userPool.addDomain("chargebotdev", { cognitoDomain: { domainPrefix: "chargebotdev" } })
+    }
 
     stack.addOutputs({
         CognitoUserPoolId: cognito.userPoolId,

@@ -2,24 +2,16 @@ import Joi from 'joi';
 import {  JsonResponseSchemaDef } from "../shared/schemas";
 
 const ChargebotGpsSchemaDef = {
-    device_id: Joi.string().allow(null),
-    device_version: Joi.string().allow(null),
+    bot_uuid: Joi.string().allow(null),
     timestamp: Joi.date().allow(null),
-    timezone: Joi.string().allow(null),
-    lat: Joi.number().allow(null),
-    lat_unit: Joi.string().allow(null),
-    lon: Joi.number().allow(null),
-    lon_unit: Joi.string().allow(null),
-    altitude: Joi.number().allow(null),
-    altitude_unit: Joi.string().allow(null),
-    speed: Joi.number().allow(null),
-    speed_unit: Joi.string().allow(null),
-    bearing: Joi.number().allow(null),
-    bearing_unit: Joi.string().allow(null),
     vehicle_status: Joi.string().allow(null),
-    quality: Joi.number().allow(null),
-    nav_mode: Joi.string().allow(null),
-    error: Joi.string().allow(null).allow(""),
+    latitude: Joi.number().allow(null),
+    longitude: Joi.number().allow(null),
+    altitude: Joi.number().allow(null),
+    speed: Joi.number().allow(null),
+    bearing: Joi.number().allow(null),
+    arrived_at: Joi.date().allow(null),
+    left_at: Joi.date().allow(null),
 };
 
 export const EntitySchema = Joi.object({

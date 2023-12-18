@@ -6,6 +6,7 @@ import { EntityAndIdPathParamSchema } from "../shared/schemas";
 import validator from "../shared/middlewares/joi-validator";
 import auditCreation from "../shared/middlewares/audit-create";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
+import { dateReviver } from "../shared/middlewares/json-date-parser";
 import { createSuccessResponse, validateUpdateBody, validateResponse, isWarmingUp } from "../shared/rest_utils";
 import { loadService } from "@chargebot-services/core/services";
 import jsonBodyParser from "@middy/http-json-body-parser";
@@ -46,7 +47,7 @@ export const main = middy(handler)
     // before
     .use(warmup({ isWarmingUp }))
     .use(validator({ pathParametersSchema: EntityAndIdPathParamSchema }))
-    .use(jsonBodyParser())
+    .use(jsonBodyParser({reviver: dateReviver}))
     .use(auditCreation())
     // after: inverse order execution
     .use(jsonBodySerializer())

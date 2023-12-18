@@ -1,5 +1,4 @@
 import { createError } from '@middy/util';
-import { ChargebotGps } from "./chargebot_gps";
 import { BotVersion } from "./bot_version";
 import { UserRole } from "./user_role";
 import { UserPhone } from "./user_phone";
@@ -37,7 +36,6 @@ import { AlertType } from "./alert_type";
 export const loadService = async (entity_name: string) => {
     let service;
 
-    if ("chargebot_gps" === entity_name) { service = ChargebotGps; }
     if ("bot_version" === entity_name) { service = BotVersion; }
     if ("user_role" === entity_name) { service = UserRole; }
     if ("user_phone" === entity_name) { service = UserPhone; }
@@ -70,6 +68,7 @@ export const loadService = async (entity_name: string) => {
     if ("app_install_permissions" === entity_name) { service = AppInstallPermissions; }
     if ("app_install" === entity_name) { service = AppInstall; }
     if ("alert_type" === entity_name) { service = AlertType; }
+
 // DO NOT REMOVE THIS LINE: PLOP SERVICE IF
 
     if (!service) {
