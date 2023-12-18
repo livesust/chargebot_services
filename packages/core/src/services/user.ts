@@ -68,7 +68,7 @@ export async function get(id: number): Promise<User | undefined> {
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<User>): Promise<User[]> {
+export async function findByCriteria(criteria: Partial<User>) {
   let query = db.selectFrom('user').where('deleted_by', 'is', null)
 
   if (criteria.id) {

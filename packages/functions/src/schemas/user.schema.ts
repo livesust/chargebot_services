@@ -6,10 +6,10 @@ import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEnti
 const UserSchemaDef = {
     first_name: Joi.string().max(255),
     last_name: Joi.string().max(255),
-    title: Joi.string().max(255),
-    photo: Joi.string().max(255),
-    invite_status: Joi.number(),
-    super_admin: Joi.boolean(),
+    title: Joi.string().max(255).allow(null),
+    photo: Joi.string().max(255).allow(null),
+    invite_status: Joi.number().allow(null),
+    super_admin: Joi.boolean().allow(null),
     user_id: Joi.string().max(255),
 };
 

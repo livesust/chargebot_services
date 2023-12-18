@@ -30,7 +30,11 @@ export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
     ...{{pascalCase name}}SchemaDef,
     {{#each relationships}}
+    {{#if not_null}}
     {{snakeCase entity}}_id: Joi.number(),
+    {{else}}
+    {{snakeCase entity}}_id: Joi.number().allow(null),
+    {{/if}}
     {{/each}}
     {{#each relationships}}
     {{#if eager}}

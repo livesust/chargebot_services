@@ -100,7 +100,7 @@ export async function get(id: number): Promise<{{pascalCase name}} | undefined> 
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<{{pascalCase name}}>) {
+export async function findByCriteria(criteria: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}}[]> {
   let query = db.selectFrom('{{snakeCase name}}').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -136,5 +136,15 @@ export async function findByCriteria(criteria: Partial<{{pascalCase name}}>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    {{#each relationships}}
+    {{#if eager}}
+    .select((eb) => with{{pascalCase entity}}(eb))
+    {{else}}
+    // uncoment to enable eager loading
+    //.select((eb) => with{{pascalCase entity}}(eb))
+    {{/if}}
+    {{/each}}
+    .execute();
 }

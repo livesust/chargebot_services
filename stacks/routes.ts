@@ -9,7 +9,8 @@ const crud = {
 }
 
 const bot_location = {
-    "GET /bot_location/{bot_uuid}": "packages/functions/src/api/bot_location.main",
+    "GET /bot/{bot_uuid}/location": "packages/functions/src/api/bot_location.main",
+    "GET /bot/assigned": "packages/functions/src/api/bots_assigned.main",
 }
 
 export default [

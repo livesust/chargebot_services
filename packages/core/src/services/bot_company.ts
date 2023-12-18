@@ -98,5 +98,9 @@ export async function findByCriteria(criteria: Partial<BotCompany>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .select((eb) => withBot(eb))
+    .select((eb) => withCompany(eb))
+    .execute();
 }

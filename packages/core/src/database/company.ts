@@ -8,7 +8,7 @@ export interface CompanyTable extends AuditedEntity {
   emergency_phone?: string;
   emergency_email?: string;
   customer_id: number;
-  home_master_id: number;
+  home_master_id?: number;
   customer?: Customer;
   home_master?: HomeMaster;
 }

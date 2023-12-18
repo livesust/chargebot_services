@@ -13,7 +13,7 @@ export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
     ...CompanySchemaDef,
     customer_id: Joi.number(),
-    home_master_id: Joi.number(),
+    home_master_id: Joi.number().allow(null),
     customer: CustomerSchema,
     home_master: HomeMasterSchema,
 });
@@ -25,7 +25,7 @@ export const CreateSchema = Joi.object({
     // overwrite keys for required attributes
     name: Joi.string().max(255).required(),
     customer_id: Joi.number().required(),
-    home_master_id: Joi.number().required(),
+    home_master_id: Joi.number(),
 });
 
 export const UpdateSchema = Joi.object({

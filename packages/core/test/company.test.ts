@@ -2,19 +2,15 @@ import { afterAll, describe, expect, it } from "vitest";
 import { Company } from "../src/services/company";
 import { getRandom } from './utils';
 import { createAndSaveCustomer, removeCustomer } from "./customer.test";
-import { createAndSaveHomeMaster, removeHomeMaster } from "./home_master.test";
 
 
 // @ts-expect-error ignore any type error
 let entity_id;
 // @ts-expect-error ignore any type error
 let customer;
-// @ts-expect-error ignore any type error
-let home_master;
 
 export async function createAndSaveCompany() {
     customer = await createAndSaveCustomer();
-    home_master = await createAndSaveHomeMaster();
     // @ts-expect-error ignore error
     return Company.create(getCompanyInstance());
 }
@@ -24,8 +20,6 @@ export async function removeCompany(id: number) {
     await Company.hard_remove(id);
     // @ts-expect-error ignore any type error
     await removeCustomer(customer.id);
-    // @ts-expect-error ignore any type error
-    await removeHomeMaster(home_master.id);
 }
 
 function getCompanyInstance() {
@@ -35,8 +29,6 @@ function getCompanyInstance() {
         "emergency_email": getRandom('varchar', 255),
         // @ts-expect-error ignore any type error
         "customer_id": customer.id,
-        // @ts-expect-error ignore any type error
-        "home_master_id": home_master.id,
     };
 }
 

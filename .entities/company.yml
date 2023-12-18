@@ -21,4 +21,4 @@ relationships:
     not_null: true
   - entity: home_master
     eager: true
-    not_null: true
+    not_null: false
