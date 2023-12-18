@@ -10,6 +10,7 @@ const UserSchemaDef = {
     photo: Joi.string().max(255),
     invite_status: Joi.number(),
     super_admin: Joi.boolean(),
+    user_id: Joi.string().max(255),
 };
 
 export const EntitySchema = Joi.object({
@@ -27,6 +28,7 @@ export const CreateSchema = Joi.object({
     // overwrite keys for required attributes
     first_name: Joi.string().max(255).required(),
     last_name: Joi.string().max(255).required(),
+    user_id: Joi.string().max(255).required(),
     company_id: Joi.number().required(),
 });
 

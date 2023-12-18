@@ -8,6 +8,7 @@ export interface UserTable extends AuditedEntity {
   photo?: string;
   invite_status?: number;
   super_admin?: boolean;
+  user_id: string;
   company_id: number;
 }
 

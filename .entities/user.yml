@@ -24,6 +24,11 @@ attributes:
   - attribute: super_admin
     type: boolean
     tsType: boolean
+  - attribute: user_id
+    type: varchar
+    varchar_length: '255'
+    tsType: string
+    not_null: true
 relationships:
   - entity: company
     eager: false

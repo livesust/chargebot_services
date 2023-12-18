@@ -68,8 +68,7 @@ export async function get(id: number): Promise<Company | undefined> {
     return await db
         .selectFrom("company")
         .selectAll()
-        // uncoment to enable eager loading
-        //.select((eb) => withCustomer(eb))
+        .select((eb) => withCustomer(eb))
         .select((eb) => withHomeMaster(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)

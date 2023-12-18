@@ -68,7 +68,7 @@ export async function get(id: number): Promise<User | undefined> {
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<User>) {
+export async function findByCriteria(criteria: Partial<User>): Promise<User[]> {
   let query = db.selectFrom('user').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -108,6 +108,13 @@ export async function findByCriteria(criteria: Partial<User>) {
   }
   if (criteria.super_admin) {
     query = query.where('super_admin', '=', criteria.super_admin);
+  }
+  if (criteria.user_id !== undefined) {
+    query = query.where(
+      'user_id', 
+      criteria.user_id === null ? 'is' : '=', 
+      criteria.user_id
+    );
   }
 
   if (criteria.created_by) {

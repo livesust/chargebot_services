@@ -1,5 +1,10 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
+{{#each relationships}}
+{{#if eager}}
+import { {{pascalCase entity}} } from "./{{snakeCase entity}}";
+{{/if}}
+{{/each}}
 
 export interface {{pascalCase name}}Table extends AuditedEntity {
   {{#each attributes}}
@@ -14,6 +19,11 @@ export interface {{pascalCase name}}Table extends AuditedEntity {
   {{snakeCase entity}}_id: number;
   {{else}}
   {{snakeCase entity}}_id?: number;
+  {{/if}}
+  {{/each}}
+  {{#each relationships}}
+  {{#if eager}}
+  {{snakeCase entity}}?: {{pascalCase entity}};
   {{/if}}
   {{/each}}
 }

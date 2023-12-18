@@ -1,7 +1,6 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
-// uncoment to enable eager loading
-//import { EntitySchema as CustomerSchema } from "./customer.schema";
+import { EntitySchema as CustomerSchema } from "./customer.schema";
 import { EntitySchema as HomeMasterSchema } from "./home_master.schema";
 
 const CompanySchemaDef = {
@@ -15,8 +14,7 @@ export const EntitySchema = Joi.object({
     ...CompanySchemaDef,
     customer_id: Joi.number(),
     home_master_id: Joi.number(),
-    // uncoment to enable eager loading
-    //customer: CustomerSchema,
+    customer: CustomerSchema,
     home_master: HomeMasterSchema,
 });
 

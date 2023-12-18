@@ -17,7 +17,7 @@ attributes:
     not_null: false
 relationships:
   - entity: customer
-    eager: false
+    eager: true
     not_null: true
   - entity: home_master
     eager: true
