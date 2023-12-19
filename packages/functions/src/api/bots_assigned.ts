@@ -8,6 +8,7 @@ import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { User } from "@chargebot-services/core/services/user";
 import { BotCompany } from "@chargebot-services/core/services/bot_company";
+import { BotUser } from "@chargebot-services/core/services/bot_user";
 import { Company } from "@chargebot-services/core/services/company";
 import { Customer } from "@chargebot-services/core/services/customer";
 
@@ -34,9 +35,9 @@ const handler = async ({ requestContext }) => {
           throw Error("User's customer not found");
         }
 
-        const botsByCompany = await BotCompany.findByCriteria({company_id: company.id});
-        if (botsByCompany) {
-          botsByCompany.forEach(({bot}) =>
+        const botUsers = await BotUser.findByCriteria({user_id: user.id});
+        if (botUsers) {
+          botUsers.forEach(({bot}) =>
             response.push({
               "id": bot?.id,
               "bot_uuid": bot?.bot_uuid,
