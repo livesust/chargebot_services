@@ -1,13 +1,6 @@
 export * as ChargebotGps from "./chargebot_gps";
-import db from '../api';
-import { ChargebotGps } from "../api/chargebot_gps";
-
-export enum VehicleStatus {
-  AT_HOME = 'AT_HOME',
-  MOVING = 'MOVING',
-  STOPPED = 'STOPPED',
-  PARKED = 'PARKED',
-}
+import db from '../../api';
+import { ChargebotGps, VehicleStatus } from "../../api/chargebot_gps";
 
 export function translateVehicleStatus(vehicle_status: VehicleStatus | string | undefined): string | undefined {
   if (!vehicle_status) {

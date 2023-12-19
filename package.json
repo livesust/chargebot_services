@@ -8,6 +8,7 @@
     "test": "sst bind vitest run",
     "build": "sst build",
     "deploy": "sst deploy",
+    "post-deploy": "aws cloudfront create-invalidation --distribution-id E2MLH2NK8THKO1 --paths /* && aws cloudfront create-invalidation --distribution-id EZ6V9WYWRQQCP --paths /*",
     "remove": "sst remove",
     "console": "sst console",
     "typecheck": "tsc --noEmit",
