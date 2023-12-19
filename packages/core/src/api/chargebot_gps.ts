@@ -3,6 +3,7 @@ import { ColumnType, Selectable } from 'kysely'
 export interface ChargebotGpsTable {
     device_id: ColumnType<string, never, never>,
     timestamp: ColumnType<Date, never, never>,
+    timezone: ColumnType<string, never, never>,
     vehicle_status: ColumnType<string, never, never>,
     lat: ColumnType<number, never, never>,
     lon: ColumnType<number, never, never>,
@@ -17,3 +18,10 @@ export interface ChargebotGpsTable {
 // use the `Selectable`, `Insertable` and `Updateable` wrappers. These wrappers
 // make sure that the correct types are used in each operation.
 export type ChargebotGps = Selectable<ChargebotGpsTable>
+
+export enum VehicleStatus {
+  AT_HOME = 'AT_HOME',
+  MOVING = 'MOVING',
+  STOPPED = 'STOPPED',
+  PARKED = 'PARKED',
+}

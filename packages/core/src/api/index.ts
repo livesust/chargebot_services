@@ -1,10 +1,14 @@
 import { Kysely, PostgresDialect, ParseJSONResultsPlugin } from "kysely";
 import { Pool } from 'pg';
 import { ChargebotGpsTable } from "./chargebot_gps";
+import { ChargebotBatteryTable } from "./chargebot_battery";
+import { ChargebotInverterTable } from "./chargebot_inverter";
 import { Config } from "sst/node/config";
 
 export interface AnalyticsDatabase {
-    chargebot_gps: ChargebotGpsTable
+    chargebot_gps: ChargebotGpsTable,
+    chargebot_battery: ChargebotBatteryTable,
+    chargebot_inverter: ChargebotInverterTable,
 }
 
 // Configs secrets are set with the following command

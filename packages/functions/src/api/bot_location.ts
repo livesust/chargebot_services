@@ -7,34 +7,33 @@ import { ResponseSchema } from "../schemas/chargebot_gps.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
-import { ChargebotGps, translateVehicleStatus } from "@chargebot-services/core/services/chargebot_gps";
+import { ChargebotGps, translateVehicleStatus } from "@chargebot-services/core/services/analytics/chargebot_gps";
+
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
     const bot_uuid = event.pathParameters!.bot_uuid!;
 
-    let response;
-
     try {
-        response = await ChargebotGps.getByBot(bot_uuid);
+        const location = await ChargebotGps.getByBot(bot_uuid);
+
+        return createSuccessResponse({
+          bot_uuid: location?.device_id,
+          timestamp: location?.timestamp,
+          vehicle_status: translateVehicleStatus(location?.vehicle_status),
+          latitude: location?.lat,
+          longitude: location?.lon,
+          altitude: location?.altitude,
+          speed: location?.speed,
+          bearing: location?.bearing,
+          arrived_at: location?.arrived_at,
+          left_at: location?.left_at,
+        });
     } catch (error) {
         const httpError = createError(500, "cannot query bot location ", { expose: true });
         httpError.details = (<Error>error).message;
         throw httpError;
     }
-
-    return createSuccessResponse({
-      bot_uuid: response?.device_id,
-      timestamp: response?.timestamp,
-      vehicle_status: translateVehicleStatus(response?.vehicle_status),
-      latitude: response?.lat,
-      longitude: response?.lon,
-      altitude: response?.altitude,
-      speed: response?.speed,
-      bearing: response?.bearing,
-      arrived_at: response?.arrived_at,
-      left_at: response?.left_at,
-    });
 };
 
 export const main = middy(handler)
