@@ -57,7 +57,7 @@ export async function get(id: number): Promise<Customer | undefined> {
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<Customer>) {
+export async function findByCriteria(criteria: Partial<Customer>): Promise<Customer[]> {
   let query = db.selectFrom('customer').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -94,5 +94,7 @@ export async function findByCriteria(criteria: Partial<Customer>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .execute();
 }

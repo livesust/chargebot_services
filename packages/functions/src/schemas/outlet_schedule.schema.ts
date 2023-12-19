@@ -1,11 +1,9 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
-// uncoment to enable eager loading
-//import { EntitySchema as OutletSchema } from "./outlet.schema";
 
 const OutletScheduleSchemaDef = {
-    day_of_week: Joi.string().max(255),
-    all_day: Joi.boolean(),
+    day_of_week: Joi.string().max(255).allow(null),
+    all_day: Joi.boolean().allow(null),
     start_time: Joi.date(),
     end_time: Joi.date(),
 };
@@ -13,9 +11,6 @@ const OutletScheduleSchemaDef = {
 export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
     ...OutletScheduleSchemaDef,
-    outlet_id: Joi.number(),
-    // uncoment to enable eager loading
-    //outlet: OutletSchema,
 });
 
 export const CreateSchema = Joi.object({
@@ -25,7 +20,6 @@ export const CreateSchema = Joi.object({
     // overwrite keys for required attributes
     start_time: Joi.date().required(),
     end_time: Joi.date().required(),
-    outlet_id: Joi.number().required(),
 });
 
 export const UpdateSchema = Joi.object({

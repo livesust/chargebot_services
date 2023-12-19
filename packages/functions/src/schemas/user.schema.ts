@@ -1,7 +1,5 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
-// uncoment to enable eager loading
-//import { EntitySchema as CompanySchema } from "./company.schema";
 
 const UserSchemaDef = {
     first_name: Joi.string().max(255),
@@ -16,9 +14,6 @@ const UserSchemaDef = {
 export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
     ...UserSchemaDef,
-    company_id: Joi.number(),
-    // uncoment to enable eager loading
-    //company: CompanySchema,
 });
 
 export const CreateSchema = Joi.object({
@@ -29,7 +24,6 @@ export const CreateSchema = Joi.object({
     first_name: Joi.string().max(255).required(),
     last_name: Joi.string().max(255).required(),
     user_id: Joi.string().max(255).required(),
-    company_id: Joi.number().required(),
 });
 
 export const UpdateSchema = Joi.object({

@@ -10,8 +10,6 @@ export interface BotAlertTable extends AuditedEntity {
   dismissed?: boolean;
   active?: boolean;
   alert_count?: number;
-  alert_type_id: number;
-  bot_id: number;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

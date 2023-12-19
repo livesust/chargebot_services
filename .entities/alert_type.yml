@@ -5,6 +5,7 @@ attributes:
     varchar_length: '255'
     tsType: string
     unique: true
+    not_null: true
   - attribute: description
     type: text
     tsType: string
@@ -14,10 +15,12 @@ attributes:
     type: varchar
     varchar_length: '255'
     tsType: string
+    not_null: false
   - attribute: severity
     type: varchar
     varchar_length: '255'
     tsType: string
+    not_null: false
   - attribute: color code
     type: varchar
     varchar_length: '100'
@@ -26,6 +29,7 @@ attributes:
   - attribute: send push
     type: boolean
     tsType: boolean
+    not_null: false
   - attribute: alert text
     type: varchar
     varchar_length: '255'
@@ -34,4 +38,5 @@ attributes:
   - attribute: alert link
     type: text
     tsType: string
+    not_null: false
 relationships: []

@@ -4,20 +4,6 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { BotAlert, BotAlertUpdate, NewBotAlert } from "../database/bot_alert";
 
-function withAlertType(eb: ExpressionBuilder<Database, 'bot_alert'>) {
-    return jsonObjectFrom(
-      eb.selectFrom('alert_type')
-        .selectAll()
-        .whereRef('alert_type.id', '=', 'bot_alert.alert_type_id')
-    ).as('alert_type')
-}
-function withBot(eb: ExpressionBuilder<Database, 'bot_alert'>) {
-    return jsonObjectFrom(
-      eb.selectFrom('bot')
-        .selectAll()
-        .whereRef('bot.id', '=', 'bot_alert.bot_id')
-    ).as('bot')
-}
 
 export async function create(bot_alert: NewBotAlert): Promise<BotAlert | undefined> {
     return await db
@@ -68,15 +54,12 @@ export async function get(id: number): Promise<BotAlert | undefined> {
     return await db
         .selectFrom("bot_alert")
         .selectAll()
-        .select((eb) => withAlertType(eb))
-        // uncoment to enable eager loading
-        //.select((eb) => withBot(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<BotAlert>) {
+export async function findByCriteria(criteria: Partial<BotAlert>): Promise<BotAlert[]> {
   let query = db.selectFrom('bot_alert').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -124,5 +107,7 @@ export async function findByCriteria(criteria: Partial<BotAlert>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .execute();
 }

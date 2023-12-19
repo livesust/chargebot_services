@@ -1,16 +1,12 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { UniversalAppSettings } from "../src/services/universal_app_settings";
 import { getRandom } from './utils';
-import { createAndSaveAppSettingsType, removeAppSettingsType } from "./app_settings_type.test";
 
 
 // @ts-expect-error ignore any type error
 let entity_id;
-// @ts-expect-error ignore any type error
-let app_settings_type;
 
 export async function createAndSaveUniversalAppSettings() {
-    app_settings_type = await createAndSaveAppSettingsType();
     // @ts-expect-error ignore error
     return UniversalAppSettings.create(getUniversalAppSettingsInstance());
 }
@@ -18,15 +14,11 @@ export async function createAndSaveUniversalAppSettings() {
 export async function removeUniversalAppSettings(id: number) {
     // run delete query to clean database
     await UniversalAppSettings.hard_remove(id);
-    // @ts-expect-error ignore any type error
-    await removeAppSettingsType(app_settings_type.id);
 }
 
 function getUniversalAppSettingsInstance() {
     return {
         "setting_value": getRandom('varchar', 255),
-        // @ts-expect-error ignore any type error
-        "app_settings_type_id": app_settings_type.id,
     };
 }
 

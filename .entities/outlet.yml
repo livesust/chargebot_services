@@ -7,6 +7,7 @@ attributes:
   - attribute: notes
     type: text
     tsType: string
+    not_null: false
 relationships:
   - entity: outlet_type
     eager: true

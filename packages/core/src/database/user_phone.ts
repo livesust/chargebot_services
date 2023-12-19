@@ -5,7 +5,6 @@ export interface UserPhoneTable extends AuditedEntity {
   phone_number: string;
   send_text?: boolean;
   primary?: boolean;
-  user_id: number;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

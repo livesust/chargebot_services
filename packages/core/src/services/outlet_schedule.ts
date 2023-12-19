@@ -4,13 +4,6 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { OutletSchedule, OutletScheduleUpdate, NewOutletSchedule } from "../database/outlet_schedule";
 
-function withOutlet(eb: ExpressionBuilder<Database, 'outlet_schedule'>) {
-    return jsonObjectFrom(
-      eb.selectFrom('outlet')
-        .selectAll()
-        .whereRef('outlet.id', '=', 'outlet_schedule.outlet_id')
-    ).as('outlet')
-}
 
 export async function create(outlet_schedule: NewOutletSchedule): Promise<OutletSchedule | undefined> {
     return await db
@@ -61,14 +54,12 @@ export async function get(id: number): Promise<OutletSchedule | undefined> {
     return await db
         .selectFrom("outlet_schedule")
         .selectAll()
-        // uncoment to enable eager loading
-        //.select((eb) => withOutlet(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<OutletSchedule>) {
+export async function findByCriteria(criteria: Partial<OutletSchedule>): Promise<OutletSchedule[]> {
   let query = db.selectFrom('outlet_schedule').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -104,5 +95,7 @@ export async function findByCriteria(criteria: Partial<OutletSchedule>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .execute();
 }

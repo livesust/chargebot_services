@@ -3,9 +3,6 @@ import { AuditedEntity } from "./audited_entity";
 
 export interface OutletEquipmentTable extends AuditedEntity {
   notes?: string;
-  equipment_id: number;
-  outlet_id: number;
-  user_id: number;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

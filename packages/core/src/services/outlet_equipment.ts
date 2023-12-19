@@ -4,27 +4,6 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { OutletEquipment, OutletEquipmentUpdate, NewOutletEquipment } from "../database/outlet_equipment";
 
-function withEquipment(eb: ExpressionBuilder<Database, 'outlet_equipment'>) {
-    return jsonObjectFrom(
-      eb.selectFrom('equipment')
-        .selectAll()
-        .whereRef('equipment.id', '=', 'outlet_equipment.equipment_id')
-    ).as('equipment')
-}
-function withOutlet(eb: ExpressionBuilder<Database, 'outlet_equipment'>) {
-    return jsonObjectFrom(
-      eb.selectFrom('outlet')
-        .selectAll()
-        .whereRef('outlet.id', '=', 'outlet_equipment.outlet_id')
-    ).as('outlet')
-}
-function withUser(eb: ExpressionBuilder<Database, 'outlet_equipment'>) {
-    return jsonObjectFrom(
-      eb.selectFrom('user')
-        .selectAll()
-        .whereRef('user.id', '=', 'outlet_equipment.user_id')
-    ).as('user')
-}
 
 export async function create(outlet_equipment: NewOutletEquipment): Promise<OutletEquipment | undefined> {
     return await db
@@ -75,17 +54,12 @@ export async function get(id: number): Promise<OutletEquipment | undefined> {
     return await db
         .selectFrom("outlet_equipment")
         .selectAll()
-        .select((eb) => withEquipment(eb))
-        // uncoment to enable eager loading
-        //.select((eb) => withOutlet(eb))
-        // uncoment to enable eager loading
-        //.select((eb) => withUser(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<OutletEquipment>) {
+export async function findByCriteria(criteria: Partial<OutletEquipment>): Promise<OutletEquipment[]> {
   let query = db.selectFrom('outlet_equipment').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -112,5 +86,7 @@ export async function findByCriteria(criteria: Partial<OutletEquipment>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .execute();
 }

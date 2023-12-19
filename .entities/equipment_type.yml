@@ -8,3 +8,4 @@ attributes:
   - attribute: description
     type: text
     tsType: string
+    not_null: false

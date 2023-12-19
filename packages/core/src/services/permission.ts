@@ -68,7 +68,7 @@ export async function get(id: number): Promise<Permission | undefined> {
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<Permission>) {
+export async function findByCriteria(criteria: Partial<Permission>): Promise<Permission[]> {
   let query = db.selectFrom('permission').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -102,5 +102,7 @@ export async function findByCriteria(criteria: Partial<Permission>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .execute();
 }

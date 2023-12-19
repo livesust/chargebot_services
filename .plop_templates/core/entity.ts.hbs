@@ -1,9 +1,17 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 {{#each relationships}}
-{{#if eager}}
+  {{#when relation_type 'eq' 'many-to-one'}}
+    {{#if eager}}
 import { {{pascalCase entity}} } from "./{{snakeCase entity}}";
-{{/if}}
+    {{/if}}
+  {{/when}}
+  {{#when relation_type 'eq' 'many-to-many'}}
+    {{#if eager}}
+import { {{pascalCase first_entity}} } from "./{{snakeCase first_entity}}";
+import { {{pascalCase second_entity}} } from "./{{snakeCase second_entity}}";
+    {{/if}}
+  {{/when}}
 {{/each}}
 
 export interface {{pascalCase name}}Table extends AuditedEntity {
@@ -15,15 +23,32 @@ export interface {{pascalCase name}}Table extends AuditedEntity {
   {{/if}}
   {{/each}}
   {{#each relationships}}
-  {{#if not_null}}
+    {{#when relation_type 'eq' 'many-to-one'}}
+      {{#if not_null}}
   {{snakeCase entity}}_id: number;
-  {{else}}
+      {{else}}
   {{snakeCase entity}}_id?: number;
-  {{/if}}
+      {{/if}}
+    {{/when}}
+    {{#when relation_type 'eq' 'many-to-many'}}
+      {{#if not_null}}
+  {{snakeCase first_entity}}_id: number;
+  {{snakeCase second_entity}}_id: number;
+      {{else}}
+  {{snakeCase first_entity}}_id?: number;
+  {{snakeCase second_entity}}_id?: number;
+      {{/if}}
+    {{/when}}
   {{/each}}
   {{#each relationships}}
   {{#if eager}}
+    {{#when relation_type 'eq' 'many-to-one'}}
   {{snakeCase entity}}?: {{pascalCase entity}};
+    {{/when}}
+    {{#when relation_type 'eq' 'many-to-many'}}
+  {{snakeCase first_entity}}?: {{pascalCase first_entity}};
+  {{snakeCase second_entity}}?: {{pascalCase second_entity}};
+    {{/when}}
   {{/if}}
   {{/each}}
 }

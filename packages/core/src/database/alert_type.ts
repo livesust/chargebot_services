@@ -2,7 +2,7 @@ import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 
 export interface AlertTypeTable extends AuditedEntity {
-  name?: string;
+  name: string;
   description?: string;
   priority?: string;
   severity?: string;

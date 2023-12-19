@@ -31,6 +31,7 @@ import { AppSettingsType } from "./app_settings_type";
 import { AppInstallPermissions } from "./app_install_permissions";
 import { AppInstall } from "./app_install";
 import { AlertType } from "./alert_type";
+import { UserScheduledAlerts } from "./user_scheduled_alerts";
 // DO NOT REMOVE THIS LINE: PLOP SERVICE IMPORT
 
 export const loadService = async (entity_name: string) => {
@@ -69,6 +70,7 @@ export const loadService = async (entity_name: string) => {
     if ("app_install" === entity_name) { service = AppInstall; }
     if ("alert_type" === entity_name) { service = AlertType; }
 
+    if ("user_scheduled_alerts" === entity_name) { service = UserScheduledAlerts; }
 // DO NOT REMOVE THIS LINE: PLOP SERVICE IF
 
     if (!service) {

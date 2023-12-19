@@ -20,6 +20,18 @@ function withRole(eb: ExpressionBuilder<Database, 'user_role'>) {
 }
 
 export async function create(user_role: NewUserRole): Promise<UserRole | undefined> {
+    // check if many-to-many record already exists
+    const existent = await db
+          .selectFrom("user_role")
+          .selectAll()
+          .where('user_id', '=', user_role.user_id)
+          .where('role_id', '=', user_role.role_id)
+          .where('deleted_by', 'is', null)
+          .executeTakeFirst();
+    if (existent) {
+        // return existent many-to-many record, do not create a new one
+        return existent;
+    }
     return await db
         .insertInto('user_role')
         .values({
@@ -68,15 +80,14 @@ export async function get(id: number): Promise<UserRole | undefined> {
     return await db
         .selectFrom("user_role")
         .selectAll()
-        // uncoment to enable eager loading
-        //.select((eb) => withUser(eb))
+        .select((eb) => withUser(eb))
         .select((eb) => withRole(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<UserRole>) {
+export async function findByCriteria(criteria: Partial<UserRole>): Promise<UserRole[]> {
   let query = db.selectFrom('user_role').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -99,5 +110,9 @@ export async function findByCriteria(criteria: Partial<UserRole>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .select((eb) => withUser(eb))
+    .select((eb) => withRole(eb))
+    .execute();
 }

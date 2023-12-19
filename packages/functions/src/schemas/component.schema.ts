@@ -4,10 +4,10 @@ import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEnti
 const ComponentSchemaDef = {
     name: Joi.string().max(255),
     version: Joi.string().max(100).allow(null),
-    description: Joi.string(),
-    specs: Joi.string(),
-    location: Joi.string().max(255),
-    notes: Joi.string(),
+    description: Joi.string().allow(null),
+    specs: Joi.string().allow(null),
+    location: Joi.string().max(255).allow(null),
+    notes: Joi.string().allow(null),
 };
 
 export const EntitySchema = Joi.object({

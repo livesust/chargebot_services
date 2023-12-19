@@ -4,6 +4,7 @@ attributes:
     type: text
     tsType: string
     unique: true
+    not_null: true
   - attribute: initials
     type: varchar
     varchar_length: '2'

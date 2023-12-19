@@ -47,8 +47,6 @@ const handler = async ({ requestContext }) => {
             })
           )
         }
-
-        console.log(user.id, company.id, JSON.stringify(botsByCompany, null, 2), JSON.stringify(response, null, 2));
     } catch (error) {
         const httpError = createError(500, "cannot query bots for user", { expose: true });
         httpError.details = (<Error>error).message;

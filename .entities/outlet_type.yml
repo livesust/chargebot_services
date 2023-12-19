@@ -8,13 +8,17 @@ attributes:
   - attribute: outlet_amps
     type: float
     tsType: number
+    not_null: false
   - attribute: outlet_volts
     type: float
     tsType: number
+    not_null: false
   - attribute: connector
     type: varchar
     varchar_length: '100'
     tsType: string
+    not_null: false
   - attribute: description
     type: text
     tsType: string
+    not_null: false

@@ -4,20 +4,6 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { Outlet, OutletUpdate, NewOutlet } from "../database/outlet";
 
-function withOutletType(eb: ExpressionBuilder<Database, 'outlet'>) {
-    return jsonObjectFrom(
-      eb.selectFrom('outlet_type')
-        .selectAll()
-        .whereRef('outlet_type.id', '=', 'outlet.outlet_type_id')
-    ).as('outlet_type')
-}
-function withBot(eb: ExpressionBuilder<Database, 'outlet'>) {
-    return jsonObjectFrom(
-      eb.selectFrom('bot')
-        .selectAll()
-        .whereRef('bot.id', '=', 'outlet.bot_id')
-    ).as('bot')
-}
 
 export async function create(outlet: NewOutlet): Promise<Outlet | undefined> {
     return await db
@@ -68,15 +54,12 @@ export async function get(id: number): Promise<Outlet | undefined> {
     return await db
         .selectFrom("outlet")
         .selectAll()
-        .select((eb) => withOutletType(eb))
-        // uncoment to enable eager loading
-        //.select((eb) => withBot(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<Outlet>) {
+export async function findByCriteria(criteria: Partial<Outlet>): Promise<Outlet[]> {
   let query = db.selectFrom('outlet').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -106,5 +89,7 @@ export async function findByCriteria(criteria: Partial<Outlet>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .execute();
 }

@@ -6,7 +6,6 @@ export interface BotChargingSettingsTable extends AuditedEntity {
   all_day?: boolean;
   start_time: Date;
   end_time: Date;
-  bot_id: number;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

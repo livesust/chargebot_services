@@ -1,16 +1,12 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { BotFirmware } from "../src/services/bot_firmware";
 import { getRandom } from './utils';
-import { createAndSaveBot, removeBot } from "./bot.test";
 
 
 // @ts-expect-error ignore any type error
 let entity_id;
-// @ts-expect-error ignore any type error
-let bot;
 
 export async function createAndSaveBotFirmware() {
-    bot = await createAndSaveBot();
     // @ts-expect-error ignore error
     return BotFirmware.create(getBotFirmwareInstance());
 }
@@ -18,8 +14,6 @@ export async function createAndSaveBotFirmware() {
 export async function removeBotFirmware(id: number) {
     // run delete query to clean database
     await BotFirmware.hard_remove(id);
-    // @ts-expect-error ignore any type error
-    await removeBot(bot.id);
 }
 
 function getBotFirmwareInstance() {
@@ -30,8 +24,6 @@ function getBotFirmwareInstance() {
         "battery_version": getRandom('varchar', 255),
         "pdu_version": getRandom('varchar', 255),
         "notes": getRandom('text'),
-        // @ts-expect-error ignore any type error
-        "bot_id": bot.id,
     };
 }
 

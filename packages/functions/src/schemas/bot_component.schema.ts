@@ -1,12 +1,11 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
-// uncoment to enable eager loading
-//import { EntitySchema as BotSchema } from "./bot.schema";
+import { EntitySchema as BotSchema } from "./bot.schema";
 import { EntitySchema as ComponentSchema } from "./component.schema";
 
 const BotComponentSchemaDef = {
     install_date: Joi.date(),
-    component_serial: Joi.string().max(255),
+    component_serial: Joi.string().max(255).allow(null),
 };
 
 export const EntitySchema = Joi.object({
@@ -14,8 +13,7 @@ export const EntitySchema = Joi.object({
     ...BotComponentSchemaDef,
     bot_id: Joi.number(),
     component_id: Joi.number(),
-    // uncoment to enable eager loading
-    //bot: BotSchema,
+    bot: BotSchema,
     component: ComponentSchema,
 });
 

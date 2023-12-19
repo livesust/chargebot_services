@@ -4,13 +4,6 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { BotChargingSettings, BotChargingSettingsUpdate, NewBotChargingSettings } from "../database/bot_charging_settings";
 
-function withBot(eb: ExpressionBuilder<Database, 'bot_charging_settings'>) {
-    return jsonObjectFrom(
-      eb.selectFrom('bot')
-        .selectAll()
-        .whereRef('bot.id', '=', 'bot_charging_settings.bot_id')
-    ).as('bot')
-}
 
 export async function create(bot_charging_settings: NewBotChargingSettings): Promise<BotChargingSettings | undefined> {
     return await db
@@ -61,14 +54,12 @@ export async function get(id: number): Promise<BotChargingSettings | undefined> 
     return await db
         .selectFrom("bot_charging_settings")
         .selectAll()
-        // uncoment to enable eager loading
-        //.select((eb) => withBot(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<BotChargingSettings>) {
+export async function findByCriteria(criteria: Partial<BotChargingSettings>): Promise<BotChargingSettings[]> {
   let query = db.selectFrom('bot_charging_settings').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -104,5 +95,7 @@ export async function findByCriteria(criteria: Partial<BotChargingSettings>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .execute();
 }

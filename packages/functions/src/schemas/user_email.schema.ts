@@ -1,20 +1,15 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
-// uncoment to enable eager loading
-//import { EntitySchema as UserSchema } from "./user.schema";
 
 const UserEmailSchemaDef = {
     email_address: Joi.string(),
-    verified: Joi.boolean(),
-    primary: Joi.boolean(),
+    verified: Joi.boolean().allow(null),
+    primary: Joi.boolean().allow(null),
 };
 
 export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
     ...UserEmailSchemaDef,
-    user_id: Joi.number(),
-    // uncoment to enable eager loading
-    //user: UserSchema,
 });
 
 export const CreateSchema = Joi.object({
@@ -23,7 +18,6 @@ export const CreateSchema = Joi.object({
 }).keys({
     // overwrite keys for required attributes
     email_address: Joi.string().required(),
-    user_id: Joi.number().required(),
 });
 
 export const UpdateSchema = Joi.object({

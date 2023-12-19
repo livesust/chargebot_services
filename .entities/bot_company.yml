@@ -1,13 +1,13 @@
 name: bot_company
+many_to_many: true
 attributes:
   - attribute: acquire date
     type: timestamptz
     tsType: Date
     not_null: true
 relationships:
-  - entity: bot
-    eager: true
-    not_null: true
-  - entity: company
+  - relation_type: many-to-many
+    first_entity: bot
+    second_entity: company
     eager: true
     not_null: true

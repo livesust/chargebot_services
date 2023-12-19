@@ -2,7 +2,7 @@ import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 
 export interface RoleTable extends AuditedEntity {
-  role?: string;
+  role: string;
   description?: string;
 }
 

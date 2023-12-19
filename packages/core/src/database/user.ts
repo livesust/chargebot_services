@@ -9,7 +9,6 @@ export interface UserTable extends AuditedEntity {
   invite_status?: number;
   super_admin?: boolean;
   user_id: string;
-  company_id: number;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

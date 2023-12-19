@@ -1,16 +1,12 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { UserEmail } from "../src/services/user_email";
 import { getRandom } from './utils';
-import { createAndSaveUser, removeUser } from "./user.test";
 
 
 // @ts-expect-error ignore any type error
 let entity_id;
-// @ts-expect-error ignore any type error
-let user;
 
 export async function createAndSaveUserEmail() {
-    user = await createAndSaveUser();
     // @ts-expect-error ignore error
     return UserEmail.create(getUserEmailInstance());
 }
@@ -18,8 +14,6 @@ export async function createAndSaveUserEmail() {
 export async function removeUserEmail(id: number) {
     // run delete query to clean database
     await UserEmail.hard_remove(id);
-    // @ts-expect-error ignore any type error
-    await removeUser(user.id);
 }
 
 function getUserEmailInstance() {
@@ -27,8 +21,6 @@ function getUserEmailInstance() {
         "email_address": getRandom('text'),
         "verified": getRandom('boolean'),
         "primary": getRandom('boolean'),
-        // @ts-expect-error ignore any type error
-        "user_id": user.id,
     };
 }
 

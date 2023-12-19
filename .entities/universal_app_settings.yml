@@ -5,6 +5,7 @@ attributes:
     varchar_length: '255'
     tsType: string
     unique: true
+    not_null: true
 relationships:
   - entity: app_settings_type
     eager: true

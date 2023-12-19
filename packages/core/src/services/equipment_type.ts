@@ -57,7 +57,7 @@ export async function get(id: number): Promise<EquipmentType | undefined> {
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<EquipmentType>) {
+export async function findByCriteria(criteria: Partial<EquipmentType>): Promise<EquipmentType[]> {
   let query = db.selectFrom('equipment_type').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -91,5 +91,7 @@ export async function findByCriteria(criteria: Partial<EquipmentType>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .execute();
 }

@@ -68,7 +68,7 @@ export async function get(id: number): Promise<AlertType | undefined> {
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<AlertType>) {
+export async function findByCriteria(criteria: Partial<AlertType>): Promise<AlertType[]> {
   let query = db.selectFrom('alert_type').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -140,5 +140,7 @@ export async function findByCriteria(criteria: Partial<AlertType>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .execute();
 }

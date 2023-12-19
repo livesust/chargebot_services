@@ -17,6 +17,8 @@ export const CreateSchema = Joi.object({
     ...StateMasterSchemaDef
 }).keys({
     // overwrite keys for required attributes
+    name: Joi.string().max(100).required(),
+    abbreviation: Joi.string().max(45).required(),
     country: Joi.string().max(255).required(),
 });
 

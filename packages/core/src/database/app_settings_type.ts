@@ -2,7 +2,7 @@ import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 
 export interface AppSettingsTypeTable extends AuditedEntity {
-  setting_name?: string;
+  setting_name: string;
   description?: string;
 }
 

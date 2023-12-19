@@ -20,6 +20,18 @@ function withUser(eb: ExpressionBuilder<Database, 'bot_user'>) {
 }
 
 export async function create(bot_user: NewBotUser): Promise<BotUser | undefined> {
+    // check if many-to-many record already exists
+    const existent = await db
+          .selectFrom("bot_user")
+          .selectAll()
+          .where('bot_id', '=', bot_user.bot_id)
+          .where('user_id', '=', bot_user.user_id)
+          .where('deleted_by', 'is', null)
+          .executeTakeFirst();
+    if (existent) {
+        // return existent many-to-many record, do not create a new one
+        return existent;
+    }
     return await db
         .insertInto('bot_user')
         .values({
@@ -68,16 +80,14 @@ export async function get(id: number): Promise<BotUser | undefined> {
     return await db
         .selectFrom("bot_user")
         .selectAll()
-        // uncoment to enable eager loading
-        //.select((eb) => withBot(eb))
-        // uncoment to enable eager loading
-        //.select((eb) => withUser(eb))
+        .select((eb) => withBot(eb))
+        .select((eb) => withUser(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<BotUser>) {
+export async function findByCriteria(criteria: Partial<BotUser>): Promise<BotUser[]> {
   let query = db.selectFrom('bot_user').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -100,5 +110,9 @@ export async function findByCriteria(criteria: Partial<BotUser>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .select((eb) => withBot(eb))
+    .select((eb) => withUser(eb))
+    .execute();
 }

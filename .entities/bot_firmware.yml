@@ -28,6 +28,7 @@ attributes:
   - attribute: notes
     type: text
     tsType: string
+    not_null: false
 relationships:
   - entity: bot
     eager: false

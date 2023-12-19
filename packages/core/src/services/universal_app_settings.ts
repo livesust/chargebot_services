@@ -4,13 +4,6 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { UniversalAppSettings, UniversalAppSettingsUpdate, NewUniversalAppSettings } from "../database/universal_app_settings";
 
-function withAppSettingsType(eb: ExpressionBuilder<Database, 'universal_app_settings'>) {
-    return jsonObjectFrom(
-      eb.selectFrom('app_settings_type')
-        .selectAll()
-        .whereRef('app_settings_type.id', '=', 'universal_app_settings.app_settings_type_id')
-    ).as('app_settings_type')
-}
 
 export async function create(universal_app_settings: NewUniversalAppSettings): Promise<UniversalAppSettings | undefined> {
     const exists = await db
@@ -72,13 +65,12 @@ export async function get(id: number): Promise<UniversalAppSettings | undefined>
     return await db
         .selectFrom("universal_app_settings")
         .selectAll()
-        .select((eb) => withAppSettingsType(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<UniversalAppSettings>) {
+export async function findByCriteria(criteria: Partial<UniversalAppSettings>): Promise<UniversalAppSettings[]> {
   let query = db.selectFrom('universal_app_settings').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -105,5 +97,7 @@ export async function findByCriteria(criteria: Partial<UniversalAppSettings>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .execute();
 }

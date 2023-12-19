@@ -8,7 +8,6 @@ export interface HomeMasterTable extends AuditedEntity {
   zip_code: string;
   latitude: number;
   longitude: number;
-  state_master_id: number;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

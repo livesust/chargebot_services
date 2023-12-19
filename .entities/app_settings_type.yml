@@ -5,6 +5,7 @@ attributes:
     varchar_length: '100'
     tsType: string
     unique: true
+    not_null: true
   - attribute: description
     type: text
     tsType: string

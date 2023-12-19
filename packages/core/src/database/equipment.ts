@@ -7,8 +7,6 @@ export interface EquipmentTable extends AuditedEntity {
   description?: string;
   voltage?: number;
   max_charging_amps?: number;
-  equipment_type_id: number;
-  customer_id: number;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

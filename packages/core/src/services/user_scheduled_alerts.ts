@@ -1,31 +1,31 @@
-export * as BotScheduledAlerts from "./bot_scheduled_alerts";
+export * as UserScheduledAlerts from "./user_scheduled_alerts";
 import db, { Database, json } from '../database';
 import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
-import { BotScheduledAlerts, BotScheduledAlertsUpdate, NewBotScheduledAlerts } from "../database/bot_scheduled_alerts";
+import { UserScheduledAlerts, UserScheduledAlertsUpdate, NewUserScheduledAlerts } from "../database/user_scheduled_alerts";
 
-function withScheduledAlert(eb: ExpressionBuilder<Database, 'bot_scheduled_alerts'>) {
+function withScheduledAlert(eb: ExpressionBuilder<Database, 'user_scheduled_alerts'>) {
     return jsonObjectFrom(
       eb.selectFrom('scheduled_alert')
         .selectAll()
-        .whereRef('scheduled_alert.id', '=', 'bot_scheduled_alerts.scheduled_alert_id')
+        .whereRef('scheduled_alert.id', '=', 'user_scheduled_alerts.scheduled_alert_id')
     ).as('scheduled_alert')
 }
-function withUser(eb: ExpressionBuilder<Database, 'bot_scheduled_alerts'>) {
+function withUser(eb: ExpressionBuilder<Database, 'user_scheduled_alerts'>) {
     return jsonObjectFrom(
       eb.selectFrom('user')
         .selectAll()
-        .whereRef('user.id', '=', 'bot_scheduled_alerts.user_id')
+        .whereRef('user.id', '=', 'user_scheduled_alerts.user_id')
     ).as('user')
 }
 
-export async function create(bot_scheduled_alerts: NewBotScheduledAlerts): Promise<BotScheduledAlerts | undefined> {
+export async function create(user_scheduled_alerts: NewUserScheduledAlerts): Promise<UserScheduledAlerts | undefined> {
     // check if many-to-many record already exists
     const existent = await db
-          .selectFrom("bot_scheduled_alerts")
+          .selectFrom("user_scheduled_alerts")
           .selectAll()
-          .where('scheduled_alert_id', '=', bot_scheduled_alerts.scheduled_alert_id)
-          .where('user_id', '=', bot_scheduled_alerts.user_id)
+          .where('scheduled_alert_id', '=', user_scheduled_alerts.scheduled_alert_id)
+          .where('user_id', '=', user_scheduled_alerts.user_id)
           .where('deleted_by', 'is', null)
           .executeTakeFirst();
     if (existent) {
@@ -33,19 +33,19 @@ export async function create(bot_scheduled_alerts: NewBotScheduledAlerts): Promi
         return existent;
     }
     return await db
-        .insertInto('bot_scheduled_alerts')
+        .insertInto('user_scheduled_alerts')
         .values({
-            ...bot_scheduled_alerts,
-            settings: json(bot_scheduled_alerts.settings),
+            ...user_scheduled_alerts,
+            settings: json(user_scheduled_alerts.settings),
         })
         .returningAll()
         .executeTakeFirst();
 }
 
-export async function update(id: number, bot_scheduled_alerts: BotScheduledAlertsUpdate): Promise<BotScheduledAlerts | undefined> {
+export async function update(id: number, user_scheduled_alerts: UserScheduledAlertsUpdate): Promise<UserScheduledAlerts | undefined> {
     return await db
-        .updateTable('bot_scheduled_alerts')
-        .set(bot_scheduled_alerts)
+        .updateTable('user_scheduled_alerts')
+        .set(user_scheduled_alerts)
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -54,7 +54,7 @@ export async function update(id: number, bot_scheduled_alerts: BotScheduledAlert
 
 export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {
     return await db
-        .updateTable('bot_scheduled_alerts')
+        .updateTable('user_scheduled_alerts')
         .set({ deleted_date: new Date(), deleted_by: user_id })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
@@ -64,22 +64,22 @@ export async function remove(id: number, user_id: string): Promise<{ id: number 
 
 export async function hard_remove(id: number): Promise<void> {
     await db
-        .deleteFrom('bot_scheduled_alerts')
+        .deleteFrom('user_scheduled_alerts')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
-export async function list(): Promise<BotScheduledAlerts[]> {
+export async function list(): Promise<UserScheduledAlerts[]> {
     return await db
-        .selectFrom("bot_scheduled_alerts")
+        .selectFrom("user_scheduled_alerts")
         .selectAll()
         .where('deleted_by', 'is', null)
         .execute();
 }
 
-export async function get(id: number): Promise<BotScheduledAlerts | undefined> {
+export async function get(id: number): Promise<UserScheduledAlerts | undefined> {
     return await db
-        .selectFrom("bot_scheduled_alerts")
+        .selectFrom("user_scheduled_alerts")
         .selectAll()
         .select((eb) => withScheduledAlert(eb))
         .select((eb) => withUser(eb))
@@ -88,8 +88,8 @@ export async function get(id: number): Promise<BotScheduledAlerts | undefined> {
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<BotScheduledAlerts>): Promise<BotScheduledAlerts[]> {
-  let query = db.selectFrom('bot_scheduled_alerts').where('deleted_by', 'is', null)
+export async function findByCriteria(criteria: Partial<UserScheduledAlerts>): Promise<UserScheduledAlerts[]> {
+  let query = db.selectFrom('user_scheduled_alerts').where('deleted_by', 'is', null)
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);

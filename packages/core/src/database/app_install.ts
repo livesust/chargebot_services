@@ -6,7 +6,6 @@ export interface AppInstallTable extends AuditedEntity {
   platform: string;
   os_version: string;
   description?: string;
-  user_id: number;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

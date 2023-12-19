@@ -3,7 +3,7 @@ import { AuditedEntity } from "./audited_entity";
 import { ScheduledAlert } from "./scheduled_alert";
 import { User } from "./user";
 
-export interface BotScheduledAlertsTable extends AuditedEntity {
+export interface UserScheduledAlertsTable extends AuditedEntity {
   alert_status?: boolean;
   settings?: object;
   scheduled_alert_id: number;
@@ -15,6 +15,6 @@ export interface BotScheduledAlertsTable extends AuditedEntity {
 // You should not use the table schema interfaces directly. Instead, you should
 // use the `Selectable`, `Insertable` and `Updateable` wrappers. These wrappers
 // make sure that the correct types are used in each operation.
-export type BotScheduledAlerts = Selectable<BotScheduledAlertsTable>
-export type NewBotScheduledAlerts = Insertable<BotScheduledAlertsTable>
-export type BotScheduledAlertsUpdate = Updateable<BotScheduledAlertsTable>
+export type UserScheduledAlerts = Selectable<UserScheduledAlertsTable>
+export type NewUserScheduledAlerts = Insertable<UserScheduledAlertsTable>
+export type UserScheduledAlertsUpdate = Updateable<UserScheduledAlertsTable>

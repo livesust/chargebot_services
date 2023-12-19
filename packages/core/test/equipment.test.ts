@@ -1,20 +1,12 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { Equipment } from "../src/services/equipment";
 import { getRandom } from './utils';
-import { createAndSaveEquipmentType, removeEquipmentType } from "./equipment_type.test";
-import { createAndSaveCustomer, removeCustomer } from "./customer.test";
 
 
 // @ts-expect-error ignore any type error
 let entity_id;
-// @ts-expect-error ignore any type error
-let equipment_type;
-// @ts-expect-error ignore any type error
-let customer;
 
 export async function createAndSaveEquipment() {
-    equipment_type = await createAndSaveEquipmentType();
-    customer = await createAndSaveCustomer();
     // @ts-expect-error ignore error
     return Equipment.create(getEquipmentInstance());
 }
@@ -22,10 +14,6 @@ export async function createAndSaveEquipment() {
 export async function removeEquipment(id: number) {
     // run delete query to clean database
     await Equipment.hard_remove(id);
-    // @ts-expect-error ignore any type error
-    await removeEquipmentType(equipment_type.id);
-    // @ts-expect-error ignore any type error
-    await removeCustomer(customer.id);
 }
 
 function getEquipmentInstance() {
@@ -35,10 +23,6 @@ function getEquipmentInstance() {
         "description": getRandom('text'),
         "voltage": getRandom('float'),
         "max_charging_amps": getRandom('float'),
-        // @ts-expect-error ignore any type error
-        "equipment_type_id": equipment_type.id,
-        // @ts-expect-error ignore any type error
-        "customer_id": customer.id,
     };
 }
 

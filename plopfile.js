@@ -98,31 +98,93 @@ export default function (plop) {
             {
                 type: 'recursive',
                 name: 'relationships',
-                message: 'Add new relationship? (always from the Many side of a ManyToOne)',
+                message: 'Add new relationship?',
                 default: false,
                 prompts: [
                     {
+                        type: 'list',
+                        name: 'relation_type',
+                        message: 'Relationship type:',
+                        choices: ['many-to-one', 'many-to-many'],
+                        default: 'string',
+                    },
+                    {
                         type: 'input',
                         name: 'entity',
-                        message: 'Entity that represents the "One" side:',
+                        message: 'Entity that represents the "1" side:',
                         validate: function(value) {
                             if (value) {
                               return true;
                             }
                             return 'Please enter a valid entity name';
-                        }
+                        },
+                        when(answers) {
+                            return answers['relation_type'] === 'many-to-one';
+                        },
+                    },
+                    {
+                        type: 'input',
+                        name: 'first_entity',
+                        message: 'First entity:',
+                        validate: function(value) {
+                            if (value) {
+                              return true;
+                            }
+                            return 'Please enter a valid entity name';
+                        },
+                        when(answers) {
+                            return answers['relation_type'] === 'many-to-many';
+                        },
+                    },
+                    {
+                        type: 'input',
+                        name: 'second_entity',
+                        message: 'Second entity:',
+                        validate: function(value) {
+                            if (value) {
+                              return true;
+                            }
+                            return 'Please enter a valid entity name';
+                        },
+                        when(answers) {
+                            return answers['relation_type'] === 'many-to-many';
+                        },
                     },
                     {
                         type: 'confirm',
                         name: 'not_null',
                         message: 'Is it required?',
-                        default: false
+                        default: false,
+                        when(answers) {
+                            return answers['relation_type'] === 'many-to-one';
+                        },
                     },
                     {
                         type: 'confirm',
                         name: 'eager',
                         message: 'Eager loading?',
-                        default: false
+                        default: false,
+                        when(answers) {
+                            return answers['relation_type'] === 'many-to-one';
+                        },
+                    },
+                    {
+                        type: 'confirm',
+                        name: 'not_null',
+                        message: 'Is it required?',
+                        default: true,
+                        when(answers) {
+                            return answers['relation_type'] === 'many-to-many';
+                        },
+                    },
+                    {
+                        type: 'confirm',
+                        name: 'eager',
+                        message: 'Eager loading?',
+                        default: true,
+                        when(answers) {
+                            return answers['relation_type'] === 'many-to-many';
+                        },
                     }
                 ]
             }
@@ -140,7 +202,7 @@ export default function (plop) {
                 if (!fs.existsSync(dirPath)){
                     fs.mkdirSync(dirPath);
                 }
-                fs.writeFileSync(filePath, yml.dump(answers), { encoding: 'utf8', flag: 'w' })
+                fs.writeFileSync(filePath, yml.dump(answers), { encoding: 'utf8', flag: 'w' });
               } catch (err) {
                 console.log(err);
               }

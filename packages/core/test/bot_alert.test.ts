@@ -1,20 +1,12 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { BotAlert } from "../src/services/bot_alert";
 import { getRandom } from './utils';
-import { createAndSaveAlertType, removeAlertType } from "./alert_type.test";
-import { createAndSaveBot, removeBot } from "./bot.test";
 
 
 // @ts-expect-error ignore any type error
 let entity_id;
-// @ts-expect-error ignore any type error
-let alert_type;
-// @ts-expect-error ignore any type error
-let bot;
 
 export async function createAndSaveBotAlert() {
-    alert_type = await createAndSaveAlertType();
-    bot = await createAndSaveBot();
     // @ts-expect-error ignore error
     return BotAlert.create(getBotAlertInstance());
 }
@@ -22,10 +14,6 @@ export async function createAndSaveBotAlert() {
 export async function removeBotAlert(id: number) {
     // run delete query to clean database
     await BotAlert.hard_remove(id);
-    // @ts-expect-error ignore any type error
-    await removeAlertType(alert_type.id);
-    // @ts-expect-error ignore any type error
-    await removeBot(bot.id);
 }
 
 function getBotAlertInstance() {
@@ -38,10 +26,6 @@ function getBotAlertInstance() {
         "dismissed": getRandom('boolean'),
         "active": getRandom('boolean'),
         "alert_count": getRandom('integer'),
-        // @ts-expect-error ignore any type error
-        "alert_type_id": alert_type.id,
-        // @ts-expect-error ignore any type error
-        "bot_id": bot.id,
     };
 }
 
