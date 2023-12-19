@@ -20,6 +20,18 @@ function withPermission(eb: ExpressionBuilder<Database, 'app_install_permissions
 }
 
 export async function create(app_install_permissions: NewAppInstallPermissions): Promise<AppInstallPermissions | undefined> {
+    // check if many-to-many record already exists
+    const existent = await db
+          .selectFrom("app_install_permissions")
+          .selectAll()
+          .where('app_install_id', '=', app_install_permissions.app_install_id)
+          .where('permission_id', '=', app_install_permissions.permission_id)
+          .where('deleted_by', 'is', null)
+          .executeTakeFirst();
+    if (existent) {
+        // return existent many-to-many record, do not create a new one
+        return existent;
+    }
     return await db
         .insertInto('app_install_permissions')
         .values({
@@ -75,7 +87,7 @@ export async function get(id: number): Promise<AppInstallPermissions | undefined
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<AppInstallPermissions>) {
+export async function findByCriteria(criteria: Partial<AppInstallPermissions>): Promise<AppInstallPermissions[]> {
   let query = db.selectFrom('app_install_permissions').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -98,5 +110,9 @@ export async function findByCriteria(criteria: Partial<AppInstallPermissions>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .select((eb) => withAppInstall(eb))
+    .select((eb) => withPermission(eb))
+    .execute();
 }

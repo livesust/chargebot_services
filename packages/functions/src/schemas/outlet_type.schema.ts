@@ -3,10 +3,10 @@ import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEnti
 
 const OutletTypeSchemaDef = {
     type: Joi.string().max(255),
-    outlet_amps: Joi.number(),
-    outlet_volts: Joi.number(),
-    connector: Joi.string().max(100),
-    description: Joi.string(),
+    outlet_amps: Joi.number().allow(null),
+    outlet_volts: Joi.number().allow(null),
+    connector: Joi.string().max(100).allow(null),
+    description: Joi.string().allow(null),
 };
 
 export const EntitySchema = Joi.object({

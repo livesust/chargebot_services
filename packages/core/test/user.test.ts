@@ -30,6 +30,7 @@ function getUserInstance() {
         "photo": getRandom('varchar', 255),
         "invite_status": getRandom('integer'),
         "super_admin": getRandom('boolean'),
+        "user_id": getRandom('varchar', 255),
         // @ts-expect-error ignore any type error
         "company_id": company.id,
     };

@@ -24,7 +24,6 @@ import { EquipmentTypeTable } from "./equipment_type";
 import { EquipmentTable } from "./equipment";
 import { ComponentTable } from "./component";
 import { BotVersionTable } from "./bot_version";
-import { BotScheduledAlertsTable } from "./bot_scheduled_alerts";
 import { BotFirmwareTable } from "./bot_firmware";
 import { BotComponentTable } from "./bot_component";
 import { BotCompanyTable } from "./bot_company";
@@ -34,6 +33,7 @@ import { AppSettingsTypeTable } from "./app_settings_type";
 import { AppInstallPermissionsTable } from "./app_install_permissions";
 import { AppInstallTable } from "./app_install";
 import { BotUserTable } from "./bot_user";
+import { UserScheduledAlertsTable } from "./user_scheduled_alerts";
 // DO NOT REMOVE THIS LINE: PLOP ENTITY IMPORT
 
 export function json<T>(value: T): RawBuilder<T> {
@@ -62,7 +62,6 @@ export interface Database {
   equipment: EquipmentTable,
   component: ComponentTable,
   bot_version: BotVersionTable,
-  bot_scheduled_alerts: BotScheduledAlertsTable,
   bot_firmware: BotFirmwareTable,
   bot_component: BotComponentTable,
   bot_company: BotCompanyTable,
@@ -72,6 +71,7 @@ export interface Database {
   app_install_permissions: AppInstallPermissionsTable,
   app_install: AppInstallTable,
   bot_user: BotUserTable,
+  user_scheduled_alerts: UserScheduledAlertsTable,
 // DO NOT REMOVE THIS LINE: PLOP ENTITY LIST
 }
 

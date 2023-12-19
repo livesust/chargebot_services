@@ -79,7 +79,7 @@ export async function get(id: number): Promise<UserPhone | undefined> {
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<UserPhone>) {
+export async function findByCriteria(criteria: Partial<UserPhone>): Promise<UserPhone[]> {
   let query = db.selectFrom('user_phone').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -112,5 +112,9 @@ export async function findByCriteria(criteria: Partial<UserPhone>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    // uncoment to enable eager loading
+    //.select((eb) => withUser(eb))
+    .execute();
 }

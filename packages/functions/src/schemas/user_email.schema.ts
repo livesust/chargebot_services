@@ -5,8 +5,8 @@ import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEnti
 
 const UserEmailSchemaDef = {
     email_address: Joi.string(),
-    verified: Joi.boolean(),
-    primary: Joi.boolean(),
+    verified: Joi.boolean().allow(null),
+    primary: Joi.boolean().allow(null),
 };
 
 export const EntitySchema = Joi.object({

@@ -1,5 +1,6 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
+import { User } from "./user";
 
 export interface AppInstallTable extends AuditedEntity {
   app_version: string;
@@ -7,6 +8,7 @@ export interface AppInstallTable extends AuditedEntity {
   os_version: string;
   description?: string;
   user_id: number;
+  user?: User;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

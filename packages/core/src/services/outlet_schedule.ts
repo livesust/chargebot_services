@@ -68,7 +68,7 @@ export async function get(id: number): Promise<OutletSchedule | undefined> {
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<OutletSchedule>) {
+export async function findByCriteria(criteria: Partial<OutletSchedule>): Promise<OutletSchedule[]> {
   let query = db.selectFrom('outlet_schedule').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -104,5 +104,9 @@ export async function findByCriteria(criteria: Partial<OutletSchedule>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    // uncoment to enable eager loading
+    //.select((eb) => withOutlet(eb))
+    .execute();
 }

@@ -14,17 +14,27 @@ attributes:
     type: varchar
     varchar_length: '255'
     tsType: string
+    not_null: false
   - attribute: photo
     type: varchar
     varchar_length: '255'
     tsType: string
+    not_null: false
   - attribute: invite_status
     type: integer
     tsType: number
+    not_null: false
   - attribute: super_admin
     type: boolean
     tsType: boolean
+    not_null: false
+  - attribute: user_id
+    type: varchar
+    varchar_length: '255'
+    tsType: string
+    not_null: true
 relationships:
   - entity: company
-    eager: false
+    relation_type: many-to-one
+    eager: true
     not_null: true

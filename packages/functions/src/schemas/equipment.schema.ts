@@ -6,10 +6,10 @@ import { EntitySchema as EquipmentTypeSchema } from "./equipment_type.schema";
 
 const EquipmentSchemaDef = {
     name: Joi.string().max(255),
-    brand: Joi.string().max(255),
-    description: Joi.string(),
-    voltage: Joi.number(),
-    max_charging_amps: Joi.number(),
+    brand: Joi.string().max(255).allow(null),
+    description: Joi.string().allow(null),
+    voltage: Joi.number().allow(null),
+    max_charging_amps: Joi.number().allow(null),
 };
 
 export const EntitySchema = Joi.object({

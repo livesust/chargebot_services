@@ -1,5 +1,6 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
+import { AlertType } from "./alert_type";
 
 export interface BotAlertTable extends AuditedEntity {
   message_displayed?: string;
@@ -12,6 +13,7 @@ export interface BotAlertTable extends AuditedEntity {
   alert_count?: number;
   alert_type_id: number;
   bot_id: number;
+  alert_type?: AlertType;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

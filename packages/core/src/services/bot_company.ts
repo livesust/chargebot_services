@@ -20,6 +20,18 @@ function withCompany(eb: ExpressionBuilder<Database, 'bot_company'>) {
 }
 
 export async function create(bot_company: NewBotCompany): Promise<BotCompany | undefined> {
+    // check if many-to-many record already exists
+    const existent = await db
+          .selectFrom("bot_company")
+          .selectAll()
+          .where('bot_id', '=', bot_company.bot_id)
+          .where('company_id', '=', bot_company.company_id)
+          .where('deleted_by', 'is', null)
+          .executeTakeFirst();
+    if (existent) {
+        // return existent many-to-many record, do not create a new one
+        return existent;
+    }
     return await db
         .insertInto('bot_company')
         .values({
@@ -75,7 +87,7 @@ export async function get(id: number): Promise<BotCompany | undefined> {
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<BotCompany>) {
+export async function findByCriteria(criteria: Partial<BotCompany>): Promise<BotCompany[]> {
   let query = db.selectFrom('bot_company').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -98,5 +110,9 @@ export async function findByCriteria(criteria: Partial<BotCompany>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .select((eb) => withBot(eb))
+    .select((eb) => withCompany(eb))
+    .execute();
 }

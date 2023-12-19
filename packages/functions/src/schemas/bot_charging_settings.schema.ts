@@ -4,8 +4,8 @@ import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEnti
 //import { EntitySchema as BotSchema } from "./bot.schema";
 
 const BotChargingSettingsSchemaDef = {
-    day_of_week: Joi.string().max(255),
-    all_day: Joi.boolean(),
+    day_of_week: Joi.string().max(255).allow(null),
+    all_day: Joi.boolean().allow(null),
     start_time: Joi.date(),
     end_time: Joi.date(),
 };

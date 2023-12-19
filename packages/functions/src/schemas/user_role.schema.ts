@@ -1,11 +1,10 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
-// uncoment to enable eager loading
-//import { EntitySchema as UserSchema } from "./user.schema";
+import { EntitySchema as UserSchema } from "./user.schema";
 import { EntitySchema as RoleSchema } from "./role.schema";
 
 const UserRoleSchemaDef = {
-    all_bots: Joi.boolean(),
+    all_bots: Joi.boolean().allow(null),
 };
 
 export const EntitySchema = Joi.object({
@@ -13,8 +12,7 @@ export const EntitySchema = Joi.object({
     ...UserRoleSchemaDef,
     user_id: Joi.number(),
     role_id: Joi.number(),
-    // uncoment to enable eager loading
-    //user: UserSchema,
+    user: UserSchema,
     role: RoleSchema,
 });
 

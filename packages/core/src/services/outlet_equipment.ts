@@ -76,16 +76,14 @@ export async function get(id: number): Promise<OutletEquipment | undefined> {
         .selectFrom("outlet_equipment")
         .selectAll()
         .select((eb) => withEquipment(eb))
-        // uncoment to enable eager loading
-        //.select((eb) => withOutlet(eb))
-        // uncoment to enable eager loading
-        //.select((eb) => withUser(eb))
+        .select((eb) => withOutlet(eb))
+        .select((eb) => withUser(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<OutletEquipment>) {
+export async function findByCriteria(criteria: Partial<OutletEquipment>): Promise<OutletEquipment[]> {
   let query = db.selectFrom('outlet_equipment').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -112,5 +110,10 @@ export async function findByCriteria(criteria: Partial<OutletEquipment>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .select((eb) => withEquipment(eb))
+    .select((eb) => withOutlet(eb))
+    .select((eb) => withUser(eb))
+    .execute();
 }

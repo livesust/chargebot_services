@@ -76,7 +76,7 @@ export async function get(id: number): Promise<BotAlert | undefined> {
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<BotAlert>) {
+export async function findByCriteria(criteria: Partial<BotAlert>): Promise<BotAlert[]> {
   let query = db.selectFrom('bot_alert').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -124,5 +124,10 @@ export async function findByCriteria(criteria: Partial<BotAlert>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .select((eb) => withAlertType(eb))
+    // uncoment to enable eager loading
+    //.select((eb) => withBot(eb))
+    .execute();
 }

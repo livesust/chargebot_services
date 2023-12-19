@@ -6,7 +6,7 @@ import { EntitySchema as OutletTypeSchema } from "./outlet_type.schema";
 
 const OutletSchemaDef = {
     pdu_outlet_number: Joi.number(),
-    notes: Joi.string(),
+    notes: Joi.string().allow(null),
 };
 
 export const EntitySchema = Joi.object({

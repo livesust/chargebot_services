@@ -7,10 +7,13 @@ attributes:
   - attribute: notes
     type: text
     tsType: string
+    not_null: false
 relationships:
   - entity: outlet_type
+    relation_type: many-to-one
     eager: true
     not_null: true
   - entity: bot
+    relation_type: many-to-one
     eager: false
     not_null: true

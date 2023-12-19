@@ -9,19 +9,25 @@ attributes:
     type: varchar
     varchar_length: '255'
     tsType: string
+    not_null: false
   - attribute: description
     type: text
     tsType: string
+    not_null: false
   - attribute: voltage
     type: float
     tsType: number
+    not_null: false
   - attribute: max charging amps
     type: float
     tsType: number
+    not_null: false
 relationships:
   - entity: equipment_type
+    relation_type: many-to-one
     eager: true
     not_null: true
   - entity: customer
+    relation_type: many-to-one
     eager: false
     not_null: true

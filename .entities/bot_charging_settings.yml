@@ -4,9 +4,11 @@ attributes:
     type: varchar
     varchar_length: '255'
     tsType: string
+    not_null: false
   - attribute: all day
     type: boolean
     tsType: boolean
+    not_null: false
   - attribute: start time
     type: timestamp
     tsType: Date
@@ -17,5 +19,6 @@ attributes:
     not_null: true
 relationships:
   - entity: bot
+    relation_type: many-to-one
     eager: false
     not_null: true

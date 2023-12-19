@@ -2,8 +2,8 @@ import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 
 export interface StateMasterTable extends AuditedEntity {
-  name?: string;
-  abbreviation?: string;
+  name: string;
+  abbreviation: string;
   country: string;
 }
 

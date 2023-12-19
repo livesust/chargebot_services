@@ -68,7 +68,7 @@ export async function get(id: number): Promise<BotChargingSettings | undefined> 
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<BotChargingSettings>) {
+export async function findByCriteria(criteria: Partial<BotChargingSettings>): Promise<BotChargingSettings[]> {
   let query = db.selectFrom('bot_charging_settings').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -104,5 +104,9 @@ export async function findByCriteria(criteria: Partial<BotChargingSettings>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    // uncoment to enable eager loading
+    //.select((eb) => withBot(eb))
+    .execute();
 }

@@ -67,7 +67,7 @@ export async function get(id: number): Promise<HomeMaster | undefined> {
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<HomeMaster>) {
+export async function findByCriteria(criteria: Partial<HomeMaster>): Promise<HomeMaster[]> {
   let query = db.selectFrom('home_master').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -121,5 +121,8 @@ export async function findByCriteria(criteria: Partial<HomeMaster>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .select((eb) => withStateMaster(eb))
+    .execute();
 }

@@ -68,7 +68,7 @@ export async function get(id: number): Promise<Role | undefined> {
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<Role>) {
+export async function findByCriteria(criteria: Partial<Role>): Promise<Role[]> {
   let query = db.selectFrom('role').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -102,5 +102,7 @@ export async function findByCriteria(criteria: Partial<Role>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .execute();
 }

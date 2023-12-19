@@ -18,6 +18,7 @@ export const CreateSchema = Joi.object({
     ...UniversalAppSettingsSchemaDef
 }).keys({
     // overwrite keys for required attributes
+    setting_value: Joi.string().max(255).required(),
     app_settings_type_id: Joi.number().required(),
 });
 

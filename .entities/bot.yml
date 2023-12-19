@@ -4,6 +4,7 @@ attributes:
     type: text
     tsType: string
     unique: true
+    not_null: true
   - attribute: initials
     type: varchar
     varchar_length: '2'
@@ -21,5 +22,6 @@ attributes:
     not_null: false
 relationships:
   - entity: bot_version
+    relation_type: many-to-one
     eager: true
     not_null: true

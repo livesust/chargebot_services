@@ -3,10 +3,10 @@ attributes:
   - attribute: all_bots
     type: boolean
     tsType: boolean
+    not_null: false
 relationships:
-  - entity: user
-    eager: false
-    not_null: true
-  - entity: role
+  - relation_type: many-to-many
+    first_entity: user
+    second_entity: role
     eager: true
     not_null: true

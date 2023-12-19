@@ -68,7 +68,7 @@ export async function get(id: number): Promise<BotFirmware | undefined> {
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<BotFirmware>) {
+export async function findByCriteria(criteria: Partial<BotFirmware>): Promise<BotFirmware[]> {
   let query = db.selectFrom('bot_firmware').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -130,5 +130,9 @@ export async function findByCriteria(criteria: Partial<BotFirmware>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    // uncoment to enable eager loading
+    //.select((eb) => withBot(eb))
+    .execute();
 }

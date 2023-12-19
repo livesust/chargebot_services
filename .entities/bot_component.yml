@@ -8,10 +8,10 @@ attributes:
     type: varchar
     varchar_length: '255'
     tsType: string
+    not_null: false
 relationships:
-  - entity: bot
-    eager: false
-    not_null: true
-  - entity: component
+  - relation_type: many-to-many
+    first_entity: bot
+    second_entity: component
     eager: true
     not_null: true

@@ -67,7 +67,7 @@ export async function get(id: number): Promise<AppInstall | undefined> {
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<AppInstall>) {
+export async function findByCriteria(criteria: Partial<AppInstall>): Promise<AppInstall[]> {
   let query = db.selectFrom('app_install').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -115,5 +115,8 @@ export async function findByCriteria(criteria: Partial<AppInstall>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .select((eb) => withUser(eb))
+    .execute();
 }

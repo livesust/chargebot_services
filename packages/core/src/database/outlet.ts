@@ -1,11 +1,13 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
+import { OutletType } from "./outlet_type";
 
 export interface OutletTable extends AuditedEntity {
   pdu_outlet_number: number;
   notes?: string;
   outlet_type_id: number;
   bot_id: number;
+  outlet_type?: OutletType;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

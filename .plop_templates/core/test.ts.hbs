@@ -2,26 +2,52 @@ import { afterAll, describe, expect, it } from "vitest";
 import { {{pascalCase name}} } from "../src/services/{{snakeCase name}}";
 import { getRandom } from './utils';
 {{#each relationships}}
+  {{#when relation_type 'eq' 'many-to-one'}}
     {{#if not_null}}
 import { createAndSave{{pascalCase entity}}, remove{{pascalCase entity}} } from "./{{snakeCase entity}}.test";
     {{/if}}
+  {{/when}}
+  {{#when relation_type 'eq' 'many-to-many'}}
+    {{#if not_null}}
+import { createAndSave{{pascalCase first_entity}}, remove{{pascalCase first_entity}} } from "./{{snakeCase first_entity}}.test";
+import { createAndSave{{pascalCase second_entity}}, remove{{pascalCase second_entity}} } from "./{{snakeCase second_entity}}.test";
+    {{/if}}
+  {{/when}}
 {{/each}}
 
 
 // @ts-expect-error ignore any type error
 let entity_id;
 {{#each relationships}}
+  {{#when relation_type 'eq' 'many-to-one'}}
     {{#if not_null}}
 // @ts-expect-error ignore any type error
 let {{snakeCase entity}};
     {{/if}}
+  {{/when}}
+  {{#when relation_type 'eq' 'many-to-many'}}
+    {{#if not_null}}
+// @ts-expect-error ignore any type error
+let {{snakeCase first_entity}};
+// @ts-expect-error ignore any type error
+let {{snakeCase second_entity}};
+    {{/if}}
+  {{/when}}
 {{/each}}
 
 export async function createAndSave{{pascalCase name}}() {
     {{#each relationships}}
+      {{#when relation_type 'eq' 'many-to-one'}}
         {{#if not_null}}
     {{snakeCase entity}} = await createAndSave{{pascalCase entity}}();
         {{/if}}
+      {{/when}}
+      {{#when relation_type 'eq' 'many-to-many'}}
+        {{#if not_null}}
+    {{snakeCase first_entity}} = await createAndSave{{pascalCase first_entity}}();
+    {{snakeCase second_entity}} = await createAndSave{{pascalCase second_entity}}();
+        {{/if}}
+      {{/when}}
     {{/each}}
     // @ts-expect-error ignore error
     return {{pascalCase name}}.create(get{{pascalCase name}}Instance());
@@ -31,10 +57,20 @@ export async function remove{{pascalCase name}}(id: number) {
     // run delete query to clean database
     await {{pascalCase name}}.hard_remove(id);
     {{#each relationships}}
+      {{#when relation_type 'eq' 'many-to-one'}}
         {{#if not_null}}
     // @ts-expect-error ignore any type error
     await remove{{pascalCase entity}}({{snakeCase entity}}.id);
         {{/if}}
+      {{/when}}
+      {{#when relation_type 'eq' 'many-to-many'}}
+        {{#if not_null}}
+    // @ts-expect-error ignore any type error
+    await remove{{pascalCase first_entity}}({{snakeCase first_entity}}.id);
+    // @ts-expect-error ignore any type error
+    await remove{{pascalCase second_entity}}({{snakeCase second_entity}}.id);
+        {{/if}}
+      {{/when}}
     {{/each}}
 }
 
@@ -44,10 +80,20 @@ function get{{pascalCase name}}Instance() {
         "{{snakeCase attribute}}": getRandom('{{type}}'{{#when type 'eq' 'varchar'}}, {{varchar_length}}{{/when}}),
         {{/each}}
         {{#each relationships}}
+          {{#when relation_type 'eq' 'many-to-one'}}
             {{#if not_null}}
         // @ts-expect-error ignore any type error
         "{{snakeCase entity}}_id": {{snakeCase entity}}.id,
             {{/if}}
+          {{/when}}
+          {{#when relation_type 'eq' 'many-to-many'}}
+            {{#if not_null}}
+        // @ts-expect-error ignore any type error
+        "{{snakeCase first_entity}}_id": {{snakeCase first_entity}}.id,
+        // @ts-expect-error ignore any type error
+        "{{snakeCase second_entity}}_id": {{snakeCase second_entity}}.id,
+            {{/if}}
+          {{/when}}
         {{/each}}
     };
 }

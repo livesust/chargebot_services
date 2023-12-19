@@ -3,13 +3,17 @@ attributes:
   - attribute: notes
     type: text
     tsType: string
+    not_null: false
 relationships:
   - entity: equipment
+    relation_type: many-to-one
     eager: true
     not_null: true
   - entity: outlet
-    eager: false
+    relation_type: many-to-one
+    eager: true
     not_null: true
   - entity: user
-    eager: false
+    relation_type: many-to-one
+    eager: true
     not_null: true

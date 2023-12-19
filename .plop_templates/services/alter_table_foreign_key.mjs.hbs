@@ -7,7 +7,13 @@ export async function up(db) {
   await db.schema
     .alterTable("{{snakeCase name}}")
     {{#each relationships}}
+      {{#when relation_type 'eq' 'many-to-one'}}
     .addColumn("{{snakeCase entity}}_id", "integer", (col) => col.references('{{snakeCase entity}}.id').onDelete('set null'))
+      {{/when}}
+      {{#when relation_type 'eq' 'many-to-many'}}
+    .addColumn("{{snakeCase first_entity}}_id", "integer", (col) => col.references('{{snakeCase first_entity}}.id').onDelete('set null'))
+    .addColumn("{{snakeCase second_entity}}_id", "integer", (col) => col.references('{{snakeCase second_entity}}.id').onDelete('set null'))
+      {{/when}}
     {{/each}}
     .execute();
 }
@@ -19,7 +25,13 @@ export async function down(db) {
   await db.schema
     .alterTable("{{snakeCase name}}")
     {{#each relationships}}
+      {{#when relation_type 'eq' 'many-to-one'}}
     .dropColumn("{{snakeCase entity}}_id")
+      {{/when}}
+      {{#when relation_type 'eq' 'many-to-many'}}
+    .dropColumn("{{snakeCase first_entity}}_id")
+    .dropColumn("{{snakeCase second_entity}}_id")
+      {{/when}}
     {{/each}}
     .execute();
 }

@@ -3,31 +3,41 @@ attributes:
   - attribute: message displayed
     type: text
     tsType: string
+    not_null: false
   - attribute: push sent
     type: boolean
     tsType: boolean
+    not_null: false
   - attribute: send time
     type: timestamptz
     tsType: Date
+    not_null: false
   - attribute: display time
     type: timestamptz
     tsType: Date
+    not_null: false
   - attribute: show
     type: boolean
     tsType: boolean
+    not_null: false
   - attribute: dismissed
     type: boolean
     tsType: boolean
+    not_null: false
   - attribute: active
     type: boolean
     tsType: boolean
+    not_null: false
   - attribute: alert count
     type: integer
     tsType: number
+    not_null: false
 relationships:
   - entity: alert_type
+    relation_type: many-to-one
     eager: true
     not_null: true
   - entity: bot
+    relation_type: many-to-one
     eager: false
     not_null: true

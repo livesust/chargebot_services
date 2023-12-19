@@ -9,6 +9,8 @@ attributes:
   - attribute: description
     type: text
     tsType: string
+    not_null: false
   - attribute: alert content
     type: text
     tsType: string
+    not_null: false

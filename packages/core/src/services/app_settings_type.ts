@@ -68,7 +68,7 @@ export async function get(id: number): Promise<AppSettingsType | undefined> {
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<AppSettingsType>) {
+export async function findByCriteria(criteria: Partial<AppSettingsType>): Promise<AppSettingsType[]> {
   let query = db.selectFrom('app_settings_type').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -102,5 +102,7 @@ export async function findByCriteria(criteria: Partial<AppSettingsType>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .execute();
 }

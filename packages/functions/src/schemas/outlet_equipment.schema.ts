@@ -1,13 +1,11 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
 import { EntitySchema as EquipmentSchema } from "./equipment.schema";
-// uncoment to enable eager loading
-//import { EntitySchema as OutletSchema } from "./outlet.schema";
-// uncoment to enable eager loading
-//import { EntitySchema as UserSchema } from "./user.schema";
+import { EntitySchema as OutletSchema } from "./outlet.schema";
+import { EntitySchema as UserSchema } from "./user.schema";
 
 const OutletEquipmentSchemaDef = {
-    notes: Joi.string(),
+    notes: Joi.string().allow(null),
 };
 
 export const EntitySchema = Joi.object({
@@ -17,10 +15,8 @@ export const EntitySchema = Joi.object({
     outlet_id: Joi.number(),
     user_id: Joi.number(),
     equipment: EquipmentSchema,
-    // uncoment to enable eager loading
-    //outlet: OutletSchema,
-    // uncoment to enable eager loading
-    //user: UserSchema,
+    outlet: OutletSchema,
+    user: UserSchema,
 });
 
 export const CreateSchema = Joi.object({

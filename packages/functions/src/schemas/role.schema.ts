@@ -16,6 +16,7 @@ export const CreateSchema = Joi.object({
     ...RoleSchemaDef
 }).keys({
     // overwrite keys for required attributes
+    role: Joi.string().max(255).required(),
 });
 
 export const UpdateSchema = Joi.object({

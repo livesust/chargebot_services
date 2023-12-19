@@ -68,7 +68,7 @@ export async function get(id: number): Promise<ScheduledAlert | undefined> {
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<ScheduledAlert>) {
+export async function findByCriteria(criteria: Partial<ScheduledAlert>): Promise<ScheduledAlert[]> {
   let query = db.selectFrom('scheduled_alert').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -109,5 +109,7 @@ export async function findByCriteria(criteria: Partial<ScheduledAlert>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .execute();
 }

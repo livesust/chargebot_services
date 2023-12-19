@@ -61,14 +61,13 @@ export async function get(id: number): Promise<User | undefined> {
     return await db
         .selectFrom("user")
         .selectAll()
-        // uncoment to enable eager loading
-        //.select((eb) => withCompany(eb))
+        .select((eb) => withCompany(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<User>) {
+export async function findByCriteria(criteria: Partial<User>): Promise<User[]> {
   let query = db.selectFrom('user').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -109,6 +108,13 @@ export async function findByCriteria(criteria: Partial<User>) {
   if (criteria.super_admin) {
     query = query.where('super_admin', '=', criteria.super_admin);
   }
+  if (criteria.user_id !== undefined) {
+    query = query.where(
+      'user_id', 
+      criteria.user_id === null ? 'is' : '=', 
+      criteria.user_id
+    );
+  }
 
   if (criteria.created_by) {
     query = query.where('created_by', '=', criteria.created_by);
@@ -122,5 +128,8 @@ export async function findByCriteria(criteria: Partial<User>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .select((eb) => withCompany(eb))
+    .execute();
 }

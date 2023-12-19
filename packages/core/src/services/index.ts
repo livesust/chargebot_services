@@ -20,7 +20,6 @@ import { Customer } from "./customer";
 import { Component } from "./component";
 import { Company } from "./company";
 import { BotUser } from "./bot_user";
-import { BotScheduledAlerts } from "./bot_scheduled_alerts";
 import { BotFirmware } from "./bot_firmware";
 import { BotComponent } from "./bot_component";
 import { BotCompany } from "./bot_company";
@@ -31,6 +30,7 @@ import { AppSettingsType } from "./app_settings_type";
 import { AppInstallPermissions } from "./app_install_permissions";
 import { AppInstall } from "./app_install";
 import { AlertType } from "./alert_type";
+import { UserScheduledAlerts } from "./user_scheduled_alerts";
 // DO NOT REMOVE THIS LINE: PLOP SERVICE IMPORT
 
 export const loadService = async (entity_name: string) => {
@@ -57,7 +57,6 @@ export const loadService = async (entity_name: string) => {
     if ("component" === entity_name) { service = Component; }
     if ("company" === entity_name) { service = Company; }
     if ("bot_user" === entity_name) { service = BotUser; }
-    if ("bot_scheduled_alerts" === entity_name) { service = BotScheduledAlerts; }
     if ("bot_firmware" === entity_name) { service = BotFirmware; }
     if ("bot_component" === entity_name) { service = BotComponent; }
     if ("bot_company" === entity_name) { service = BotCompany; }
@@ -69,6 +68,7 @@ export const loadService = async (entity_name: string) => {
     if ("app_install" === entity_name) { service = AppInstall; }
     if ("alert_type" === entity_name) { service = AlertType; }
 
+    if ("user_scheduled_alerts" === entity_name) { service = UserScheduledAlerts; }
 // DO NOT REMOVE THIS LINE: PLOP SERVICE IF
 
     if (!service) {

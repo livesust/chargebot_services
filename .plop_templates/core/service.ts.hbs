@@ -7,6 +7,7 @@ import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { {{pascalCase name}}, {{pascalCase name}}Update, New{{pascalCase name}} } from "../database/{{snakeCase name}}";
 
 {{#each relationships}}
+  {{#when relation_type 'eq' 'many-to-one'}}
 function with{{pascalCase entity}}(eb: ExpressionBuilder<Database, '{{snakeCase ../name}}'>) {
     return jsonObjectFrom(
       eb.selectFrom('{{snakeCase entity}}')
@@ -14,6 +15,23 @@ function with{{pascalCase entity}}(eb: ExpressionBuilder<Database, '{{snakeCase 
         .whereRef('{{snakeCase entity}}.id', '=', '{{snakeCase ../name}}.{{snakeCase entity}}_id')
     ).as('{{snakeCase entity}}')
 }
+  {{/when}}
+  {{#when relation_type 'eq' 'many-to-many'}}
+function with{{pascalCase first_entity}}(eb: ExpressionBuilder<Database, '{{snakeCase ../name}}'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('{{snakeCase first_entity}}')
+        .selectAll()
+        .whereRef('{{snakeCase first_entity}}.id', '=', '{{snakeCase ../name}}.{{snakeCase first_entity}}_id')
+    ).as('{{snakeCase first_entity}}')
+}
+function with{{pascalCase second_entity}}(eb: ExpressionBuilder<Database, '{{snakeCase ../name}}'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('{{snakeCase second_entity}}')
+        .selectAll()
+        .whereRef('{{snakeCase second_entity}}.id', '=', '{{snakeCase ../name}}.{{snakeCase second_entity}}_id')
+    ).as('{{snakeCase second_entity}}')
+}
+  {{/when}}
 {{/each}}
 
 export async function create({{snakeCase name}}: New{{pascalCase name}}): Promise<{{pascalCase name}} | undefined> {
@@ -34,6 +52,22 @@ export async function create({{snakeCase name}}: New{{pascalCase name}}): Promis
         throw Error('Entity already exists with unique values');
     }
     {{/any}}
+    {{#each relationships}}
+      {{#when relation_type 'eq' 'many-to-many'}}
+    // check if many-to-many record already exists
+    const existent = await db
+          .selectFrom("{{snakeCase ../name}}")
+          .selectAll()
+          .where('{{snakeCase first_entity}}_id', '=', {{snakeCase ../name}}.{{snakeCase first_entity}}_id)
+          .where('{{snakeCase second_entity}}_id', '=', {{snakeCase ../name}}.{{snakeCase second_entity}}_id)
+          .where('deleted_by', 'is', null)
+          .executeTakeFirst();
+    if (existent) {
+        // return existent many-to-many record, do not create a new one
+        return existent;
+    }
+      {{/when}}
+    {{/each}}
     return await db
         .insertInto('{{snakeCase name}}')
         .values({
@@ -88,19 +122,31 @@ export async function get(id: number): Promise<{{pascalCase name}} | undefined> 
         .selectFrom("{{snakeCase name}}")
         .selectAll()
         {{#each relationships}}
-        {{#if eager}}
+          {{#when relation_type 'eq' 'many-to-one'}}
+            {{#if eager}}
         .select((eb) => with{{pascalCase entity}}(eb))
-        {{else}}
+            {{else}}
         // uncoment to enable eager loading
         //.select((eb) => with{{pascalCase entity}}(eb))
-        {{/if}}
+            {{/if}}
+          {{/when}}
+          {{#when relation_type 'eq' 'many-to-many'}}
+            {{#if eager}}
+        .select((eb) => with{{pascalCase first_entity}}(eb))
+        .select((eb) => with{{pascalCase second_entity}}(eb))
+            {{else}}
+        // uncoment to enable eager loading
+        // .select((eb) => with{{pascalCase first_entity}}(eb))
+        // .select((eb) => with{{pascalCase second_entity}}(eb))
+            {{/if}}
+          {{/when}}
         {{/each}}
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<{{pascalCase name}}>) {
+export async function findByCriteria(criteria: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}}[]> {
   let query = db.selectFrom('{{snakeCase name}}').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -136,5 +182,27 @@ export async function findByCriteria(criteria: Partial<{{pascalCase name}}>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    {{#each relationships}}
+      {{#when relation_type 'eq' 'many-to-one'}}
+        {{#if eager}}
+    .select((eb) => with{{pascalCase entity}}(eb))
+        {{else}}
+    // uncoment to enable eager loading
+    //.select((eb) => with{{pascalCase entity}}(eb))
+        {{/if}}
+      {{/when}}
+      {{#when relation_type 'eq' 'many-to-many'}}
+        {{#if eager}}
+    .select((eb) => with{{pascalCase first_entity}}(eb))
+    .select((eb) => with{{pascalCase second_entity}}(eb))
+        {{else}}
+    // uncoment to enable eager loading
+    // .select((eb) => with{{pascalCase first_entity}}(eb))
+    // .select((eb) => with{{pascalCase second_entity}}(eb))
+        {{/if}}
+      {{/when}}
+    {{/each}}
+    .execute();
 }

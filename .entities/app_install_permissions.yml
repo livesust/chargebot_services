@@ -3,10 +3,10 @@ attributes:
   - attribute: permission_status
     type: boolean
     tsType: boolean
+    not_null: false
 relationships:
-  - entity: app_install
-    eager: true
-    not_null: true
-  - entity: permission
+  - relation_type: many-to-many
+    first_entity: app_install
+    second_entity: permission
     eager: true
     not_null: true

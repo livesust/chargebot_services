@@ -1,26 +1,24 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
 import { EntitySchema as ScheduledAlertSchema } from "./scheduled_alert.schema";
-// uncoment to enable eager loading
-//import { EntitySchema as UserSchema } from "./user.schema";
+import { EntitySchema as UserSchema } from "./user.schema";
 
-const BotScheduledAlertsSchemaDef = {
-    alert_status: Joi.boolean(),
+const UserScheduledAlertsSchemaDef = {
+    alert_status: Joi.boolean().allow(null),
 };
 
 export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
-    ...BotScheduledAlertsSchemaDef,
+    ...UserScheduledAlertsSchemaDef,
     scheduled_alert_id: Joi.number(),
     user_id: Joi.number(),
     scheduled_alert: ScheduledAlertSchema,
-    // uncoment to enable eager loading
-    //user: UserSchema,
+    user: UserSchema,
 });
 
 export const CreateSchema = Joi.object({
     ...AuditedEntityCreateSchemaDef,
-    ...BotScheduledAlertsSchemaDef
+    ...UserScheduledAlertsSchemaDef
 }).keys({
     // overwrite keys for required attributes
     scheduled_alert_id: Joi.number().required(),
@@ -29,12 +27,12 @@ export const CreateSchema = Joi.object({
 
 export const UpdateSchema = Joi.object({
     ...AuditedEntityUpdateSchemaDef,
-    ...BotScheduledAlertsSchemaDef
+    ...UserScheduledAlertsSchemaDef
 });
 
 export const SearchSchema = Joi.object({
     id: Joi.number(),
-    ...BotScheduledAlertsSchemaDef
+    ...UserScheduledAlertsSchemaDef
 });
 
 export const ResponseSchema = Joi.object({

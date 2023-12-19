@@ -4,7 +4,7 @@ import { EntitySchema as AppInstallSchema } from "./app_install.schema";
 import { EntitySchema as PermissionSchema } from "./permission.schema";
 
 const AppInstallPermissionsSchemaDef = {
-    permission_status: Joi.boolean(),
+    permission_status: Joi.boolean().allow(null),
 };
 
 export const EntitySchema = Joi.object({

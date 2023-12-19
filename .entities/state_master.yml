@@ -5,11 +5,13 @@ attributes:
     varchar_length: '100'
     tsType: string
     unique: true
+    not_null: true
   - attribute: abbreviation
     type: varchar
     varchar_length: '45'
     tsType: string
     unique: true
+    not_null: true
   - attribute: country
     type: varchar
     varchar_length: '255'

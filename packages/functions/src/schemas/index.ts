@@ -20,7 +20,6 @@ import * as Customer from "./customer.schema";
 import * as Component from "./component.schema";
 import * as Company from "./company.schema";
 import * as BotUser from "./bot_user.schema";
-import * as BotScheduledAlerts from "./bot_scheduled_alerts.schema";
 import * as BotFirmware from "./bot_firmware.schema";
 import * as BotComponent from "./bot_component.schema";
 import * as BotCompany from "./bot_company.schema";
@@ -31,6 +30,7 @@ import * as AppSettingsType from "./app_settings_type.schema";
 import * as AppInstallPermissions from "./app_install_permissions.schema";
 import * as AppInstall from "./app_install.schema";
 import * as AlertType from "./alert_type.schema";
+import * as UserScheduledAlerts from "./user_scheduled_alerts.schema";
 // DO NOT REMOVE THIS LINE: PLOP SCHEMA IMPORT
 
 export const loadSchemas = (entity_name: string) => {
@@ -57,7 +57,6 @@ export const loadSchemas = (entity_name: string) => {
     if ("component" === entity_name) { schema = Component; }
     if ("company" === entity_name) { schema = Company; }
     if ("bot_user" === entity_name) { schema = BotUser; }
-    if ("bot_scheduled_alerts" === entity_name) { schema = BotScheduledAlerts; }
     if ("bot_firmware" === entity_name) { schema = BotFirmware; }
     if ("bot_component" === entity_name) { schema = BotComponent; }
     if ("bot_company" === entity_name) { schema = BotCompany; }
@@ -68,6 +67,7 @@ export const loadSchemas = (entity_name: string) => {
     if ("app_install_permissions" === entity_name) { schema = AppInstallPermissions; }
     if ("app_install" === entity_name) { schema = AppInstall; }
     if ("alert_type" === entity_name) { schema = AlertType; }
+    if ("user_scheduled_alerts" === entity_name) { schema = UserScheduledAlerts; }
 // DO NOT REMOVE THIS LINE: PLOP SCHEMA IF
 
     if (!schema) {

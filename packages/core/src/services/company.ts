@@ -68,15 +68,14 @@ export async function get(id: number): Promise<Company | undefined> {
     return await db
         .selectFrom("company")
         .selectAll()
-        // uncoment to enable eager loading
-        //.select((eb) => withCustomer(eb))
+        .select((eb) => withCustomer(eb))
         .select((eb) => withHomeMaster(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<Company>) {
+export async function findByCriteria(criteria: Partial<Company>): Promise<Company[]> {
   let query = db.selectFrom('company').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -117,5 +116,9 @@ export async function findByCriteria(criteria: Partial<Company>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .select((eb) => withCustomer(eb))
+    .select((eb) => withHomeMaster(eb))
+    .execute();
 }

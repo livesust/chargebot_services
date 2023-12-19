@@ -8,10 +8,13 @@ attributes:
   - attribute: verified
     type: boolean
     tsType: boolean
+    not_null: false
   - attribute: primary
     type: boolean
     tsType: boolean
+    not_null: false
 relationships:
   - entity: user
+    relation_type: many-to-one
     eager: false
     not_null: true

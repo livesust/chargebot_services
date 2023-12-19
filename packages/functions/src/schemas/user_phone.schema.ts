@@ -5,8 +5,8 @@ import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEnti
 
 const UserPhoneSchemaDef = {
     phone_number: Joi.string(),
-    send_text: Joi.boolean(),
-    primary: Joi.boolean(),
+    send_text: Joi.boolean().allow(null),
+    primary: Joi.boolean().allow(null),
 };
 
 export const EntitySchema = Joi.object({

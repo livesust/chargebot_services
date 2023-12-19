@@ -78,7 +78,7 @@ export async function get(id: number): Promise<Bot | undefined> {
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<Bot>) {
+export async function findByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
   let query = db.selectFrom('bot').where('deleted_by', 'is', null)
 
   if (criteria.id) {
@@ -126,5 +126,8 @@ export async function findByCriteria(criteria: Partial<Bot>) {
     );
   }
 
-  return await query.selectAll().execute();
+  return await query
+    .selectAll()
+    .select((eb) => withBotVersion(eb))
+    .execute();
 }

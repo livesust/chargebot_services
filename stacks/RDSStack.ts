@@ -20,7 +20,7 @@ export function RDSStack({ app, stack }: StackContext) {
                 maxCapacity: 'ACU_64',
             }
             : {
-                autoPause: true,
+                autoPause: 15,  // 15min inactive before the cluster is paused
                 minCapacity: 'ACU_2',
                 maxCapacity: 'ACU_2',
             },

@@ -4,12 +4,12 @@ import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEnti
 const AlertTypeSchemaDef = {
     name: Joi.string().max(255),
     description: Joi.string().allow(null),
-    priority: Joi.string().max(255),
-    severity: Joi.string().max(255),
+    priority: Joi.string().max(255).allow(null),
+    severity: Joi.string().max(255).allow(null),
     color_code: Joi.string().max(100),
-    send_push: Joi.boolean(),
+    send_push: Joi.boolean().allow(null),
     alert_text: Joi.string().max(255),
-    alert_link: Joi.string(),
+    alert_link: Joi.string().allow(null),
 };
 
 export const EntitySchema = Joi.object({
@@ -22,6 +22,7 @@ export const CreateSchema = Joi.object({
     ...AlertTypeSchemaDef
 }).keys({
     // overwrite keys for required attributes
+    name: Joi.string().max(255).required(),
     color_code: Joi.string().max(100).required(),
     alert_text: Joi.string().max(255).required(),
 });

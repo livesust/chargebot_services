@@ -1,9 +1,11 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
+import { AppSettingsType } from "./app_settings_type";
 
 export interface UniversalAppSettingsTable extends AuditedEntity {
-  setting_value?: string;
+  setting_value: string;
   app_settings_type_id: number;
+  app_settings_type?: AppSettingsType;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

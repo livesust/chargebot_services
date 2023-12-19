@@ -3,8 +3,8 @@ import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEnti
 
 const ScheduledAlertSchemaDef = {
     name: Joi.string().max(255),
-    description: Joi.string(),
-    alert_content: Joi.string(),
+    description: Joi.string().allow(null),
+    alert_content: Joi.string().allow(null),
 };
 
 export const EntitySchema = Joi.object({

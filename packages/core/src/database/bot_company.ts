@@ -1,10 +1,14 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
+import { Bot } from "./bot";
+import { Company } from "./company";
 
 export interface BotCompanyTable extends AuditedEntity {
   acquire_date: Date;
   bot_id: number;
   company_id: number;
+  bot?: Bot;
+  company?: Company;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should
