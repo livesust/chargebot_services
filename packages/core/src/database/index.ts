@@ -24,7 +24,6 @@ import { EquipmentTypeTable } from "./equipment_type";
 import { EquipmentTable } from "./equipment";
 import { ComponentTable } from "./component";
 import { BotVersionTable } from "./bot_version";
-import { BotScheduledAlertsTable } from "./bot_scheduled_alerts";
 import { BotFirmwareTable } from "./bot_firmware";
 import { BotComponentTable } from "./bot_component";
 import { BotCompanyTable } from "./bot_company";
@@ -63,7 +62,6 @@ export interface Database {
   equipment: EquipmentTable,
   component: ComponentTable,
   bot_version: BotVersionTable,
-  bot_scheduled_alerts: BotScheduledAlertsTable,
   bot_firmware: BotFirmwareTable,
   bot_component: BotComponentTable,
   bot_company: BotCompanyTable,

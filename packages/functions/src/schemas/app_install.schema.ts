@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
+import { EntitySchema as UserSchema } from "./user.schema";
 
 const AppInstallSchemaDef = {
     app_version: Joi.string().max(255),
@@ -11,6 +12,8 @@ const AppInstallSchemaDef = {
 export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
     ...AppInstallSchemaDef,
+    user_id: Joi.number(),
+    user: UserSchema,
 });
 
 export const CreateSchema = Joi.object({
@@ -21,6 +24,7 @@ export const CreateSchema = Joi.object({
     app_version: Joi.string().max(255).required(),
     platform: Joi.string().max(100).required(),
     os_version: Joi.string().max(100).required(),
+    user_id: Joi.number().required(),
 });
 
 export const UpdateSchema = Joi.object({

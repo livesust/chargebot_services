@@ -1,12 +1,16 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { OutletSchedule } from "../src/services/outlet_schedule";
 import { getRandom } from './utils';
+import { createAndSaveOutlet, removeOutlet } from "./outlet.test";
 
 
 // @ts-expect-error ignore any type error
 let entity_id;
+// @ts-expect-error ignore any type error
+let outlet;
 
 export async function createAndSaveOutletSchedule() {
+    outlet = await createAndSaveOutlet();
     // @ts-expect-error ignore error
     return OutletSchedule.create(getOutletScheduleInstance());
 }
@@ -14,6 +18,8 @@ export async function createAndSaveOutletSchedule() {
 export async function removeOutletSchedule(id: number) {
     // run delete query to clean database
     await OutletSchedule.hard_remove(id);
+    // @ts-expect-error ignore any type error
+    await removeOutlet(outlet.id);
 }
 
 function getOutletScheduleInstance() {
@@ -22,6 +28,8 @@ function getOutletScheduleInstance() {
         "all_day": getRandom('boolean'),
         "start_time": getRandom('timestamp'),
         "end_time": getRandom('timestamp'),
+        // @ts-expect-error ignore any type error
+        "outlet_id": outlet.id,
     };
 }
 

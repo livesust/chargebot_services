@@ -4,6 +4,20 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { Company, CompanyUpdate, NewCompany } from "../database/company";
 
+function withCustomer(eb: ExpressionBuilder<Database, 'company'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('customer')
+        .selectAll()
+        .whereRef('customer.id', '=', 'company.customer_id')
+    ).as('customer')
+}
+function withHomeMaster(eb: ExpressionBuilder<Database, 'company'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('home_master')
+        .selectAll()
+        .whereRef('home_master.id', '=', 'company.home_master_id')
+    ).as('home_master')
+}
 
 export async function create(company: NewCompany): Promise<Company | undefined> {
     return await db
@@ -54,6 +68,8 @@ export async function get(id: number): Promise<Company | undefined> {
     return await db
         .selectFrom("company")
         .selectAll()
+        .select((eb) => withCustomer(eb))
+        .select((eb) => withHomeMaster(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
@@ -102,5 +118,7 @@ export async function findByCriteria(criteria: Partial<Company>): Promise<Compan
 
   return await query
     .selectAll()
+    .select((eb) => withCustomer(eb))
+    .select((eb) => withHomeMaster(eb))
     .execute();
 }

@@ -4,6 +4,13 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { Bot, BotUpdate, NewBot } from "../database/bot";
 
+function withBotVersion(eb: ExpressionBuilder<Database, 'bot'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('bot_version')
+        .selectAll()
+        .whereRef('bot_version.id', '=', 'bot.bot_version_id')
+    ).as('bot_version')
+}
 
 export async function create(bot: NewBot): Promise<Bot | undefined> {
     const exists = await db
@@ -65,6 +72,7 @@ export async function get(id: number): Promise<Bot | undefined> {
     return await db
         .selectFrom("bot")
         .selectAll()
+        .select((eb) => withBotVersion(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
@@ -120,5 +128,6 @@ export async function findByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
 
   return await query
     .selectAll()
+    .select((eb) => withBotVersion(eb))
     .execute();
 }

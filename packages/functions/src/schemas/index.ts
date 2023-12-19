@@ -20,7 +20,6 @@ import * as Customer from "./customer.schema";
 import * as Component from "./component.schema";
 import * as Company from "./company.schema";
 import * as BotUser from "./bot_user.schema";
-import * as BotScheduledAlerts from "./bot_scheduled_alerts.schema";
 import * as BotFirmware from "./bot_firmware.schema";
 import * as BotComponent from "./bot_component.schema";
 import * as BotCompany from "./bot_company.schema";
@@ -58,7 +57,6 @@ export const loadSchemas = (entity_name: string) => {
     if ("component" === entity_name) { schema = Component; }
     if ("company" === entity_name) { schema = Company; }
     if ("bot_user" === entity_name) { schema = BotUser; }
-    if ("bot_scheduled_alerts" === entity_name) { schema = BotScheduledAlerts; }
     if ("bot_firmware" === entity_name) { schema = BotFirmware; }
     if ("bot_component" === entity_name) { schema = BotComponent; }
     if ("bot_company" === entity_name) { schema = BotCompany; }

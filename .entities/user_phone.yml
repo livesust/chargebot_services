@@ -15,5 +15,6 @@ attributes:
     not_null: false
 relationships:
   - entity: user
+    relation_type: many-to-one
     eager: false
     not_null: true

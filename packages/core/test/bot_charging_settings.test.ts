@@ -1,12 +1,16 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { BotChargingSettings } from "../src/services/bot_charging_settings";
 import { getRandom } from './utils';
+import { createAndSaveBot, removeBot } from "./bot.test";
 
 
 // @ts-expect-error ignore any type error
 let entity_id;
+// @ts-expect-error ignore any type error
+let bot;
 
 export async function createAndSaveBotChargingSettings() {
+    bot = await createAndSaveBot();
     // @ts-expect-error ignore error
     return BotChargingSettings.create(getBotChargingSettingsInstance());
 }
@@ -14,6 +18,8 @@ export async function createAndSaveBotChargingSettings() {
 export async function removeBotChargingSettings(id: number) {
     // run delete query to clean database
     await BotChargingSettings.hard_remove(id);
+    // @ts-expect-error ignore any type error
+    await removeBot(bot.id);
 }
 
 function getBotChargingSettingsInstance() {
@@ -22,6 +28,8 @@ function getBotChargingSettingsInstance() {
         "all_day": getRandom('boolean'),
         "start_time": getRandom('timestamp'),
         "end_time": getRandom('timestamp'),
+        // @ts-expect-error ignore any type error
+        "bot_id": bot.id,
     };
 }
 

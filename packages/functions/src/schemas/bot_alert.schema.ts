@@ -1,5 +1,8 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
+import { EntitySchema as AlertTypeSchema } from "./alert_type.schema";
+// uncoment to enable eager loading
+//import { EntitySchema as BotSchema } from "./bot.schema";
 
 const BotAlertSchemaDef = {
     message_displayed: Joi.string().allow(null),
@@ -15,6 +18,11 @@ const BotAlertSchemaDef = {
 export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
     ...BotAlertSchemaDef,
+    alert_type_id: Joi.number(),
+    bot_id: Joi.number(),
+    alert_type: AlertTypeSchema,
+    // uncoment to enable eager loading
+    //bot: BotSchema,
 });
 
 export const CreateSchema = Joi.object({
@@ -22,6 +30,8 @@ export const CreateSchema = Joi.object({
     ...BotAlertSchemaDef
 }).keys({
     // overwrite keys for required attributes
+    alert_type_id: Joi.number().required(),
+    bot_id: Joi.number().required(),
 });
 
 export const UpdateSchema = Joi.object({

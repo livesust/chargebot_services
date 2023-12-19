@@ -24,8 +24,10 @@ attributes:
     not_null: false
 relationships:
   - entity: equipment_type
+    relation_type: many-to-one
     eager: true
     not_null: true
   - entity: customer
+    relation_type: many-to-one
     eager: false
     not_null: true

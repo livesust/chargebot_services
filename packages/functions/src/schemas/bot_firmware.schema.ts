@@ -1,5 +1,7 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
+// uncoment to enable eager loading
+//import { EntitySchema as BotSchema } from "./bot.schema";
 
 const BotFirmwareSchemaDef = {
     inverter_version: Joi.string().max(255),
@@ -13,6 +15,9 @@ const BotFirmwareSchemaDef = {
 export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
     ...BotFirmwareSchemaDef,
+    bot_id: Joi.number(),
+    // uncoment to enable eager loading
+    //bot: BotSchema,
 });
 
 export const CreateSchema = Joi.object({
@@ -25,6 +30,7 @@ export const CreateSchema = Joi.object({
     firmware_version: Joi.string().max(255).required(),
     battery_version: Joi.string().max(255).required(),
     pdu_version: Joi.string().max(255).required(),
+    bot_id: Joi.number().required(),
 });
 
 export const UpdateSchema = Joi.object({

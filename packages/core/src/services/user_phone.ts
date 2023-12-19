@@ -4,6 +4,13 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { UserPhone, UserPhoneUpdate, NewUserPhone } from "../database/user_phone";
 
+function withUser(eb: ExpressionBuilder<Database, 'user_phone'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('user')
+        .selectAll()
+        .whereRef('user.id', '=', 'user_phone.user_id')
+    ).as('user')
+}
 
 export async function create(user_phone: NewUserPhone): Promise<UserPhone | undefined> {
     const exists = await db
@@ -65,6 +72,8 @@ export async function get(id: number): Promise<UserPhone | undefined> {
     return await db
         .selectFrom("user_phone")
         .selectAll()
+        // uncoment to enable eager loading
+        //.select((eb) => withUser(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
@@ -105,5 +114,7 @@ export async function findByCriteria(criteria: Partial<UserPhone>): Promise<User
 
   return await query
     .selectAll()
+    // uncoment to enable eager loading
+    //.select((eb) => withUser(eb))
     .execute();
 }

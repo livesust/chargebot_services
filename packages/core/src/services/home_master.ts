@@ -4,6 +4,13 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { HomeMaster, HomeMasterUpdate, NewHomeMaster } from "../database/home_master";
 
+function withStateMaster(eb: ExpressionBuilder<Database, 'home_master'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('state_master')
+        .selectAll()
+        .whereRef('state_master.id', '=', 'home_master.state_master_id')
+    ).as('state_master')
+}
 
 export async function create(home_master: NewHomeMaster): Promise<HomeMaster | undefined> {
     return await db
@@ -54,6 +61,7 @@ export async function get(id: number): Promise<HomeMaster | undefined> {
     return await db
         .selectFrom("home_master")
         .selectAll()
+        .select((eb) => withStateMaster(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
@@ -115,5 +123,6 @@ export async function findByCriteria(criteria: Partial<HomeMaster>): Promise<Hom
 
   return await query
     .selectAll()
+    .select((eb) => withStateMaster(eb))
     .execute();
 }

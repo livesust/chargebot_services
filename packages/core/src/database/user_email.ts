@@ -5,6 +5,7 @@ export interface UserEmailTable extends AuditedEntity {
   email_address: string;
   verified?: boolean;
   primary?: boolean;
+  user_id: number;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

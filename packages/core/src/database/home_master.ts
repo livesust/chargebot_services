@@ -1,5 +1,6 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
+import { StateMaster } from "./state_master";
 
 export interface HomeMasterTable extends AuditedEntity {
   address_line_1: string;
@@ -8,6 +9,8 @@ export interface HomeMasterTable extends AuditedEntity {
   zip_code: string;
   latitude: number;
   longitude: number;
+  state_master_id: number;
+  state_master?: StateMaster;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

@@ -6,11 +6,14 @@ attributes:
     not_null: false
 relationships:
   - entity: equipment
+    relation_type: many-to-one
     eager: true
     not_null: true
   - entity: outlet
+    relation_type: many-to-one
     eager: true
     not_null: true
   - entity: user
+    relation_type: many-to-one
     eager: true
     not_null: true

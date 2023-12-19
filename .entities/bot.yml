@@ -22,5 +22,6 @@ attributes:
     not_null: false
 relationships:
   - entity: bot_version
+    relation_type: many-to-one
     eager: true
     not_null: true

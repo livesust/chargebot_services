@@ -35,5 +35,6 @@ attributes:
     not_null: true
 relationships:
   - entity: company
-    eager: false
+    relation_type: many-to-one
+    eager: true
     not_null: true

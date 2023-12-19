@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
+import { EntitySchema as StateMasterSchema } from "./state_master.schema";
 
 const HomeMasterSchemaDef = {
     address_line_1: Joi.string(),
@@ -13,6 +14,8 @@ const HomeMasterSchemaDef = {
 export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
     ...HomeMasterSchemaDef,
+    state_master_id: Joi.number(),
+    state_master: StateMasterSchema,
 });
 
 export const CreateSchema = Joi.object({
@@ -25,6 +28,7 @@ export const CreateSchema = Joi.object({
     zip_code: Joi.string().max(100).required(),
     latitude: Joi.number().required(),
     longitude: Joi.number().required(),
+    state_master_id: Joi.number().required(),
 });
 
 export const UpdateSchema = Joi.object({

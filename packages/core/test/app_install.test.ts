@@ -1,12 +1,16 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { AppInstall } from "../src/services/app_install";
 import { getRandom } from './utils';
+import { createAndSaveUser, removeUser } from "./user.test";
 
 
 // @ts-expect-error ignore any type error
 let entity_id;
+// @ts-expect-error ignore any type error
+let user;
 
 export async function createAndSaveAppInstall() {
+    user = await createAndSaveUser();
     // @ts-expect-error ignore error
     return AppInstall.create(getAppInstallInstance());
 }
@@ -14,6 +18,8 @@ export async function createAndSaveAppInstall() {
 export async function removeAppInstall(id: number) {
     // run delete query to clean database
     await AppInstall.hard_remove(id);
+    // @ts-expect-error ignore any type error
+    await removeUser(user.id);
 }
 
 function getAppInstallInstance() {
@@ -22,6 +28,8 @@ function getAppInstallInstance() {
         "platform": getRandom('varchar', 100),
         "os_version": getRandom('varchar', 100),
         "description": getRandom('text'),
+        // @ts-expect-error ignore any type error
+        "user_id": user.id,
     };
 }
 

@@ -31,5 +31,6 @@ attributes:
     not_null: false
 relationships:
   - entity: bot
+    relation_type: many-to-one
     eager: false
     not_null: true

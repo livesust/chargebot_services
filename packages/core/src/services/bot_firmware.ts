@@ -4,6 +4,13 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { BotFirmware, BotFirmwareUpdate, NewBotFirmware } from "../database/bot_firmware";
 
+function withBot(eb: ExpressionBuilder<Database, 'bot_firmware'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('bot')
+        .selectAll()
+        .whereRef('bot.id', '=', 'bot_firmware.bot_id')
+    ).as('bot')
+}
 
 export async function create(bot_firmware: NewBotFirmware): Promise<BotFirmware | undefined> {
     return await db
@@ -54,6 +61,8 @@ export async function get(id: number): Promise<BotFirmware | undefined> {
     return await db
         .selectFrom("bot_firmware")
         .selectAll()
+        // uncoment to enable eager loading
+        //.select((eb) => withBot(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
@@ -123,5 +132,7 @@ export async function findByCriteria(criteria: Partial<BotFirmware>): Promise<Bo
 
   return await query
     .selectAll()
+    // uncoment to enable eager loading
+    //.select((eb) => withBot(eb))
     .execute();
 }

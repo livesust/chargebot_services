@@ -20,7 +20,6 @@ import { Customer } from "./customer";
 import { Component } from "./component";
 import { Company } from "./company";
 import { BotUser } from "./bot_user";
-import { BotScheduledAlerts } from "./bot_scheduled_alerts";
 import { BotFirmware } from "./bot_firmware";
 import { BotComponent } from "./bot_component";
 import { BotCompany } from "./bot_company";
@@ -58,7 +57,6 @@ export const loadService = async (entity_name: string) => {
     if ("component" === entity_name) { service = Component; }
     if ("company" === entity_name) { service = Company; }
     if ("bot_user" === entity_name) { service = BotUser; }
-    if ("bot_scheduled_alerts" === entity_name) { service = BotScheduledAlerts; }
     if ("bot_firmware" === entity_name) { service = BotFirmware; }
     if ("bot_component" === entity_name) { service = BotComponent; }
     if ("bot_company" === entity_name) { service = BotCompany; }

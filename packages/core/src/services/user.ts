@@ -4,6 +4,13 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { User, UserUpdate, NewUser } from "../database/user";
 
+function withCompany(eb: ExpressionBuilder<Database, 'user'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('company')
+        .selectAll()
+        .whereRef('company.id', '=', 'user.company_id')
+    ).as('company')
+}
 
 export async function create(user: NewUser): Promise<User | undefined> {
     return await db
@@ -54,6 +61,7 @@ export async function get(id: number): Promise<User | undefined> {
     return await db
         .selectFrom("user")
         .selectAll()
+        .select((eb) => withCompany(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
@@ -122,5 +130,6 @@ export async function findByCriteria(criteria: Partial<User>): Promise<User[]> {
 
   return await query
     .selectAll()
+    .select((eb) => withCompany(eb))
     .execute();
 }

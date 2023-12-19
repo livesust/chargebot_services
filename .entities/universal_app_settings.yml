@@ -8,5 +8,6 @@ attributes:
     not_null: true
 relationships:
   - entity: app_settings_type
+    relation_type: many-to-one
     eager: true
     not_null: true

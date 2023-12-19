@@ -1,12 +1,24 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { OutletEquipment } from "../src/services/outlet_equipment";
 import { getRandom } from './utils';
+import { createAndSaveEquipment, removeEquipment } from "./equipment.test";
+import { createAndSaveOutlet, removeOutlet } from "./outlet.test";
+import { createAndSaveUser, removeUser } from "./user.test";
 
 
 // @ts-expect-error ignore any type error
 let entity_id;
+// @ts-expect-error ignore any type error
+let equipment;
+// @ts-expect-error ignore any type error
+let outlet;
+// @ts-expect-error ignore any type error
+let user;
 
 export async function createAndSaveOutletEquipment() {
+    equipment = await createAndSaveEquipment();
+    outlet = await createAndSaveOutlet();
+    user = await createAndSaveUser();
     // @ts-expect-error ignore error
     return OutletEquipment.create(getOutletEquipmentInstance());
 }
@@ -14,11 +26,23 @@ export async function createAndSaveOutletEquipment() {
 export async function removeOutletEquipment(id: number) {
     // run delete query to clean database
     await OutletEquipment.hard_remove(id);
+    // @ts-expect-error ignore any type error
+    await removeEquipment(equipment.id);
+    // @ts-expect-error ignore any type error
+    await removeOutlet(outlet.id);
+    // @ts-expect-error ignore any type error
+    await removeUser(user.id);
 }
 
 function getOutletEquipmentInstance() {
     return {
         "notes": getRandom('text'),
+        // @ts-expect-error ignore any type error
+        "equipment_id": equipment.id,
+        // @ts-expect-error ignore any type error
+        "outlet_id": outlet.id,
+        // @ts-expect-error ignore any type error
+        "user_id": user.id,
     };
 }
 

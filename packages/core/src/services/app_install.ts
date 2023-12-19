@@ -4,6 +4,13 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { AppInstall, AppInstallUpdate, NewAppInstall } from "../database/app_install";
 
+function withUser(eb: ExpressionBuilder<Database, 'app_install'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('user')
+        .selectAll()
+        .whereRef('user.id', '=', 'app_install.user_id')
+    ).as('user')
+}
 
 export async function create(app_install: NewAppInstall): Promise<AppInstall | undefined> {
     return await db
@@ -54,6 +61,7 @@ export async function get(id: number): Promise<AppInstall | undefined> {
     return await db
         .selectFrom("app_install")
         .selectAll()
+        .select((eb) => withUser(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
@@ -109,5 +117,6 @@ export async function findByCriteria(criteria: Partial<AppInstall>): Promise<App
 
   return await query
     .selectAll()
+    .select((eb) => withUser(eb))
     .execute();
 }

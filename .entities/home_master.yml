@@ -28,5 +28,6 @@ attributes:
     not_null: true
 relationships:
   - entity: state_master
+    relation_type: many-to-one
     eager: true
     not_null: true

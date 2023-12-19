@@ -4,6 +4,20 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { Equipment, EquipmentUpdate, NewEquipment } from "../database/equipment";
 
+function withEquipmentType(eb: ExpressionBuilder<Database, 'equipment'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('equipment_type')
+        .selectAll()
+        .whereRef('equipment_type.id', '=', 'equipment.equipment_type_id')
+    ).as('equipment_type')
+}
+function withCustomer(eb: ExpressionBuilder<Database, 'equipment'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('customer')
+        .selectAll()
+        .whereRef('customer.id', '=', 'equipment.customer_id')
+    ).as('customer')
+}
 
 export async function create(equipment: NewEquipment): Promise<Equipment | undefined> {
     return await db
@@ -54,6 +68,9 @@ export async function get(id: number): Promise<Equipment | undefined> {
     return await db
         .selectFrom("equipment")
         .selectAll()
+        .select((eb) => withEquipmentType(eb))
+        // uncoment to enable eager loading
+        //.select((eb) => withCustomer(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
@@ -108,5 +125,8 @@ export async function findByCriteria(criteria: Partial<Equipment>): Promise<Equi
 
   return await query
     .selectAll()
+    .select((eb) => withEquipmentType(eb))
+    // uncoment to enable eager loading
+    //.select((eb) => withCustomer(eb))
     .execute();
 }

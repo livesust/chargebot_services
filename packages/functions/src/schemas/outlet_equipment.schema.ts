@@ -1,5 +1,8 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
+import { EntitySchema as EquipmentSchema } from "./equipment.schema";
+import { EntitySchema as OutletSchema } from "./outlet.schema";
+import { EntitySchema as UserSchema } from "./user.schema";
 
 const OutletEquipmentSchemaDef = {
     notes: Joi.string().allow(null),
@@ -8,6 +11,12 @@ const OutletEquipmentSchemaDef = {
 export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
     ...OutletEquipmentSchemaDef,
+    equipment_id: Joi.number(),
+    outlet_id: Joi.number(),
+    user_id: Joi.number(),
+    equipment: EquipmentSchema,
+    outlet: OutletSchema,
+    user: UserSchema,
 });
 
 export const CreateSchema = Joi.object({
@@ -15,6 +24,9 @@ export const CreateSchema = Joi.object({
     ...OutletEquipmentSchemaDef
 }).keys({
     // overwrite keys for required attributes
+    equipment_id: Joi.number().required(),
+    outlet_id: Joi.number().required(),
+    user_id: Joi.number().required(),
 });
 
 export const UpdateSchema = Joi.object({

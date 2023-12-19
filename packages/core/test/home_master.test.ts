@@ -1,12 +1,16 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { HomeMaster } from "../src/services/home_master";
 import { getRandom } from './utils';
+import { createAndSaveStateMaster, removeStateMaster } from "./state_master.test";
 
 
 // @ts-expect-error ignore any type error
 let entity_id;
+// @ts-expect-error ignore any type error
+let state_master;
 
 export async function createAndSaveHomeMaster() {
+    state_master = await createAndSaveStateMaster();
     // @ts-expect-error ignore error
     return HomeMaster.create(getHomeMasterInstance());
 }
@@ -14,6 +18,8 @@ export async function createAndSaveHomeMaster() {
 export async function removeHomeMaster(id: number) {
     // run delete query to clean database
     await HomeMaster.hard_remove(id);
+    // @ts-expect-error ignore any type error
+    await removeStateMaster(state_master.id);
 }
 
 function getHomeMasterInstance() {
@@ -24,6 +30,8 @@ function getHomeMasterInstance() {
         "zip_code": getRandom('varchar', 100),
         "latitude": getRandom('float'),
         "longitude": getRandom('float'),
+        // @ts-expect-error ignore any type error
+        "state_master_id": state_master.id,
     };
 }
 

@@ -17,8 +17,10 @@ attributes:
     not_null: false
 relationships:
   - entity: customer
+    relation_type: many-to-one
     eager: true
     not_null: true
   - entity: home_master
+    relation_type: many-to-one
     eager: true
     not_null: false

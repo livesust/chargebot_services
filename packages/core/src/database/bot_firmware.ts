@@ -8,6 +8,7 @@ export interface BotFirmwareTable extends AuditedEntity {
   battery_version: string;
   pdu_version: string;
   notes?: string;
+  bot_id: number;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

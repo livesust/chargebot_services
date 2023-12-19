@@ -1,5 +1,6 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
+import { EquipmentType } from "./equipment_type";
 
 export interface EquipmentTable extends AuditedEntity {
   name: string;
@@ -7,6 +8,9 @@ export interface EquipmentTable extends AuditedEntity {
   description?: string;
   voltage?: number;
   max_charging_amps?: number;
+  equipment_type_id: number;
+  customer_id: number;
+  equipment_type?: EquipmentType;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

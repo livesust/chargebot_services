@@ -1,12 +1,16 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { Bot } from "../src/services/bot";
 import { getRandom } from './utils';
+import { createAndSaveBotVersion, removeBotVersion } from "./bot_version.test";
 
 
 // @ts-expect-error ignore any type error
 let entity_id;
+// @ts-expect-error ignore any type error
+let bot_version;
 
 export async function createAndSaveBot() {
+    bot_version = await createAndSaveBotVersion();
     // @ts-expect-error ignore error
     return Bot.create(getBotInstance());
 }
@@ -14,6 +18,8 @@ export async function createAndSaveBot() {
 export async function removeBot(id: number) {
     // run delete query to clean database
     await Bot.hard_remove(id);
+    // @ts-expect-error ignore any type error
+    await removeBotVersion(bot_version.id);
 }
 
 function getBotInstance() {
@@ -22,6 +28,8 @@ function getBotInstance() {
         "initials": getRandom('varchar', 2),
         "name": getRandom('varchar', 255),
         "pin_color": getRandom('varchar', 100),
+        // @ts-expect-error ignore any type error
+        "bot_version_id": bot_version.id,
     };
 }
 
