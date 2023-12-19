@@ -1,6 +1,6 @@
 import middy from "@middy/core";
 import warmup from "@middy/warmup";
-import { createError } from '@middy/util';
+import { createError, HttpError } from '@middy/util';
 import httpErrorHandler from "@middy/http-error-handler";
 import { ArrayResponseSchema } from "../schemas/bots_assigned.schema";
 import validator from "../shared/middlewares/joi-validator";
@@ -20,18 +20,18 @@ const handler = async ({ requestContext }) => {
     try {
         const users = await User.findByCriteria({user_id: user_id});
         if (users?.length == 0) {
-          throw Error("User not found");
+          throw createError(404, "user not found", { expose: true });
         }
         const user = users[0];
         
         const company = await Company.get(user.company_id);
         if (!company) {
-          throw Error("User's company not found");
+          throw createError(404, "user's company not found", { expose: true });
         }
         
         const customer = await Customer.get(company.customer_id);
         if (!customer) {
-          throw Error("User's customer not found");
+          throw createError(404, "user's customer not found", { expose: true });
         }
 
         const botsByCompany = await BotCompany.findByCriteria({company_id: company.id});
@@ -51,6 +51,12 @@ const handler = async ({ requestContext }) => {
           )
         }
     } catch (error) {
+        if (error instanceof HttpError) {
+          // re-throw when is a http error generated above
+          throw error;
+        }
+
+        // create and throw database errors
         const httpError = createError(500, "cannot query bots for user", { expose: true });
         httpError.details = (<Error>error).message;
         throw httpError;
