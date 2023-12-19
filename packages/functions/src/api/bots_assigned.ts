@@ -30,6 +30,9 @@ const handler = async ({ requestContext }) => {
         }
         
         const customer = await Customer.get(company.customer_id);
+        if (!customer) {
+          throw Error("User's customer not found");
+        }
 
         const botsByCompany = await BotCompany.findByCriteria({company_id: company.id});
         if (botsByCompany) {
