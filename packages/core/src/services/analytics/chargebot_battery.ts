@@ -5,9 +5,8 @@ import { ChargebotBattery, BatteryVariables } from "../../api/chargebot_battery"
 
 export async function getBatteryLevel(bot_uuid: string): Promise<number | undefined> {
   // @ts-expect-error not overloads match
-  const battery: ChargebotBattery | undefined = await db
+  const levelSoc: ChargebotBattery | undefined = await db
     .selectFrom("chargebot_battery")
-    // @ts-expect-error any
     .select(({ fn }) => [
       'device_id',
       'device_version',
@@ -30,5 +29,5 @@ export async function getBatteryLevel(bot_uuid: string): Promise<number | undefi
     .limit(1)
     .executeTakeFirst();
 
-  return battery?.value ? Math.round(battery?.value as number) : undefined;
+  return levelSoc?.value ? Math.round(levelSoc?.value as number) : undefined;
 }

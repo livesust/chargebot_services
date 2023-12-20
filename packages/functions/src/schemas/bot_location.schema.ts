@@ -1,7 +1,7 @@
 import Joi from 'joi';
 import {  JsonResponseSchemaDef } from "../shared/schemas";
 
-const ChargebotGpsSchemaDef = {
+const BotLocationSchemaDef = {
     bot_uuid: Joi.string().allow(null),
     timestamp: Joi.date().allow(null),
     vehicle_status: Joi.string().allow(null),
@@ -15,7 +15,7 @@ const ChargebotGpsSchemaDef = {
 };
 
 export const EntitySchema = Joi.object({
-    ...ChargebotGpsSchemaDef,
+    ...BotLocationSchemaDef,
 });
 
 export const ResponseSchema = Joi.object({

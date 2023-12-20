@@ -2,7 +2,7 @@ import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import { createError, HttpError } from '@middy/util';
 import httpErrorHandler from "@middy/http-error-handler";
-import { ArrayResponseSchema } from "../schemas/bots_assigned.schema";
+import { ArrayResponseSchema } from "../schemas/bot_assigned.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
@@ -11,6 +11,7 @@ import { BotUser } from "@chargebot-services/core/services/bot_user";
 import { Company } from "@chargebot-services/core/services/company";
 import { ChargebotBattery } from "@chargebot-services/core/services/analytics/chargebot_battery";
 import { ChargebotInverter } from "@chargebot-services/core/services/analytics/chargebot_inverter";
+import { BotUUIDPathParamSchema } from "src/shared/schemas";
 
 // @ts-expect-error ignore any type for event
 const handler = async ({ requestContext }) => {
@@ -35,7 +36,6 @@ const handler = async ({ requestContext }) => {
         }
     
         if (botsByUser) {
-          console.log(user, company, company.customer, botsByUser);
           for (const botUser of botsByUser) {
             const bot = botUser.bot!;
             const [battery_level, battery_status] = await Promise.all([

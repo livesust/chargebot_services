@@ -3,12 +3,16 @@ import { Pool } from 'pg';
 import { ChargebotGpsTable } from "./chargebot_gps";
 import { ChargebotBatteryTable } from "./chargebot_battery";
 import { ChargebotInverterTable } from "./chargebot_inverter";
+import { ChargebotPDUTable } from "./chargebot_pdu";
+import { ChargebotErrorTable } from "./chargebot_error";
 import { Config } from "sst/node/config";
 
 export interface AnalyticsDatabase {
     chargebot_gps: ChargebotGpsTable,
     chargebot_battery: ChargebotBatteryTable,
     chargebot_inverter: ChargebotInverterTable,
+    chargebot_pdu: ChargebotPDUTable,
+    chargebot_error: ChargebotErrorTable,
 }
 
 // Configs secrets are set with the following command
