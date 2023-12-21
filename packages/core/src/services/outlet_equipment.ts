@@ -4,10 +4,19 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { OutletEquipment, OutletEquipmentUpdate, NewOutletEquipment } from "../database/outlet_equipment";
 
+function withEquipmentType(eb: ExpressionBuilder<Database, 'equipment'>) {
+  return jsonObjectFrom(
+    eb.selectFrom('equipment_type')
+      .selectAll()
+      .whereRef('equipment_type.id', '=', 'equipment.equipment_type_id')
+  ).as('equipment_type')
+}
+
 function withEquipment(eb: ExpressionBuilder<Database, 'outlet_equipment'>) {
     return jsonObjectFrom(
       eb.selectFrom('equipment')
         .selectAll()
+        .select((eb) => withEquipmentType(eb))
         .whereRef('equipment.id', '=', 'outlet_equipment.equipment_id')
     ).as('equipment')
 }
