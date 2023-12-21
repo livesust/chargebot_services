@@ -11,6 +11,7 @@ function withCustomer(eb: ExpressionBuilder<Database, 'company'>) {
         .whereRef('customer.id', '=', 'company.customer_id')
     ).as('customer')
 }
+
 function withHomeMaster(eb: ExpressionBuilder<Database, 'company'>) {
     return jsonObjectFrom(
       eb.selectFrom('home_master')
@@ -18,6 +19,7 @@ function withHomeMaster(eb: ExpressionBuilder<Database, 'company'>) {
         .whereRef('home_master.id', '=', 'company.home_master_id')
     ).as('home_master')
 }
+
 
 export async function create(company: NewCompany): Promise<Company | undefined> {
     return await db
@@ -76,7 +78,28 @@ export async function get(id: number): Promise<Company | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<Company>): Promise<Company[]> {
-  let query = db.selectFrom('company').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withCustomer(eb))
+    .select((eb) => withHomeMaster(eb))
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<Company>): Promise<Company | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withCustomer(eb))
+    .select((eb) => withHomeMaster(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<Company>) {
+  let query = db.selectFrom('company').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -104,6 +127,13 @@ export async function findByCriteria(criteria: Partial<Company>): Promise<Compan
     );
   }
 
+  if (criteria.customer_id) {
+    query = query.where('customer_id', '=', criteria.customer_id);
+  }
+  if (criteria.home_master_id) {
+    query = query.where('home_master_id', '=', criteria.home_master_id);
+  }
+
   if (criteria.created_by) {
     query = query.where('created_by', '=', criteria.created_by);
   }
@@ -116,9 +146,5 @@ export async function findByCriteria(criteria: Partial<Company>): Promise<Compan
     );
   }
 
-  return await query
-    .selectAll()
-    .select((eb) => withCustomer(eb))
-    .select((eb) => withHomeMaster(eb))
-    .execute();
+  return query;
 }

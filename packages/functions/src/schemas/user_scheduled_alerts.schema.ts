@@ -32,6 +32,8 @@ export const UpdateSchema = Joi.object({
 
 export const SearchSchema = Joi.object({
     id: Joi.number(),
+    scheduled_alert_id: Joi.number(),
+    user_id: Joi.number(),
     ...UserScheduledAlertsSchemaDef
 });
 

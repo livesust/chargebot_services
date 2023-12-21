@@ -11,6 +11,7 @@ function withBot(eb: ExpressionBuilder<Database, 'bot_company'>) {
         .whereRef('bot.id', '=', 'bot_company.bot_id')
     ).as('bot')
 }
+
 function withCompany(eb: ExpressionBuilder<Database, 'bot_company'>) {
     return jsonObjectFrom(
       eb.selectFrom('company')
@@ -18,6 +19,7 @@ function withCompany(eb: ExpressionBuilder<Database, 'bot_company'>) {
         .whereRef('company.id', '=', 'bot_company.company_id')
     ).as('company')
 }
+
 
 export async function create(bot_company: NewBotCompany): Promise<BotCompany | undefined> {
     // check if many-to-many record already exists
@@ -88,7 +90,28 @@ export async function get(id: number): Promise<BotCompany | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<BotCompany>): Promise<BotCompany[]> {
-  let query = db.selectFrom('bot_company').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withBot(eb))
+    .select((eb) => withCompany(eb))
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<BotCompany>): Promise<BotCompany | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withBot(eb))
+    .select((eb) => withCompany(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<BotCompany>) {
+  let query = db.selectFrom('bot_company').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -96,6 +119,14 @@ export async function findByCriteria(criteria: Partial<BotCompany>): Promise<Bot
 
   if (criteria.acquire_date) {
     query = query.where('acquire_date', '=', criteria.acquire_date);
+  }
+
+  if (criteria.bot_id) {
+    query = query.where('bot_id', '=', criteria.bot_id);
+  }
+
+  if (criteria.company_id) {
+    query = query.where('company_id', '=', criteria.company_id);
   }
 
   if (criteria.created_by) {
@@ -110,9 +141,5 @@ export async function findByCriteria(criteria: Partial<BotCompany>): Promise<Bot
     );
   }
 
-  return await query
-    .selectAll()
-    .select((eb) => withBot(eb))
-    .select((eb) => withCompany(eb))
-    .execute();
+  return query;
 }

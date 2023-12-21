@@ -58,7 +58,24 @@ export async function get(id: number): Promise<OutletType | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<OutletType>): Promise<OutletType[]> {
-  let query = db.selectFrom('outlet_type').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<OutletType>): Promise<OutletType | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<OutletType>) {
+  let query = db.selectFrom('outlet_type').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -92,6 +109,7 @@ export async function findByCriteria(criteria: Partial<OutletType>): Promise<Out
     );
   }
 
+
   if (criteria.created_by) {
     query = query.where('created_by', '=', criteria.created_by);
   }
@@ -104,7 +122,5 @@ export async function findByCriteria(criteria: Partial<OutletType>): Promise<Out
     );
   }
 
-  return await query
-    .selectAll()
-    .execute();
+  return query;
 }

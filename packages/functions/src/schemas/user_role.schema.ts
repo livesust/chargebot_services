@@ -32,6 +32,8 @@ export const UpdateSchema = Joi.object({
 
 export const SearchSchema = Joi.object({
     id: Joi.number(),
+    user_id: Joi.number(),
+    role_id: Joi.number(),
     ...UserRoleSchemaDef
 });
 

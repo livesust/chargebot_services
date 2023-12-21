@@ -70,7 +70,24 @@ export async function get(id: number): Promise<StateMaster | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<StateMaster>): Promise<StateMaster[]> {
-  let query = db.selectFrom('state_master').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<StateMaster>): Promise<StateMaster | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<StateMaster>) {
+  let query = db.selectFrom('state_master').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -98,6 +115,7 @@ export async function findByCriteria(criteria: Partial<StateMaster>): Promise<St
     );
   }
 
+
   if (criteria.created_by) {
     query = query.where('created_by', '=', criteria.created_by);
   }
@@ -110,7 +128,5 @@ export async function findByCriteria(criteria: Partial<StateMaster>): Promise<St
     );
   }
 
-  return await query
-    .selectAll()
-    .execute();
+  return query;
 }

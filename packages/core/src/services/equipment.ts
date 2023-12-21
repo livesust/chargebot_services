@@ -11,6 +11,7 @@ function withEquipmentType(eb: ExpressionBuilder<Database, 'equipment'>) {
         .whereRef('equipment_type.id', '=', 'equipment.equipment_type_id')
     ).as('equipment_type')
 }
+
 function withCustomer(eb: ExpressionBuilder<Database, 'equipment'>) {
     return jsonObjectFrom(
       eb.selectFrom('customer')
@@ -18,6 +19,7 @@ function withCustomer(eb: ExpressionBuilder<Database, 'equipment'>) {
         .whereRef('customer.id', '=', 'equipment.customer_id')
     ).as('customer')
 }
+
 
 export async function create(equipment: NewEquipment): Promise<Equipment | undefined> {
     return await db
@@ -77,7 +79,30 @@ export async function get(id: number): Promise<Equipment | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<Equipment>): Promise<Equipment[]> {
-  let query = db.selectFrom('equipment').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withEquipmentType(eb))
+    // uncoment to enable eager loading
+    //.select((eb) => withCustomer(eb))
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<Equipment>): Promise<Equipment | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withEquipmentType(eb))
+    // uncoment to enable eager loading
+    //.select((eb) => withCustomer(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<Equipment>) {
+  let query = db.selectFrom('equipment').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -111,6 +136,13 @@ export async function findByCriteria(criteria: Partial<Equipment>): Promise<Equi
     query = query.where('max_charging_amps', '=', criteria.max_charging_amps);
   }
 
+  if (criteria.equipment_type_id) {
+    query = query.where('equipment_type_id', '=', criteria.equipment_type_id);
+  }
+  if (criteria.customer_id) {
+    query = query.where('customer_id', '=', criteria.customer_id);
+  }
+
   if (criteria.created_by) {
     query = query.where('created_by', '=', criteria.created_by);
   }
@@ -123,10 +155,5 @@ export async function findByCriteria(criteria: Partial<Equipment>): Promise<Equi
     );
   }
 
-  return await query
-    .selectAll()
-    .select((eb) => withEquipmentType(eb))
-    // uncoment to enable eager loading
-    //.select((eb) => withCustomer(eb))
-    .execute();
+  return query;
 }

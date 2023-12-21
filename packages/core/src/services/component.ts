@@ -58,7 +58,24 @@ export async function get(id: number): Promise<Component | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<Component>): Promise<Component[]> {
-  let query = db.selectFrom('component').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<Component>): Promise<Component | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<Component>) {
+  let query = db.selectFrom('component').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -107,6 +124,7 @@ export async function findByCriteria(criteria: Partial<Component>): Promise<Comp
     );
   }
 
+
   if (criteria.created_by) {
     query = query.where('created_by', '=', criteria.created_by);
   }
@@ -119,7 +137,5 @@ export async function findByCriteria(criteria: Partial<Component>): Promise<Comp
     );
   }
 
-  return await query
-    .selectAll()
-    .execute();
+  return query;
 }

@@ -38,6 +38,7 @@ export const UpdateSchema = Joi.object({
 
 export const SearchSchema = Joi.object({
     id: Joi.number(),
+    state_master_id: Joi.number(),
     ...HomeMasterSchemaDef
 });
 

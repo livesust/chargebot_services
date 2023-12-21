@@ -12,6 +12,7 @@ function withBotVersion(eb: ExpressionBuilder<Database, 'bot'>) {
     ).as('bot_version')
 }
 
+
 export async function create(bot: NewBot): Promise<Bot | undefined> {
     const exists = await db
         .selectFrom('bot')
@@ -79,7 +80,26 @@ export async function get(id: number): Promise<Bot | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
-  let query = db.selectFrom('bot').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withBotVersion(eb))
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<Bot>): Promise<Bot | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withBotVersion(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<Bot>) {
+  let query = db.selectFrom('bot').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -114,6 +134,10 @@ export async function findByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
     );
   }
 
+  if (criteria.bot_version_id) {
+    query = query.where('bot_version_id', '=', criteria.bot_version_id);
+  }
+
   if (criteria.created_by) {
     query = query.where('created_by', '=', criteria.created_by);
   }
@@ -126,8 +150,5 @@ export async function findByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
     );
   }
 
-  return await query
-    .selectAll()
-    .select((eb) => withBotVersion(eb))
-    .execute();
+  return query;
 }

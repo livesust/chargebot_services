@@ -12,6 +12,7 @@ function withUser(eb: ExpressionBuilder<Database, 'app_install'>) {
     ).as('user')
 }
 
+
 export async function create(app_install: NewAppInstall): Promise<AppInstall | undefined> {
     return await db
         .insertInto('app_install')
@@ -68,7 +69,26 @@ export async function get(id: number): Promise<AppInstall | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<AppInstall>): Promise<AppInstall[]> {
-  let query = db.selectFrom('app_install').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withUser(eb))
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<AppInstall>): Promise<AppInstall | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withUser(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<AppInstall>) {
+  let query = db.selectFrom('app_install').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -103,6 +123,10 @@ export async function findByCriteria(criteria: Partial<AppInstall>): Promise<App
     );
   }
 
+  if (criteria.user_id) {
+    query = query.where('user_id', '=', criteria.user_id);
+  }
+
   if (criteria.created_by) {
     query = query.where('created_by', '=', criteria.created_by);
   }
@@ -115,8 +139,5 @@ export async function findByCriteria(criteria: Partial<AppInstall>): Promise<App
     );
   }
 
-  return await query
-    .selectAll()
-    .select((eb) => withUser(eb))
-    .execute();
+  return query;
 }

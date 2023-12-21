@@ -11,6 +11,7 @@ function withScheduledAlert(eb: ExpressionBuilder<Database, 'user_scheduled_aler
         .whereRef('scheduled_alert.id', '=', 'user_scheduled_alerts.scheduled_alert_id')
     ).as('scheduled_alert')
 }
+
 function withUser(eb: ExpressionBuilder<Database, 'user_scheduled_alerts'>) {
     return jsonObjectFrom(
       eb.selectFrom('user')
@@ -18,6 +19,7 @@ function withUser(eb: ExpressionBuilder<Database, 'user_scheduled_alerts'>) {
         .whereRef('user.id', '=', 'user_scheduled_alerts.user_id')
     ).as('user')
 }
+
 
 export async function create(user_scheduled_alerts: NewUserScheduledAlerts): Promise<UserScheduledAlerts | undefined> {
     // check if many-to-many record already exists
@@ -89,7 +91,28 @@ export async function get(id: number): Promise<UserScheduledAlerts | undefined> 
 }
 
 export async function findByCriteria(criteria: Partial<UserScheduledAlerts>): Promise<UserScheduledAlerts[]> {
-  let query = db.selectFrom('user_scheduled_alerts').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withScheduledAlert(eb))
+    .select((eb) => withUser(eb))
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<UserScheduledAlerts>): Promise<UserScheduledAlerts | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withScheduledAlert(eb))
+    .select((eb) => withUser(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<UserScheduledAlerts>) {
+  let query = db.selectFrom('user_scheduled_alerts').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -100,6 +123,14 @@ export async function findByCriteria(criteria: Partial<UserScheduledAlerts>): Pr
   }
   if (criteria.settings) {
     query = query.where('settings', '=', criteria.settings);
+  }
+
+  if (criteria.scheduled_alert_id) {
+    query = query.where('scheduled_alert_id', '=', criteria.scheduled_alert_id);
+  }
+
+  if (criteria.user_id) {
+    query = query.where('user_id', '=', criteria.user_id);
   }
 
   if (criteria.created_by) {
@@ -114,9 +145,5 @@ export async function findByCriteria(criteria: Partial<UserScheduledAlerts>): Pr
     );
   }
 
-  return await query
-    .selectAll()
-    .select((eb) => withScheduledAlert(eb))
-    .select((eb) => withUser(eb))
-    .execute();
+  return query;
 }

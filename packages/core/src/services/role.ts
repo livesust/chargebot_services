@@ -69,7 +69,24 @@ export async function get(id: number): Promise<Role | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<Role>): Promise<Role[]> {
-  let query = db.selectFrom('role').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<Role>): Promise<Role | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<Role>) {
+  let query = db.selectFrom('role').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -90,6 +107,7 @@ export async function findByCriteria(criteria: Partial<Role>): Promise<Role[]> {
     );
   }
 
+
   if (criteria.created_by) {
     query = query.where('created_by', '=', criteria.created_by);
   }
@@ -102,7 +120,5 @@ export async function findByCriteria(criteria: Partial<Role>): Promise<Role[]> {
     );
   }
 
-  return await query
-    .selectAll()
-    .execute();
+  return query;
 }

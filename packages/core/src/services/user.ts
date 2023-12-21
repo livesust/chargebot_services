@@ -12,6 +12,7 @@ function withCompany(eb: ExpressionBuilder<Database, 'user'>) {
     ).as('company')
 }
 
+
 export async function create(user: NewUser): Promise<User | undefined> {
     return await db
         .insertInto('user')
@@ -68,7 +69,26 @@ export async function get(id: number): Promise<User | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<User>): Promise<User[]> {
-  let query = db.selectFrom('user').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withCompany(eb))
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<User>): Promise<User | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withCompany(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<User>) {
+  let query = db.selectFrom('user').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -116,6 +136,10 @@ export async function findByCriteria(criteria: Partial<User>): Promise<User[]> {
     );
   }
 
+  if (criteria.company_id) {
+    query = query.where('company_id', '=', criteria.company_id);
+  }
+
   if (criteria.created_by) {
     query = query.where('created_by', '=', criteria.created_by);
   }
@@ -128,8 +152,5 @@ export async function findByCriteria(criteria: Partial<User>): Promise<User[]> {
     );
   }
 
-  return await query
-    .selectAll()
-    .select((eb) => withCompany(eb))
-    .execute();
+  return query;
 }

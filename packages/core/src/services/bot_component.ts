@@ -11,6 +11,7 @@ function withBot(eb: ExpressionBuilder<Database, 'bot_component'>) {
         .whereRef('bot.id', '=', 'bot_component.bot_id')
     ).as('bot')
 }
+
 function withComponent(eb: ExpressionBuilder<Database, 'bot_component'>) {
     return jsonObjectFrom(
       eb.selectFrom('component')
@@ -18,6 +19,7 @@ function withComponent(eb: ExpressionBuilder<Database, 'bot_component'>) {
         .whereRef('component.id', '=', 'bot_component.component_id')
     ).as('component')
 }
+
 
 export async function create(bot_component: NewBotComponent): Promise<BotComponent | undefined> {
     // check if many-to-many record already exists
@@ -88,7 +90,28 @@ export async function get(id: number): Promise<BotComponent | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<BotComponent>): Promise<BotComponent[]> {
-  let query = db.selectFrom('bot_component').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withBot(eb))
+    .select((eb) => withComponent(eb))
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<BotComponent>): Promise<BotComponent | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withBot(eb))
+    .select((eb) => withComponent(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<BotComponent>) {
+  let query = db.selectFrom('bot_component').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -105,6 +128,14 @@ export async function findByCriteria(criteria: Partial<BotComponent>): Promise<B
     );
   }
 
+  if (criteria.bot_id) {
+    query = query.where('bot_id', '=', criteria.bot_id);
+  }
+
+  if (criteria.component_id) {
+    query = query.where('component_id', '=', criteria.component_id);
+  }
+
   if (criteria.created_by) {
     query = query.where('created_by', '=', criteria.created_by);
   }
@@ -117,9 +148,5 @@ export async function findByCriteria(criteria: Partial<BotComponent>): Promise<B
     );
   }
 
-  return await query
-    .selectAll()
-    .select((eb) => withBot(eb))
-    .select((eb) => withComponent(eb))
-    .execute();
+  return query;
 }

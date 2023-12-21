@@ -29,6 +29,7 @@ export const UpdateSchema = Joi.object({
 
 export const SearchSchema = Joi.object({
     id: Joi.number(),
+    app_settings_type_id: Joi.number(),
     ...UniversalAppSettingsSchemaDef
 });
 

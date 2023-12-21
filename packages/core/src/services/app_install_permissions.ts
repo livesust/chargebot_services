@@ -11,6 +11,7 @@ function withAppInstall(eb: ExpressionBuilder<Database, 'app_install_permissions
         .whereRef('app_install.id', '=', 'app_install_permissions.app_install_id')
     ).as('app_install')
 }
+
 function withPermission(eb: ExpressionBuilder<Database, 'app_install_permissions'>) {
     return jsonObjectFrom(
       eb.selectFrom('permission')
@@ -18,6 +19,7 @@ function withPermission(eb: ExpressionBuilder<Database, 'app_install_permissions
         .whereRef('permission.id', '=', 'app_install_permissions.permission_id')
     ).as('permission')
 }
+
 
 export async function create(app_install_permissions: NewAppInstallPermissions): Promise<AppInstallPermissions | undefined> {
     // check if many-to-many record already exists
@@ -88,7 +90,28 @@ export async function get(id: number): Promise<AppInstallPermissions | undefined
 }
 
 export async function findByCriteria(criteria: Partial<AppInstallPermissions>): Promise<AppInstallPermissions[]> {
-  let query = db.selectFrom('app_install_permissions').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withAppInstall(eb))
+    .select((eb) => withPermission(eb))
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<AppInstallPermissions>): Promise<AppInstallPermissions | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withAppInstall(eb))
+    .select((eb) => withPermission(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<AppInstallPermissions>) {
+  let query = db.selectFrom('app_install_permissions').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -96,6 +119,14 @@ export async function findByCriteria(criteria: Partial<AppInstallPermissions>): 
 
   if (criteria.permission_status) {
     query = query.where('permission_status', '=', criteria.permission_status);
+  }
+
+  if (criteria.app_install_id) {
+    query = query.where('app_install_id', '=', criteria.app_install_id);
+  }
+
+  if (criteria.permission_id) {
+    query = query.where('permission_id', '=', criteria.permission_id);
   }
 
   if (criteria.created_by) {
@@ -110,9 +141,5 @@ export async function findByCriteria(criteria: Partial<AppInstallPermissions>): 
     );
   }
 
-  return await query
-    .selectAll()
-    .select((eb) => withAppInstall(eb))
-    .select((eb) => withPermission(eb))
-    .execute();
+  return query;
 }

@@ -12,6 +12,7 @@ function withUser(eb: ExpressionBuilder<Database, 'user_email'>) {
     ).as('user')
 }
 
+
 export async function create(user_email: NewUserEmail): Promise<UserEmail | undefined> {
     const exists = await db
         .selectFrom('user_email')
@@ -80,7 +81,28 @@ export async function get(id: number): Promise<UserEmail | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<UserEmail>): Promise<UserEmail[]> {
-  let query = db.selectFrom('user_email').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    // uncoment to enable eager loading
+    //.select((eb) => withUser(eb))
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<UserEmail>): Promise<UserEmail | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    // uncoment to enable eager loading
+    //.select((eb) => withUser(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<UserEmail>) {
+  let query = db.selectFrom('user_email').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -100,6 +122,10 @@ export async function findByCriteria(criteria: Partial<UserEmail>): Promise<User
     query = query.where('primary', '=', criteria.primary);
   }
 
+  if (criteria.user_id) {
+    query = query.where('user_id', '=', criteria.user_id);
+  }
+
   if (criteria.created_by) {
     query = query.where('created_by', '=', criteria.created_by);
   }
@@ -112,9 +138,5 @@ export async function findByCriteria(criteria: Partial<UserEmail>): Promise<User
     );
   }
 
-  return await query
-    .selectAll()
-    // uncoment to enable eager loading
-    //.select((eb) => withUser(eb))
-    .execute();
+  return query;
 }

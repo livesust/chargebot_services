@@ -12,6 +12,7 @@ function withOutlet(eb: ExpressionBuilder<Database, 'outlet_schedule'>) {
     ).as('outlet')
 }
 
+
 export async function create(outlet_schedule: NewOutletSchedule): Promise<OutletSchedule | undefined> {
     return await db
         .insertInto('outlet_schedule')
@@ -98,8 +99,8 @@ function buildCriteriaQuery(criteria: Partial<OutletSchedule>) {
 
   if (criteria.day_of_week !== undefined) {
     query = query.where(
-      'day_of_week',
-      criteria.day_of_week === null ? 'is' : '=',
+      'day_of_week', 
+      criteria.day_of_week === null ? 'is' : '=', 
       criteria.day_of_week
     );
   }
@@ -113,17 +114,21 @@ function buildCriteriaQuery(criteria: Partial<OutletSchedule>) {
     query = query.where('end_time', '=', criteria.end_time);
   }
 
+  if (criteria.outlet_id) {
+    query = query.where('outlet_id', '=', criteria.outlet_id);
+  }
+
   if (criteria.created_by) {
     query = query.where('created_by', '=', criteria.created_by);
   }
 
   if (criteria.modified_by !== undefined) {
     query = query.where(
-      'modified_by',
-      criteria.modified_by === null ? 'is' : '=',
+      'modified_by', 
+      criteria.modified_by === null ? 'is' : '=', 
       criteria.modified_by
     );
   }
+
   return query;
 }
-

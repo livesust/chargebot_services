@@ -70,7 +70,24 @@ export async function get(id: number): Promise<BotVersion | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<BotVersion>): Promise<BotVersion[]> {
-  let query = db.selectFrom('bot_version').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<BotVersion>): Promise<BotVersion | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<BotVersion>) {
+  let query = db.selectFrom('bot_version').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -101,6 +118,7 @@ export async function findByCriteria(criteria: Partial<BotVersion>): Promise<Bot
     query = query.where('active_date', '=', criteria.active_date);
   }
 
+
   if (criteria.created_by) {
     query = query.where('created_by', '=', criteria.created_by);
   }
@@ -113,7 +131,5 @@ export async function findByCriteria(criteria: Partial<BotVersion>): Promise<Bot
     );
   }
 
-  return await query
-    .selectAll()
-    .execute();
+  return query;
 }

@@ -40,6 +40,7 @@ export const UpdateSchema = Joi.object({
 
 export const SearchSchema = Joi.object({
     id: Joi.number(),
+    bot_id: Joi.number(),
     ...BotFirmwareSchemaDef
 });
 

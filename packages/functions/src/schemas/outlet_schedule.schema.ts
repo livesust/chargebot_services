@@ -34,6 +34,7 @@ export const UpdateSchema = Joi.object({
 
 export const SearchSchema = Joi.object({
     id: Joi.number(),
+    outlet_id: Joi.number(),
     ...OutletScheduleSchemaDef
 });
 

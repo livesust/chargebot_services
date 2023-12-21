@@ -12,6 +12,7 @@ function withStateMaster(eb: ExpressionBuilder<Database, 'home_master'>) {
     ).as('state_master')
 }
 
+
 export async function create(home_master: NewHomeMaster): Promise<HomeMaster | undefined> {
     return await db
         .insertInto('home_master')
@@ -68,7 +69,26 @@ export async function get(id: number): Promise<HomeMaster | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<HomeMaster>): Promise<HomeMaster[]> {
-  let query = db.selectFrom('home_master').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withStateMaster(eb))
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<HomeMaster>): Promise<HomeMaster | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withStateMaster(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<HomeMaster>) {
+  let query = db.selectFrom('home_master').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -109,6 +129,10 @@ export async function findByCriteria(criteria: Partial<HomeMaster>): Promise<Hom
     query = query.where('longitude', '=', criteria.longitude);
   }
 
+  if (criteria.state_master_id) {
+    query = query.where('state_master_id', '=', criteria.state_master_id);
+  }
+
   if (criteria.created_by) {
     query = query.where('created_by', '=', criteria.created_by);
   }
@@ -121,8 +145,5 @@ export async function findByCriteria(criteria: Partial<HomeMaster>): Promise<Hom
     );
   }
 
-  return await query
-    .selectAll()
-    .select((eb) => withStateMaster(eb))
-    .execute();
+  return query;
 }

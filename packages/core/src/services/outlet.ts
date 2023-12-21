@@ -11,6 +11,7 @@ function withOutletType(eb: ExpressionBuilder<Database, 'outlet'>) {
         .whereRef('outlet_type.id', '=', 'outlet.outlet_type_id')
     ).as('outlet_type')
 }
+
 function withBot(eb: ExpressionBuilder<Database, 'outlet'>) {
     return jsonObjectFrom(
       eb.selectFrom('bot')
@@ -18,6 +19,7 @@ function withBot(eb: ExpressionBuilder<Database, 'outlet'>) {
         .whereRef('bot.id', '=', 'outlet.bot_id')
     ).as('bot')
 }
+
 
 export async function create(outlet: NewOutlet): Promise<Outlet | undefined> {
     return await db
@@ -77,7 +79,30 @@ export async function get(id: number): Promise<Outlet | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<Outlet>): Promise<Outlet[]> {
-  let query = db.selectFrom('outlet').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withOutletType(eb))
+    // uncoment to enable eager loading
+    //.select((eb) => withBot(eb))
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<Outlet>): Promise<Outlet | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withOutletType(eb))
+    // uncoment to enable eager loading
+    //.select((eb) => withBot(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<Outlet>) {
+  let query = db.selectFrom('outlet').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -86,7 +111,6 @@ export async function findByCriteria(criteria: Partial<Outlet>): Promise<Outlet[
   if (criteria.pdu_outlet_number) {
     query = query.where('pdu_outlet_number', '=', criteria.pdu_outlet_number);
   }
-
   if (criteria.notes !== undefined) {
     query = query.where(
       'notes', 
@@ -95,12 +119,11 @@ export async function findByCriteria(criteria: Partial<Outlet>): Promise<Outlet[
     );
   }
 
-  if (criteria.bot_id) {
-    query = query.where('bot_id', '=', criteria.bot_id);
-  }
-
   if (criteria.outlet_type_id) {
     query = query.where('outlet_type_id', '=', criteria.outlet_type_id);
+  }
+  if (criteria.bot_id) {
+    query = query.where('bot_id', '=', criteria.bot_id);
   }
 
   if (criteria.created_by) {
@@ -115,10 +138,5 @@ export async function findByCriteria(criteria: Partial<Outlet>): Promise<Outlet[
     );
   }
 
-  return await query
-    .selectAll()
-    .select((eb) => withOutletType(eb))
-    // uncoment to enable eager loading
-    //.select((eb) => withBot(eb))
-    .execute();
+  return query;
 }

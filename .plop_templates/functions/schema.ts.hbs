@@ -129,6 +129,15 @@ export const UpdateSchema = Joi.object({
 
 export const SearchSchema = Joi.object({
     id: Joi.number(),
+    {{#each relationships}}
+      {{#when relation_type 'eq' 'many-to-one'}}
+    {{snakeCase entity}}_id: Joi.number(),
+      {{/when}}
+      {{#when relation_type 'eq' 'many-to-many'}}
+    {{snakeCase first_entity}}_id: Joi.number(),
+    {{snakeCase second_entity}}_id: Joi.number(),
+      {{/when}}
+    {{/each}}
     ...{{pascalCase name}}SchemaDef
 });
 
