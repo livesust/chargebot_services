@@ -37,3 +37,14 @@ export enum PDUVariable {
   OUTLET_8_STATE = 'outlet_state_7',
 }
 
+export const PDU_OUTLET_IDS = [
+  PDUVariable.OUTLET_1_STATE,
+  PDUVariable.OUTLET_2_STATE,
+  PDUVariable.OUTLET_3_STATE,
+  PDUVariable.OUTLET_4_STATE,
+  PDUVariable.OUTLET_5_STATE,
+  PDUVariable.OUTLET_6_STATE,
+  PDUVariable.OUTLET_7_STATE,
+  PDUVariable.OUTLET_8_STATE,
+]
+

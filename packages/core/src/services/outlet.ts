@@ -86,12 +86,21 @@ export async function findByCriteria(criteria: Partial<Outlet>): Promise<Outlet[
   if (criteria.pdu_outlet_number) {
     query = query.where('pdu_outlet_number', '=', criteria.pdu_outlet_number);
   }
+
   if (criteria.notes !== undefined) {
     query = query.where(
       'notes', 
       criteria.notes === null ? 'is' : '=', 
       criteria.notes
     );
+  }
+
+  if (criteria.bot_id) {
+    query = query.where('bot_id', '=', criteria.bot_id);
+  }
+
+  if (criteria.outlet_type_id) {
+    query = query.where('outlet_type_id', '=', criteria.outlet_type_id);
   }
 
   if (criteria.created_by) {

@@ -69,7 +69,28 @@ export async function get(id: number): Promise<OutletSchedule | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<OutletSchedule>): Promise<OutletSchedule[]> {
-  let query = db.selectFrom('outlet_schedule').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    // uncoment to enable eager loading
+    //.select((eb) => withOutlet(eb))
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<OutletSchedule>): Promise<OutletSchedule | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    // uncoment to enable eager loading
+    //.select((eb) => withOutlet(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<OutletSchedule>) {
+  let query = db.selectFrom('outlet_schedule').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -77,8 +98,8 @@ export async function findByCriteria(criteria: Partial<OutletSchedule>): Promise
 
   if (criteria.day_of_week !== undefined) {
     query = query.where(
-      'day_of_week', 
-      criteria.day_of_week === null ? 'is' : '=', 
+      'day_of_week',
+      criteria.day_of_week === null ? 'is' : '=',
       criteria.day_of_week
     );
   }
@@ -98,15 +119,11 @@ export async function findByCriteria(criteria: Partial<OutletSchedule>): Promise
 
   if (criteria.modified_by !== undefined) {
     query = query.where(
-      'modified_by', 
-      criteria.modified_by === null ? 'is' : '=', 
+      'modified_by',
+      criteria.modified_by === null ? 'is' : '=',
       criteria.modified_by
     );
   }
-
-  return await query
-    .selectAll()
-    // uncoment to enable eager loading
-    //.select((eb) => withOutlet(eb))
-    .execute();
+  return query;
 }
+

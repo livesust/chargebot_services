@@ -1,7 +1,7 @@
 import Joi from 'joi';
 import {  JsonResponseSchemaDef } from "../shared/schemas";
 
-const BotLocationSchemaDef = {
+const BotStatusSchemaDef = {
     bot_uuid: Joi.string().allow(null),
     battery_level: Joi.number().allow(null),
     battery_status: Joi.string().allow(null),
@@ -19,7 +19,7 @@ const BotLocationSchemaDef = {
 };
 
 export const EntitySchema = Joi.object({
-    ...BotLocationSchemaDef,
+    ...BotStatusSchemaDef,
 });
 
 export const ResponseSchema = Joi.object({

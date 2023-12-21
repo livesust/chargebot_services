@@ -5,9 +5,9 @@ import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEnti
 
 const OutletScheduleSchemaDef = {
     day_of_week: Joi.string().max(255).allow(null),
-    all_day: Joi.boolean().allow(null),
-    start_time: Joi.date(),
-    end_time: Joi.date(),
+    all_day: Joi.boolean(),
+    start_time: Joi.date().allow(null),
+    end_time: Joi.date().allow(null),
 };
 
 export const EntitySchema = Joi.object({
@@ -23,8 +23,7 @@ export const CreateSchema = Joi.object({
     ...OutletScheduleSchemaDef
 }).keys({
     // overwrite keys for required attributes
-    start_time: Joi.date().required(),
-    end_time: Joi.date().required(),
+    all_day: Joi.boolean().required(),
     outlet_id: Joi.number().required(),
 });
 

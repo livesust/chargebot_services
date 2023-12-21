@@ -6,6 +6,15 @@ import { loadSchemas } from '../schemas';
 export const isWarmingUp = (event) => event.isWarmingUp === true
 
 // @ts-expect-error ignore any type for body
+export const createNotFoundResponse = (body) => {
+    return {
+        statusCode: 400,
+        headers: { "Content-Type": "application/json" },
+        body,
+    };
+}
+
+// @ts-expect-error ignore any type for body
 export const createSuccessResponse = (body) => {
     return {
         statusCode: 200,

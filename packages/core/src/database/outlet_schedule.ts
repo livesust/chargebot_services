@@ -3,9 +3,9 @@ import { AuditedEntity } from "./audited_entity";
 
 export interface OutletScheduleTable extends AuditedEntity {
   day_of_week?: string;
-  all_day?: boolean;
-  start_time: Date;
-  end_time: Date;
+  all_day: boolean;
+  start_time?: Date;
+  end_time?: Date;
   outlet_id: number;
 }
 

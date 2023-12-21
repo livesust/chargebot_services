@@ -8,7 +8,7 @@ export function translateVehicleStatus(vehicle_status: VehicleStatus | string | 
   }
 
   return vehicle_status == VehicleStatus.PARKED
-    ? 'AT_LOCATION'
+    ? 'ON_LOCATION'
     : (
       vehicle_status == VehicleStatus.MOVING || vehicle_status == VehicleStatus.STOPPED
         ? 'IN_TRANSIT'
