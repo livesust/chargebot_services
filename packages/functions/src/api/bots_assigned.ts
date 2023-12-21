@@ -11,7 +11,6 @@ import { BotUser } from "@chargebot-services/core/services/bot_user";
 import { Company } from "@chargebot-services/core/services/company";
 import { ChargebotBattery } from "@chargebot-services/core/services/analytics/chargebot_battery";
 import { ChargebotInverter } from "@chargebot-services/core/services/analytics/chargebot_inverter";
-import { BotUUIDPathParamSchema } from "src/shared/schemas";
 
 // @ts-expect-error ignore any type for event
 const handler = async ({ requestContext }) => {

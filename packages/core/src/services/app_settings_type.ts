@@ -69,7 +69,24 @@ export async function get(id: number): Promise<AppSettingsType | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<AppSettingsType>): Promise<AppSettingsType[]> {
-  let query = db.selectFrom('app_settings_type').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<AppSettingsType>): Promise<AppSettingsType | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<AppSettingsType>) {
+  let query = db.selectFrom('app_settings_type').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -90,6 +107,7 @@ export async function findByCriteria(criteria: Partial<AppSettingsType>): Promis
     );
   }
 
+
   if (criteria.created_by) {
     query = query.where('created_by', '=', criteria.created_by);
   }
@@ -102,7 +120,5 @@ export async function findByCriteria(criteria: Partial<AppSettingsType>): Promis
     );
   }
 
-  return await query
-    .selectAll()
-    .execute();
+  return query;
 }

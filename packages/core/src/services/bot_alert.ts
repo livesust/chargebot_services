@@ -11,6 +11,7 @@ function withAlertType(eb: ExpressionBuilder<Database, 'bot_alert'>) {
         .whereRef('alert_type.id', '=', 'bot_alert.alert_type_id')
     ).as('alert_type')
 }
+
 function withBot(eb: ExpressionBuilder<Database, 'bot_alert'>) {
     return jsonObjectFrom(
       eb.selectFrom('bot')
@@ -18,6 +19,7 @@ function withBot(eb: ExpressionBuilder<Database, 'bot_alert'>) {
         .whereRef('bot.id', '=', 'bot_alert.bot_id')
     ).as('bot')
 }
+
 
 export async function create(bot_alert: NewBotAlert): Promise<BotAlert | undefined> {
     return await db
@@ -77,7 +79,30 @@ export async function get(id: number): Promise<BotAlert | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<BotAlert>): Promise<BotAlert[]> {
-  let query = db.selectFrom('bot_alert').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withAlertType(eb))
+    // uncoment to enable eager loading
+    //.select((eb) => withBot(eb))
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<BotAlert>): Promise<BotAlert | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withAlertType(eb))
+    // uncoment to enable eager loading
+    //.select((eb) => withBot(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<BotAlert>) {
+  let query = db.selectFrom('bot_alert').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -112,6 +137,13 @@ export async function findByCriteria(criteria: Partial<BotAlert>): Promise<BotAl
     query = query.where('alert_count', '=', criteria.alert_count);
   }
 
+  if (criteria.alert_type_id) {
+    query = query.where('alert_type_id', '=', criteria.alert_type_id);
+  }
+  if (criteria.bot_id) {
+    query = query.where('bot_id', '=', criteria.bot_id);
+  }
+
   if (criteria.created_by) {
     query = query.where('created_by', '=', criteria.created_by);
   }
@@ -124,10 +156,5 @@ export async function findByCriteria(criteria: Partial<BotAlert>): Promise<BotAl
     );
   }
 
-  return await query
-    .selectAll()
-    .select((eb) => withAlertType(eb))
-    // uncoment to enable eager loading
-    //.select((eb) => withBot(eb))
-    .execute();
+  return query;
 }

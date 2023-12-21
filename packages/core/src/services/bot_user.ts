@@ -11,6 +11,7 @@ function withBot(eb: ExpressionBuilder<Database, 'bot_user'>) {
         .whereRef('bot.id', '=', 'bot_user.bot_id')
     ).as('bot')
 }
+
 function withUser(eb: ExpressionBuilder<Database, 'bot_user'>) {
     return jsonObjectFrom(
       eb.selectFrom('user')
@@ -18,6 +19,7 @@ function withUser(eb: ExpressionBuilder<Database, 'bot_user'>) {
         .whereRef('user.id', '=', 'bot_user.user_id')
     ).as('user')
 }
+
 
 export async function create(bot_user: NewBotUser): Promise<BotUser | undefined> {
     // check if many-to-many record already exists
@@ -88,7 +90,28 @@ export async function get(id: number): Promise<BotUser | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<BotUser>): Promise<BotUser[]> {
-  let query = db.selectFrom('bot_user').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withBot(eb))
+    .select((eb) => withUser(eb))
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<BotUser>): Promise<BotUser | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withBot(eb))
+    .select((eb) => withUser(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<BotUser>) {
+  let query = db.selectFrom('bot_user').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -96,6 +119,14 @@ export async function findByCriteria(criteria: Partial<BotUser>): Promise<BotUse
 
   if (criteria.assignment_date) {
     query = query.where('assignment_date', '=', criteria.assignment_date);
+  }
+
+  if (criteria.bot_id) {
+    query = query.where('bot_id', '=', criteria.bot_id);
+  }
+
+  if (criteria.user_id) {
+    query = query.where('user_id', '=', criteria.user_id);
   }
 
   if (criteria.created_by) {
@@ -110,9 +141,5 @@ export async function findByCriteria(criteria: Partial<BotUser>): Promise<BotUse
     );
   }
 
-  return await query
-    .selectAll()
-    .select((eb) => withBot(eb))
-    .select((eb) => withUser(eb))
-    .execute();
+  return query;
 }

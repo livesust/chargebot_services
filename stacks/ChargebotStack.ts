@@ -100,7 +100,9 @@ export function ChargebotStack({ stack }: StackContext) {
             IOT_API_KEY
           ],
         }
-      }
+      },
+      "GET /bot/{id}/outlets": "packages/functions/src/api/bot_outlets.main",
+      "GET /bot/{bot_uuid}/outlet/{outlet_id}": "packages/functions/src/api/bot_outlet_details.main",
     }
   });
 

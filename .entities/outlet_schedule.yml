@@ -8,15 +8,15 @@ attributes:
   - attribute: all day
     type: boolean
     tsType: boolean
-    not_null: false
+    not_null: true
   - attribute: start time
     type: timestamp
     tsType: Date
-    not_null: true
+    not_null: false
   - attribute: end time
     type: timestamp
     tsType: Date
-    not_null: true
+    not_null: false
 relationships:
   - entity: outlet
     relation_type: many-to-one

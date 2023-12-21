@@ -12,6 +12,7 @@ function withOutlet(eb: ExpressionBuilder<Database, 'outlet_schedule'>) {
     ).as('outlet')
 }
 
+
 export async function create(outlet_schedule: NewOutletSchedule): Promise<OutletSchedule | undefined> {
     return await db
         .insertInto('outlet_schedule')
@@ -69,7 +70,28 @@ export async function get(id: number): Promise<OutletSchedule | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<OutletSchedule>): Promise<OutletSchedule[]> {
-  let query = db.selectFrom('outlet_schedule').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    // uncoment to enable eager loading
+    //.select((eb) => withOutlet(eb))
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<OutletSchedule>): Promise<OutletSchedule | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    // uncoment to enable eager loading
+    //.select((eb) => withOutlet(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<OutletSchedule>) {
+  let query = db.selectFrom('outlet_schedule').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -92,6 +114,10 @@ export async function findByCriteria(criteria: Partial<OutletSchedule>): Promise
     query = query.where('end_time', '=', criteria.end_time);
   }
 
+  if (criteria.outlet_id) {
+    query = query.where('outlet_id', '=', criteria.outlet_id);
+  }
+
   if (criteria.created_by) {
     query = query.where('created_by', '=', criteria.created_by);
   }
@@ -104,9 +130,5 @@ export async function findByCriteria(criteria: Partial<OutletSchedule>): Promise
     );
   }
 
-  return await query
-    .selectAll()
-    // uncoment to enable eager loading
-    //.select((eb) => withOutlet(eb))
-    .execute();
+  return query;
 }

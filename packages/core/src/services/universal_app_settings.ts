@@ -12,6 +12,7 @@ function withAppSettingsType(eb: ExpressionBuilder<Database, 'universal_app_sett
     ).as('app_settings_type')
 }
 
+
 export async function create(universal_app_settings: NewUniversalAppSettings): Promise<UniversalAppSettings | undefined> {
     const exists = await db
         .selectFrom('universal_app_settings')
@@ -79,7 +80,26 @@ export async function get(id: number): Promise<UniversalAppSettings | undefined>
 }
 
 export async function findByCriteria(criteria: Partial<UniversalAppSettings>): Promise<UniversalAppSettings[]> {
-  let query = db.selectFrom('universal_app_settings').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withAppSettingsType(eb))
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<UniversalAppSettings>): Promise<UniversalAppSettings | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withAppSettingsType(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<UniversalAppSettings>) {
+  let query = db.selectFrom('universal_app_settings').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -91,6 +111,10 @@ export async function findByCriteria(criteria: Partial<UniversalAppSettings>): P
       criteria.setting_value === null ? 'is' : '=', 
       criteria.setting_value
     );
+  }
+
+  if (criteria.app_settings_type_id) {
+    query = query.where('app_settings_type_id', '=', criteria.app_settings_type_id);
   }
 
   if (criteria.created_by) {
@@ -105,8 +129,5 @@ export async function findByCriteria(criteria: Partial<UniversalAppSettings>): P
     );
   }
 
-  return await query
-    .selectAll()
-    .select((eb) => withAppSettingsType(eb))
-    .execute();
+  return query;
 }

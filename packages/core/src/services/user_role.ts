@@ -11,6 +11,7 @@ function withUser(eb: ExpressionBuilder<Database, 'user_role'>) {
         .whereRef('user.id', '=', 'user_role.user_id')
     ).as('user')
 }
+
 function withRole(eb: ExpressionBuilder<Database, 'user_role'>) {
     return jsonObjectFrom(
       eb.selectFrom('role')
@@ -18,6 +19,7 @@ function withRole(eb: ExpressionBuilder<Database, 'user_role'>) {
         .whereRef('role.id', '=', 'user_role.role_id')
     ).as('role')
 }
+
 
 export async function create(user_role: NewUserRole): Promise<UserRole | undefined> {
     // check if many-to-many record already exists
@@ -88,7 +90,28 @@ export async function get(id: number): Promise<UserRole | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<UserRole>): Promise<UserRole[]> {
-  let query = db.selectFrom('user_role').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withUser(eb))
+    .select((eb) => withRole(eb))
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<UserRole>): Promise<UserRole | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withUser(eb))
+    .select((eb) => withRole(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<UserRole>) {
+  let query = db.selectFrom('user_role').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -96,6 +119,14 @@ export async function findByCriteria(criteria: Partial<UserRole>): Promise<UserR
 
   if (criteria.all_bots) {
     query = query.where('all_bots', '=', criteria.all_bots);
+  }
+
+  if (criteria.user_id) {
+    query = query.where('user_id', '=', criteria.user_id);
+  }
+
+  if (criteria.role_id) {
+    query = query.where('role_id', '=', criteria.role_id);
   }
 
   if (criteria.created_by) {
@@ -110,9 +141,5 @@ export async function findByCriteria(criteria: Partial<UserRole>): Promise<UserR
     );
   }
 
-  return await query
-    .selectAll()
-    .select((eb) => withUser(eb))
-    .select((eb) => withRole(eb))
-    .execute();
+  return query;
 }

@@ -12,6 +12,7 @@ function withBot(eb: ExpressionBuilder<Database, 'bot_charging_settings'>) {
     ).as('bot')
 }
 
+
 export async function create(bot_charging_settings: NewBotChargingSettings): Promise<BotChargingSettings | undefined> {
     return await db
         .insertInto('bot_charging_settings')
@@ -69,7 +70,28 @@ export async function get(id: number): Promise<BotChargingSettings | undefined> 
 }
 
 export async function findByCriteria(criteria: Partial<BotChargingSettings>): Promise<BotChargingSettings[]> {
-  let query = db.selectFrom('bot_charging_settings').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    // uncoment to enable eager loading
+    //.select((eb) => withBot(eb))
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<BotChargingSettings>): Promise<BotChargingSettings | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    // uncoment to enable eager loading
+    //.select((eb) => withBot(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<BotChargingSettings>) {
+  let query = db.selectFrom('bot_charging_settings').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -92,6 +114,10 @@ export async function findByCriteria(criteria: Partial<BotChargingSettings>): Pr
     query = query.where('end_time', '=', criteria.end_time);
   }
 
+  if (criteria.bot_id) {
+    query = query.where('bot_id', '=', criteria.bot_id);
+  }
+
   if (criteria.created_by) {
     query = query.where('created_by', '=', criteria.created_by);
   }
@@ -104,9 +130,5 @@ export async function findByCriteria(criteria: Partial<BotChargingSettings>): Pr
     );
   }
 
-  return await query
-    .selectAll()
-    // uncoment to enable eager loading
-    //.select((eb) => withBot(eb))
-    .execute();
+  return query;
 }

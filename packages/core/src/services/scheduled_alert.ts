@@ -69,7 +69,24 @@ export async function get(id: number): Promise<ScheduledAlert | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<ScheduledAlert>): Promise<ScheduledAlert[]> {
-  let query = db.selectFrom('scheduled_alert').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<ScheduledAlert>): Promise<ScheduledAlert | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<ScheduledAlert>) {
+  let query = db.selectFrom('scheduled_alert').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -97,6 +114,7 @@ export async function findByCriteria(criteria: Partial<ScheduledAlert>): Promise
     );
   }
 
+
   if (criteria.created_by) {
     query = query.where('created_by', '=', criteria.created_by);
   }
@@ -109,7 +127,5 @@ export async function findByCriteria(criteria: Partial<ScheduledAlert>): Promise
     );
   }
 
-  return await query
-    .selectAll()
-    .execute();
+  return query;
 }

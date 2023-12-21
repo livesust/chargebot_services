@@ -32,6 +32,8 @@ export const UpdateSchema = Joi.object({
 
 export const SearchSchema = Joi.object({
     id: Joi.number(),
+    app_install_id: Joi.number(),
+    permission_id: Joi.number(),
     ...AppInstallPermissionsSchemaDef
 });
 

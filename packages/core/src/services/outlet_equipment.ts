@@ -11,6 +11,7 @@ function withEquipment(eb: ExpressionBuilder<Database, 'outlet_equipment'>) {
         .whereRef('equipment.id', '=', 'outlet_equipment.equipment_id')
     ).as('equipment')
 }
+
 function withOutlet(eb: ExpressionBuilder<Database, 'outlet_equipment'>) {
     return jsonObjectFrom(
       eb.selectFrom('outlet')
@@ -18,6 +19,7 @@ function withOutlet(eb: ExpressionBuilder<Database, 'outlet_equipment'>) {
         .whereRef('outlet.id', '=', 'outlet_equipment.outlet_id')
     ).as('outlet')
 }
+
 function withUser(eb: ExpressionBuilder<Database, 'outlet_equipment'>) {
     return jsonObjectFrom(
       eb.selectFrom('user')
@@ -25,6 +27,7 @@ function withUser(eb: ExpressionBuilder<Database, 'outlet_equipment'>) {
         .whereRef('user.id', '=', 'outlet_equipment.user_id')
     ).as('user')
 }
+
 
 export async function create(outlet_equipment: NewOutletEquipment): Promise<OutletEquipment | undefined> {
     return await db
@@ -84,7 +87,30 @@ export async function get(id: number): Promise<OutletEquipment | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<OutletEquipment>): Promise<OutletEquipment[]> {
-  let query = db.selectFrom('outlet_equipment').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withEquipment(eb))
+    .select((eb) => withOutlet(eb))
+    .select((eb) => withUser(eb))
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<OutletEquipment>): Promise<OutletEquipment | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .select((eb) => withEquipment(eb))
+    .select((eb) => withOutlet(eb))
+    .select((eb) => withUser(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<OutletEquipment>) {
+  let query = db.selectFrom('outlet_equipment').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -96,6 +122,16 @@ export async function findByCriteria(criteria: Partial<OutletEquipment>): Promis
       criteria.notes === null ? 'is' : '=', 
       criteria.notes
     );
+  }
+
+  if (criteria.equipment_id) {
+    query = query.where('equipment_id', '=', criteria.equipment_id);
+  }
+  if (criteria.outlet_id) {
+    query = query.where('outlet_id', '=', criteria.outlet_id);
+  }
+  if (criteria.user_id) {
+    query = query.where('user_id', '=', criteria.user_id);
   }
 
   if (criteria.created_by) {
@@ -110,10 +146,5 @@ export async function findByCriteria(criteria: Partial<OutletEquipment>): Promis
     );
   }
 
-  return await query
-    .selectAll()
-    .select((eb) => withEquipment(eb))
-    .select((eb) => withOutlet(eb))
-    .select((eb) => withUser(eb))
-    .execute();
+  return query;
 }

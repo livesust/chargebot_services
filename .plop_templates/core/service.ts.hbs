@@ -15,6 +15,7 @@ function with{{pascalCase entity}}(eb: ExpressionBuilder<Database, '{{snakeCase 
         .whereRef('{{snakeCase entity}}.id', '=', '{{snakeCase ../name}}.{{snakeCase entity}}_id')
     ).as('{{snakeCase entity}}')
 }
+
   {{/when}}
   {{#when relation_type 'eq' 'many-to-many'}}
 function with{{pascalCase first_entity}}(eb: ExpressionBuilder<Database, '{{snakeCase ../name}}'>) {
@@ -24,6 +25,7 @@ function with{{pascalCase first_entity}}(eb: ExpressionBuilder<Database, '{{snak
         .whereRef('{{snakeCase first_entity}}.id', '=', '{{snakeCase ../name}}.{{snakeCase first_entity}}_id')
     ).as('{{snakeCase first_entity}}')
 }
+
 function with{{pascalCase second_entity}}(eb: ExpressionBuilder<Database, '{{snakeCase ../name}}'>) {
     return jsonObjectFrom(
       eb.selectFrom('{{snakeCase second_entity}}')
@@ -31,6 +33,7 @@ function with{{pascalCase second_entity}}(eb: ExpressionBuilder<Database, '{{sna
         .whereRef('{{snakeCase second_entity}}.id', '=', '{{snakeCase ../name}}.{{snakeCase second_entity}}_id')
     ).as('{{snakeCase second_entity}}')
 }
+
   {{/when}}
 {{/each}}
 
@@ -147,40 +150,7 @@ export async function get(id: number): Promise<{{pascalCase name}} | undefined> 
 }
 
 export async function findByCriteria(criteria: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}}[]> {
-  let query = db.selectFrom('{{snakeCase name}}').where('deleted_by', 'is', null)
-
-  if (criteria.id) {
-    query = query.where('id', '=', criteria.id);
-  }
-
-{{#each attributes}}
-{{#when tsType 'eq' 'string'}}
-  if (criteria.{{snakeCase attribute}} !== undefined) {
-    query = query.where(
-      '{{snakeCase attribute}}', 
-      criteria.{{snakeCase attribute}} === null ? 'is' : '=', 
-      criteria.{{snakeCase attribute}}
-    );
-  }
-{{/when}}
-{{#when tsType 'neq' 'string'}}
-  if (criteria.{{snakeCase attribute}}) {
-    query = query.where('{{snakeCase attribute}}', '=', criteria.{{snakeCase attribute}});
-  }
-{{/when}}
-{{/each}}
-
-  if (criteria.created_by) {
-    query = query.where('created_by', '=', criteria.created_by);
-  }
-
-  if (criteria.modified_by !== undefined) {
-    query = query.where(
-      'modified_by', 
-      criteria.modified_by === null ? 'is' : '=', 
-      criteria.modified_by
-    );
-  }
+  const query = buildCriteriaQuery(criteria);
 
   return await query
     .selectAll()
@@ -205,4 +175,89 @@ export async function findByCriteria(criteria: Partial<{{pascalCase name}}>): Pr
       {{/when}}
     {{/each}}
     .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}} | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    {{#each relationships}}
+      {{#when relation_type 'eq' 'many-to-one'}}
+        {{#if eager}}
+    .select((eb) => with{{pascalCase entity}}(eb))
+        {{else}}
+    // uncoment to enable eager loading
+    //.select((eb) => with{{pascalCase entity}}(eb))
+        {{/if}}
+      {{/when}}
+      {{#when relation_type 'eq' 'many-to-many'}}
+        {{#if eager}}
+    .select((eb) => with{{pascalCase first_entity}}(eb))
+    .select((eb) => with{{pascalCase second_entity}}(eb))
+        {{else}}
+    // uncoment to enable eager loading
+    // .select((eb) => with{{pascalCase first_entity}}(eb))
+    // .select((eb) => with{{pascalCase second_entity}}(eb))
+        {{/if}}
+      {{/when}}
+    {{/each}}
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<{{pascalCase name}}>) {
+  let query = db.selectFrom('{{snakeCase name}}').where('deleted_by', 'is', null);
+
+  if (criteria.id) {
+    query = query.where('id', '=', criteria.id);
+  }
+
+{{#each attributes}}
+  {{#when tsType 'eq' 'string'}}
+  if (criteria.{{snakeCase attribute}} !== undefined) {
+    query = query.where(
+      '{{snakeCase attribute}}', 
+      criteria.{{snakeCase attribute}} === null ? 'is' : '=', 
+      criteria.{{snakeCase attribute}}
+    );
+  }
+  {{/when}}
+  {{#when tsType 'neq' 'string'}}
+  if (criteria.{{snakeCase attribute}}) {
+    query = query.where('{{snakeCase attribute}}', '=', criteria.{{snakeCase attribute}});
+  }
+  {{/when}}
+{{/each}}
+
+{{#each relationships}}
+  {{#when relation_type 'eq' 'many-to-one'}}
+  if (criteria.{{snakeCase entity}}_id) {
+    query = query.where('{{snakeCase entity}}_id', '=', criteria.{{snakeCase entity}}_id);
+  }
+  {{/when}}
+  {{#when relation_type 'eq' 'many-to-many'}}
+  if (criteria.{{snakeCase first_entity}}_id) {
+    query = query.where('{{snakeCase first_entity}}_id', '=', criteria.{{snakeCase first_entity}}_id);
+  }
+
+  if (criteria.{{snakeCase second_entity}}_id) {
+    query = query.where('{{snakeCase second_entity}}_id', '=', criteria.{{snakeCase second_entity}}_id);
+  }
+  {{/when}}
+{{/each}}
+
+  if (criteria.created_by) {
+    query = query.where('created_by', '=', criteria.created_by);
+  }
+
+  if (criteria.modified_by !== undefined) {
+    query = query.where(
+      'modified_by', 
+      criteria.modified_by === null ? 'is' : '=', 
+      criteria.modified_by
+    );
+  }
+
+  return query;
 }

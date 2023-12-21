@@ -69,7 +69,24 @@ export async function get(id: number): Promise<Permission | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<Permission>): Promise<Permission[]> {
-  let query = db.selectFrom('permission').where('deleted_by', 'is', null)
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .execute();
+}
+
+export async function findOneByCriteria(criteria: Partial<Permission>): Promise<Permission | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return await query
+    .selectAll()
+    .limit(1)
+    .executeTakeFirst();
+}
+
+function buildCriteriaQuery(criteria: Partial<Permission>) {
+  let query = db.selectFrom('permission').where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -90,6 +107,7 @@ export async function findByCriteria(criteria: Partial<Permission>): Promise<Per
     );
   }
 
+
   if (criteria.created_by) {
     query = query.where('created_by', '=', criteria.created_by);
   }
@@ -102,7 +120,5 @@ export async function findByCriteria(criteria: Partial<Permission>): Promise<Per
     );
   }
 
-  return await query
-    .selectAll()
-    .execute();
+  return query;
 }

@@ -1,7 +1,7 @@
 export * as ChargebotPDU from "./chargebot_pdu";
 import { sql } from "kysely";
 import db from '../../api';
-import { ChargebotPDU, PDUVariable } from "../../api/chargebot_pdu";
+import { ChargebotPDU, PDUVariable, PDU_OUTLET_IDS } from "../../api/chargebot_pdu";
 
 export async function getPDUStatus(bot_uuid: string): Promise<ChargebotPDU[] | undefined> {
   // @ts-expect-error not overloads match
@@ -72,4 +72,31 @@ export async function getPDUCurrent(bot_uuid: string): Promise<number | undefine
     .executeTakeFirst();
 
   return pduCurrent?.value ? pduCurrent.value as number : undefined;
+}
+
+export async function getOutletStatus(bot_uuid: string, outlet_id: number): Promise<{timestamp: Date, status: string} | undefined> {
+  // @ts-expect-error not overloads match
+  const status: {timestamp: Date, status: string} | undefined = await db
+    .selectFrom("chargebot_pdu")
+    .select([
+      'timestamp',
+      sql`(case when value_int = 0 then 'OFF' else 'ON' end) as status`
+    ])
+    .where('device_id', '=', bot_uuid)
+    .where('variable', '=', translateOutletId(outlet_id))
+    .orderBy('timestamp', 'desc')
+    .limit(1)
+    .executeTakeFirst();
+
+  return status;
+}
+
+
+
+export function translateOutletId(outlet_id: number): PDUVariable {
+  if (!outlet_id) {
+    return PDUVariable.OUTLET_1_STATE;
+  }
+
+  return PDU_OUTLET_IDS[outlet_id-1];
 }
