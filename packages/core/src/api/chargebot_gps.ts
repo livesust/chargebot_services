@@ -11,6 +11,7 @@ export interface ChargebotGpsTable {
   altitude: ColumnType<number, never, never>,
   speed: ColumnType<number, never, never>,
   bearing: ColumnType<number, never, never>,
+  distance: ColumnType<number, never, never>,
   arrived_at: ColumnType<Date | undefined, never, never>,
   left_at: ColumnType<Date | undefined, never, never>,
 }
@@ -25,4 +26,20 @@ export enum VehicleStatus {
   MOVING = 'MOVING',
   STOPPED = 'STOPPED',
   PARKED = 'PARKED',
+}
+
+export interface ChargebotGpsHistory {
+  arrived_at: Date,
+  left_at: Date,
+  latitude: number,
+  longitude: number,
+  distance: number,
+  vehicle_status: string,
+}
+
+export interface ChargebotGpsPosition {
+  timestamp: Date,
+  latitude: number,
+  longitude: number,
+  vehicle_status: string,
 }
