@@ -35,6 +35,11 @@ export function ChargebotStack({ stack }: StackContext) {
     code: Code.fromAsset("layers/axios"),
   });
 
+
+  const luxonLayer = new LayerVersion(stack, "luxon-layer", {
+    code: Code.fromAsset("layers/luxon"),
+  });
+
   // Create the HTTP API
   const api = new Api(stack, "Api", {
     // customDomain: {
@@ -77,6 +82,10 @@ export function ChargebotStack({ stack }: StackContext) {
         // @ts-expect-error ignore error
         role: iamRole
       },
+      layers: [luxonLayer],
+      nodejs: {
+        install: ["luxon"],
+      },
     },
     routes: {
       "GET /{entity}": "packages/functions/src/crud/list.main",
@@ -103,6 +112,7 @@ export function ChargebotStack({ stack }: StackContext) {
       },
       "GET /bot/{id}/outlets": "packages/functions/src/api/bot_outlets.main",
       "GET /bot/{bot_uuid}/outlet/{outlet_id}": "packages/functions/src/api/bot_outlet_details.main",
+      "GET /bot/{bot_uuid}/location/from/{from}/to/{to}": "packages/functions/src/api/bot_location_history.main",
     }
   });
 

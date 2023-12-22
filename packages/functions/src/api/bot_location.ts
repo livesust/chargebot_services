@@ -15,7 +15,7 @@ const handler = async (event) => {
   const bot_uuid = event.pathParameters!.bot_uuid!;
 
   try {
-    const location = await ChargebotGps.getByBot(bot_uuid);
+    const location = await ChargebotGps.getLastPositionByBot(bot_uuid);
 
     return createSuccessResponse({
       bot_uuid: location?.device_id,

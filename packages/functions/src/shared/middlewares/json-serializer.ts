@@ -1,17 +1,18 @@
 import middy from '@middy/core';
+import { DateTime } from "luxon";
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 
 // Replacer function to convert Date objects to ISO 8601 format
 const dateReplacer = (_: string, value: unknown) => {
   if (value instanceof Date) {
     // Convert Date objects to ISO 8601 format with timezone
-    return value.toISOString();
+    return DateTime.fromJSDate(value).toISO();
   }
   if (typeof value === 'string') {
     // Check if the string is in a valid date format
-    const dateRegex = /^\d{4}-\d{2}-\d{2}((T|\s){1}\d{2}:\d{2}:\d{2}(\.\d{1,3})?(Z|[+-]\d{2}:\d{2})?)?$/;
-    if (dateRegex.test(value)) {
-      return new Date(value).toISOString();
+    const date = DateTime.fromISO(value) || DateTime.fromSQL(value) || DateTime.fromRFC2822(value) || DateTime.fromHTTP(value);
+    if (date.isValid) {
+      return date.toISO();
     }
   }
   return value;
