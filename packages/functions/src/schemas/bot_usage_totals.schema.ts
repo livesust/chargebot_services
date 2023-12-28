@@ -28,8 +28,3 @@ export const ArrayResponseSchema = Joi.object({
     ...JsonResponseSchemaDef,
     body: Joi.array().items(EntitySchema)
 });
-
-export const PathParamSchema = Joi.object({
-  bot_uuid: Joi.string().uuid().required(),
-  outlet_id: Joi.number().required()
-});

@@ -13,14 +13,7 @@ import { ChargebotError } from "@chargebot-services/core/services/analytics/char
 import { IotShadow } from "@chargebot-services/core/services/iot/iot_shadow";
 import { InverterVariable } from "@chargebot-services/core/api/chargebot_inverter";
 import { BotUUIDPathParamSchema } from "src/shared/schemas";
-
-
-const getNumber = (value: unknown):number => {
-  if (!value || isNaN(value as number)) {
-    return 0;
-  }
-  return value as number;
-}
+import { getNumber } from "../shared/rest_utils";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
