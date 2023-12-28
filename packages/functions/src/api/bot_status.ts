@@ -31,7 +31,7 @@ const handler = async (event) => {
       ChargebotBattery.getBatteryLevel(bot_uuid),
       ChargebotInverter.getBatteryStatus(bot_uuid),
       ChargebotInverter.getInverterStatus(bot_uuid),
-      ChargebotInverter.getEnergyTotalsToday(bot_uuid),
+      ChargebotInverter.getTodayEnergyUsage(bot_uuid),
       ChargebotPDU.getPDUCurrent(bot_uuid),
       ChargebotError.getConnectionStatus(bot_uuid),
       ChargebotError.getSystemStatus(bot_uuid),
