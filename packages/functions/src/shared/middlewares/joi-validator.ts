@@ -39,7 +39,7 @@ const middleware = (options: Options): middy.MiddlewareObj<APIGatewayProxyEvent,
             const { error: validationError, value } = headersSchema.validate(request.event.headers, headersValidationOptions);
             if (validationError) {
                 // Bad Request
-                const error = createError(400, `Header: ${validationError.message}`);
+                const error = createError(400, `Header: ${validationError.message}`, { expose: true });
                 const errorDetails = validationError.details.map(detail => detail.message);
                 error.details = errorDetails;
                 throw error;
@@ -50,7 +50,7 @@ const middleware = (options: Options): middy.MiddlewareObj<APIGatewayProxyEvent,
             const { error: validationError, value } = eventSchema.validate(request.event.body, eventValidationOptions);
             if (validationError) {
                 // Bad Request
-                const error = createError(400, validationError.message);
+                const error = createError(400, validationError.message, { expose: true });
                 const errorDetails = validationError.details.map(detail => detail.message);
                 error.details = errorDetails;
                 throw error;
@@ -61,7 +61,7 @@ const middleware = (options: Options): middy.MiddlewareObj<APIGatewayProxyEvent,
             const { error: validationError } = pathParametersSchema.validate(request.event.pathParameters, pathParametersValidationOptions);
             if (validationError) {
                 // Bad Request
-                const error = createError(400, validationError.message);
+                const error = createError(400, validationError.message, { expose: true });
                 const errorDetails = validationError.details.map(detail => detail.message);
                 error.details = errorDetails;
                 throw error;
@@ -76,7 +76,7 @@ const middleware = (options: Options): middy.MiddlewareObj<APIGatewayProxyEvent,
             const { error: validationError } = responseSchema.validate(request.response, responseValidationOptions);
             if (validationError) {
                 // Bad Request
-                const error = createError(500, validationError.message);
+                const error = createError(500, validationError.message, { expose: true });
                 const errorDetails = validationError.details.map(detail => detail.message);
                 error.details = errorDetails;
                 throw error;

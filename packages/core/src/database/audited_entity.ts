@@ -11,8 +11,8 @@ export interface AuditedEntity {
     created_date: ColumnType<Date, Date | undefined, never>;
 
     // only provided on updates and select
-    modified_by: ColumnType<string, never, string>;
-    modified_date: ColumnType<Date, never, Date>;
+    modified_by: ColumnType<string, string | undefined, string>;
+    modified_date: ColumnType<Date, Date | undefined, Date>;
 
     // optionally provided on updates (when deleted) and select
     deleted_by: ColumnType<string, never, string | undefined>;
