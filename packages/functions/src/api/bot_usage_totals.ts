@@ -2,7 +2,7 @@ import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import { createError } from '@middy/util';
 import httpErrorHandler from "@middy/http-error-handler";
-import { ResponseSchema } from "../schemas/bot_monthly_usage.schema";
+import { ResponseSchema } from "../schemas/bot_usage_totals.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";

@@ -1,7 +1,6 @@
 import { createError } from '@middy/util';
 import { ObjectSchema } from "joi";
 import { loadSchemas } from '../schemas';
-import { DateTime } from "luxon";
 
 // @ts-expect-error ignore any type for event
 export const isWarmingUp = (event) => event.isWarmingUp === true
@@ -92,4 +91,11 @@ export const validateArrayResponse = async (response, entity_name: string) => {
         error.details = errorDetails;
         throw error;
     }
+}
+
+export const getNumber = (value: unknown):number => {
+  if (!value || isNaN(value as number)) {
+    return 0;
+  }
+  return value as number;
 }
