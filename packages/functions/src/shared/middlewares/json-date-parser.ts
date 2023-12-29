@@ -10,5 +10,5 @@ export const dateReviver = (_: string, value: unknown) => {
       return date.toJSDate();
     }
   }
-  return new Date(value as string);
+  return value;
 };

@@ -13,7 +13,7 @@ import jsonBodyParser from "@middy/http-json-body-parser";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
-    const body = event.body;
+    const body = event.body ?? {};
     const entity_name = event.pathParameters!.entity!;
 
     await validateSearchBody(body, entity_name);
