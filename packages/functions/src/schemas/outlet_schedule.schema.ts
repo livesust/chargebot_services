@@ -29,7 +29,8 @@ export const CreateSchema = Joi.object({
 
 export const UpdateSchema = Joi.object({
     ...AuditedEntityUpdateSchemaDef,
-    ...OutletScheduleSchemaDef
+    ...OutletScheduleSchemaDef,
+    outlet_id: Joi.number(),
 });
 
 export const SearchSchema = Joi.object({

@@ -24,7 +24,8 @@ export const CreateSchema = Joi.object({
 
 export const UpdateSchema = Joi.object({
     ...AuditedEntityUpdateSchemaDef,
-    ...UniversalAppSettingsSchemaDef
+    ...UniversalAppSettingsSchemaDef,
+    app_settings_type_id: Joi.number(),
 });
 
 export const SearchSchema = Joi.object({

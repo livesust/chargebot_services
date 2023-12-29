@@ -37,7 +37,6 @@ export const UpdateSchema = Joi.object({
     ...EquipmentSchemaDef,
     equipment_type_id: Joi.number(),
     customer_id: Joi.number(),
-    equipment_type: EquipmentTypeSchema,
 });
 
 export const SearchSchema = Joi.object({
