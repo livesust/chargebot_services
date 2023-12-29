@@ -24,17 +24,16 @@ export class HourlyUsage {
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
   const bot_uuid = event.pathParameters!.bot_uuid!;
-  const from = DateTime.fromISO(event.pathParameters!.date!).setZone('UTC');
-  const to = from.endOf('day');
+  const date = event.pathParameters!.date!;
+  const from = DateTime.fromISO(date).setZone('UTC').toJSDate();
+  const to = DateTime.fromISO(date).setZone('UTC').endOf('day').toJSDate();
 
   try {
-    const start = from.toJSDate();
-    const end = to.toJSDate();
-    const [energyUsageTotals, avgBatteryLevel, inverterHourlyBuckets, batteryHourlyBuckets] = await Promise.all([
-      ChargebotInverter.getTotalEnergyUsage(bot_uuid, start, end),
-      ChargebotBattery.getAvgBatteryLevel(bot_uuid, start, end),
-      ChargebotInverter.getEnergyUsageByHourBucket(bot_uuid, start, end),
-      ChargebotBattery.getBatteryLevelByHourBucket(bot_uuid, start, end),
+    const [energyUsageTotals, inverterHourlyBuckets, batteryLevelSoc, batteryHourlyBuckets] = await Promise.all([
+      ChargebotInverter.getTotalEnergyUsage(bot_uuid, from, to),
+      ChargebotInverter.getEnergyUsageByHourBucket(bot_uuid, from, to),
+      ChargebotBattery.getAvgBatteryLevel(bot_uuid, from, to),
+      ChargebotBattery.getBatteryLevelByHourBucket(bot_uuid, from, to),
     ]);
 
     const energyUsageVariables: { [key: string]: unknown } = energyUsageTotals.reduce((acc: { [key: string]: unknown }, obj) => {
@@ -45,11 +44,13 @@ const handler = async (event) => {
     const hourly: HourlyUsage[] = [];
 
     inverterHourlyBuckets.forEach((obj) => {
-      const hour_of_day = obj.bucket.getUTCDate();
+      const hour_of_day = obj.bucket.getTime();
 
-      const hour_record: HourlyUsage =
-        hourly?.find((e) => e.hour_of_day === hour_of_day)
-        ?? Object.assign(new HourlyUsage(), { hour_of_day: hour_of_day });
+      let hour_record: HourlyUsage | undefined = hourly?.find((e) => e.hour_of_day === hour_of_day);
+      if (!hour_record) {
+        hour_record = Object.assign(new HourlyUsage(), { hour_of_day: hour_of_day });
+        hourly.push(hour_record);
+      }
 
       if (obj.variable === InverterVariable.ENERGY_USAGE) {
         hour_record.energy_usage = obj.avg_value;
@@ -65,7 +66,7 @@ const handler = async (event) => {
     });
 
     batteryHourlyBuckets.forEach((obj) => {
-      const hour_of_day = obj.bucket.getUTCDate();
+      const hour_of_day = obj.bucket.getTime();
 
       const hour_record: HourlyUsage =
         hourly?.find((e) => e.hour_of_day === hour_of_day)
@@ -78,11 +79,12 @@ const handler = async (event) => {
 
     const response = {
       bot_uuid: bot_uuid,
+      timestamp: date,
       energy_usage: getNumber(energyUsageVariables[InverterVariable.ENERGY_USAGE]),
       total_charging: grid_charging + solar_charging,
       grid_charging: grid_charging,
       solar_charging: solar_charging,
-      battery_level: avgBatteryLevel,
+      battery_level: batteryLevelSoc,
       hourly: hourly
     };
 

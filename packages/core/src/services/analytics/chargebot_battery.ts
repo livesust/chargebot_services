@@ -2,6 +2,7 @@ export * as ChargebotBattery from "./chargebot_battery";
 import { sql } from "kysely";
 import db from '../../api';
 import { ChargebotBattery, BatteryVariables } from "../../api/chargebot_battery";
+import { ChargebotInverter } from "./chargebot_inverter";
 
 export async function getBatteryLevel(bot_uuid: string): Promise<number | undefined> {
   // @ts-expect-error not overloads match
@@ -29,7 +30,7 @@ export async function getBatteryLevel(bot_uuid: string): Promise<number | undefi
     .limit(1)
     .executeTakeFirst();
 
-  return levelSoc?.value ? Math.round(levelSoc?.value as number) : undefined;
+  return levelSoc?.value ? Math.round(levelSoc?.value as number) : ChargebotInverter.getBatteryLevel(bot_uuid);
 }
 
 export async function getAvgBatteryLevel(bot_uuid: string, from: Date, to: Date): Promise<number | undefined> {
@@ -52,7 +53,7 @@ export async function getAvgBatteryLevel(bot_uuid: string, from: Date, to: Date)
     .where('timestamp', '<=', to)
     .executeTakeFirst();
 
-  return levelSoc?.value ? Math.round(levelSoc?.value as number) : undefined;
+  return levelSoc?.value ? Math.round(levelSoc?.value as number) : ChargebotInverter.getAvgBatteryLevel(bot_uuid, from, to);
 }
 
 export async function getBatteryLevelByHourBucket(bot_uuid: string, from: Date, to: Date): Promise<{
@@ -61,8 +62,7 @@ export async function getBatteryLevelByHourBucket(bot_uuid: string, from: Date, 
   max_value: number,
   avg_value: number
 }[]> {
-  // @ts-expect-error not overloads match
-  return await db
+  const results = await db
     .selectFrom("chargebot_battery")
     // @ts-expect-error implicit any
     .select(({ fn }) => [
@@ -81,12 +81,12 @@ export async function getBatteryLevelByHourBucket(bot_uuid: string, from: Date, 
           'value_float',
           'value_double'
       )).as('max_value'),
-      fn.avg(fn.coalesce(
-          'value_int',
-          'value_long',
-          'value_float',
-          'value_double'
-      )).as('avg_value'),
+      sql`round(avg(coalesce(
+        value_int,
+        value_long,
+        value_float,
+        value_double
+      ))) as avg_value`,
     ])
     .where('device_id', '=', bot_uuid)
     .where('variable', '=', BatteryVariables.LEVEL_SOC)
@@ -95,4 +95,7 @@ export async function getBatteryLevelByHourBucket(bot_uuid: string, from: Date, 
     .groupBy('bucket')
     .orderBy('bucket', 'asc')
     .execute();
+
+    // @ts-expect-error not overloads match
+    return results && results.length > 0 ? results :  ChargebotInverter.getBatteryLevelByHourBucket(bot_uuid, from, to);
 }
