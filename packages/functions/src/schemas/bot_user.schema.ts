@@ -28,7 +28,9 @@ export const CreateSchema = Joi.object({
 
 export const UpdateSchema = Joi.object({
     ...AuditedEntityUpdateSchemaDef,
-    ...BotUserSchemaDef
+    ...BotUserSchemaDef,
+    bot_id: Joi.number(),
+    user_id: Joi.number(),
 });
 
 export const SearchSchema = Joi.object({

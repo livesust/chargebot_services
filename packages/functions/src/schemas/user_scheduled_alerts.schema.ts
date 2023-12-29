@@ -27,7 +27,9 @@ export const CreateSchema = Joi.object({
 
 export const UpdateSchema = Joi.object({
     ...AuditedEntityUpdateSchemaDef,
-    ...UserScheduledAlertsSchemaDef
+    ...UserScheduledAlertsSchemaDef,
+    scheduled_alert_id: Joi.number(),
+    user_id: Joi.number(),
 });
 
 export const SearchSchema = Joi.object({

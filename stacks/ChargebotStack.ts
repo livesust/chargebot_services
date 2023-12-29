@@ -115,6 +115,7 @@ export function ChargebotStack({ stack }: StackContext) {
       "GET /bot/{bot_uuid}/location/from/{from}/to/{to}": "packages/functions/src/api/bot_location_history.main",
       "GET /bot/{bot_uuid}/usage/totals": "packages/functions/src/api/bot_usage_totals.main",
       "GET /bot/{bot_uuid}/usage/day/{date}": "packages/functions/src/api/bot_usage_history.main",
+      "GET /equipment/customer/{customer_id}": "packages/functions/src/api/equipments_by_customer.main",
     }
   });
 

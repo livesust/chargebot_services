@@ -27,7 +27,9 @@ export const CreateSchema = Joi.object({
 
 export const UpdateSchema = Joi.object({
     ...AuditedEntityUpdateSchemaDef,
-    ...AppInstallPermissionsSchemaDef
+    ...AppInstallPermissionsSchemaDef,
+    app_install_id: Joi.number(),
+    permission_id: Joi.number(),
 });
 
 export const SearchSchema = Joi.object({

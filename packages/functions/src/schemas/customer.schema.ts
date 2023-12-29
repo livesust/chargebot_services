@@ -22,7 +22,7 @@ export const CreateSchema = Joi.object({
 
 export const UpdateSchema = Joi.object({
     ...AuditedEntityUpdateSchemaDef,
-    ...CustomerSchemaDef
+    ...CustomerSchemaDef,
 });
 
 export const SearchSchema = Joi.object({
