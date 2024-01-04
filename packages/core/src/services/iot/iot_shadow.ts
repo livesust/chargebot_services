@@ -1,4 +1,4 @@
-export * as IotShadow from "./iot_shadow";
+export * as IoTShadow from "./iot_shadow";
 import axios from 'axios';
 import { Config } from "sst/node/config";
 import { IoTShadow } from "../../iot/iot_shadow";

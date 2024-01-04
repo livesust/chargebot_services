@@ -42,7 +42,7 @@ export const EntityPathParamSchema = Joi.object({
 });
 
 export const BotUUIDPathParamSchema = Joi.object({
-    bot_uuid: Joi.string().uuid().required()
+    bot_uuid: Joi.string().required()
 });
 
 export const EntityAndIdPathParamSchema = Joi.object({

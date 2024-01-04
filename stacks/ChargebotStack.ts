@@ -1,7 +1,7 @@
 import { StackContext, Config, Api, use } from "sst/constructs";
 import { RDSStack } from "./RDSStack";
 import { CognitoStack } from "./CognitoStack";
-import { IRole, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
+import { Effect, IRole, Policy, PolicyStatement, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { LayerVersion, Code } from "aws-cdk-lib/aws-lambda";
 
 export function ChargebotStack({ stack }: StackContext) {
@@ -15,20 +15,37 @@ export function ChargebotStack({ stack }: StackContext) {
   const TIMESCALE_PORT = new Config.Secret(stack, "TIMESCALE_PORT");
   const TIMESCALE_DATABASE = new Config.Secret(stack, "TIMESCALE_DATABASE");
 
-  // IoT Shadow API Gateway Keys
+  // IoT Keys
   const IOT_API_URL = new Config.Secret(stack, "IOT_API_URL");
   const IOT_API_KEY = new Config.Secret(stack, "IOT_API_KEY");
+  const IOT_ENDPOINT = new Config.Secret(stack, "IOT_ENDPOINT");
 
   // Create an IAM role
   const iamRole: IRole = new Role(stack, "ApiRole", {
     assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
     managedPolicies: [
-      {
-        managedPolicyArn:
-          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
-      },
+      { managedPolicyArn: "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole" },
     ],
   });
+
+  const iotRole: IRole = new Role(stack, "IoTRole", {
+    assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
+  });
+
+  const iotPolicy: Policy = new Policy(stack, "IoTPolicy", {
+    policyName: 'lambda_iot_policy',
+    statements: [new PolicyStatement({
+      effect: Effect.ALLOW,
+      actions: [
+        "iot:Connect",
+        "iot:Publish",
+        "iot:Subscribe",
+        "iot:Receive",
+      ],
+      resources: ["*"]
+    })]
+  });
+  iotPolicy.attachToRole(iotRole);
 
   // axios lambda layer to make http requests
   const axiosLayer = new LayerVersion(stack, "axios-layer", {
@@ -118,6 +135,14 @@ export function ChargebotStack({ stack }: StackContext) {
       "GET /equipment/customer/{customer_id}": "packages/functions/src/api/equipments_by_customer.main",
       "POST /equipment/{equipment_id}/outlet/{outlet_id}": "packages/functions/src/api/assign_equipment_outlet.main",
       "DELETE /equipment/{equipment_id}/outlet/{outlet_id}": "packages/functions/src/api/unassign_equipment_outlet.main",
+      "POST /bot/{bot_uuid}/control": {
+        function: {
+          handler: "packages/functions/src/api/control_outlet.main",
+          bind: [IOT_ENDPOINT],
+          // @ts-expect-error ignore error
+          role: iotRole
+        }
+      },
     }
   });
 
