@@ -10,7 +10,7 @@ import { ChargebotBattery } from "@chargebot-services/core/services/analytics/ch
 import { ChargebotInverter } from "@chargebot-services/core/services/analytics/chargebot_inverter";
 import { ChargebotPDU } from "@chargebot-services/core/services/analytics/chargebot_pdu";
 import { ChargebotError } from "@chargebot-services/core/services/analytics/chargebot_error";
-import { IotShadow } from "@chargebot-services/core/services/iot/iot_shadow";
+import { IoTShadow } from "@chargebot-services/core/services/iot/iot_shadow";
 import { InverterVariable } from "@chargebot-services/core/api/chargebot_inverter";
 import { BotUUIDPathParamSchema } from "src/shared/schemas";
 import { getNumber } from "../shared/rest_utils";
@@ -28,7 +28,7 @@ const handler = async (event) => {
       ChargebotPDU.getPDUCurrent(bot_uuid),
       ChargebotError.getConnectionStatus(bot_uuid),
       ChargebotError.getSystemStatus(bot_uuid),
-      IotShadow.getSystemStatus(bot_uuid),
+      IoTShadow.getSystemStatus(bot_uuid),
     ]);
 
     const inverterVariables: { [key: string]: unknown } = inverterStatus.reduce((acc: { [key: string]: unknown }, obj) => {

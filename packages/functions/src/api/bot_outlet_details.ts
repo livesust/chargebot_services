@@ -28,7 +28,7 @@ const handler = async (event) => {
     const equipment = outletEquipment ? outletEquipment.equipment : undefined;
 
     if (!outlet) {
-      return createNotFoundResponse(undefined);
+      return createNotFoundResponse({ "response": "outlet not found" });
     }
 
     const response = {
