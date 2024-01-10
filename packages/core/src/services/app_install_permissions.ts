@@ -62,14 +62,28 @@ export async function create(app_install_permissions: NewAppInstallPermissions):
     };
 }
 
-export async function update(id: number, app_install_permissions: AppInstallPermissionsUpdate): Promise<AppInstallPermissions | undefined> {
-    return await db
+export async function update(id: number, app_install_permissions: AppInstallPermissionsUpdate): Promise<{
+  entity: AppInstallPermissions | undefined,
+  event: unknown
+} | undefined> {
+    const updated = await db
         .updateTable('app_install_permissions')
         .set(app_install_permissions)
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
+
+    if (!updated) {
+      return undefined;
+    }
+
+    return {
+      entity: updated,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {

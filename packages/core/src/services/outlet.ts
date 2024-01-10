@@ -45,14 +45,28 @@ export async function create(outlet: NewOutlet): Promise<{
     };
 }
 
-export async function update(id: number, outlet: OutletUpdate): Promise<Outlet | undefined> {
-    return await db
+export async function update(id: number, outlet: OutletUpdate): Promise<{
+  entity: Outlet | undefined,
+  event: unknown
+} | undefined> {
+    const updated = await db
         .updateTable('outlet')
         .set(outlet)
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
+
+    if (!updated) {
+      return undefined;
+    }
+
+    return {
+      entity: updated,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {

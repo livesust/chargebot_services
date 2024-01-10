@@ -37,14 +37,28 @@ export async function create(app_install: NewAppInstall): Promise<{
     };
 }
 
-export async function update(id: number, app_install: AppInstallUpdate): Promise<AppInstall | undefined> {
-    return await db
+export async function update(id: number, app_install: AppInstallUpdate): Promise<{
+  entity: AppInstall | undefined,
+  event: unknown
+} | undefined> {
+    const updated = await db
         .updateTable('app_install')
         .set(app_install)
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
+
+    if (!updated) {
+      return undefined;
+    }
+
+    return {
+      entity: updated,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {

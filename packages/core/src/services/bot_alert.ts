@@ -45,14 +45,28 @@ export async function create(bot_alert: NewBotAlert): Promise<{
     };
 }
 
-export async function update(id: number, bot_alert: BotAlertUpdate): Promise<BotAlert | undefined> {
-    return await db
+export async function update(id: number, bot_alert: BotAlertUpdate): Promise<{
+  entity: BotAlert | undefined,
+  event: unknown
+} | undefined> {
+    const updated = await db
         .updateTable('bot_alert')
         .set(bot_alert)
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
+
+    if (!updated) {
+      return undefined;
+    }
+
+    return {
+      entity: updated,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {

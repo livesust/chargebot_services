@@ -14,7 +14,6 @@ function withOutlet(eb: ExpressionBuilder<Database, 'outlet_schedule'>) {
   ).as('outlet')
 }
 
-
 export async function create(outlet_schedule: NewOutletSchedule): Promise<{
   entity: OutletSchedule | undefined,
   event: unknown
@@ -32,8 +31,9 @@ export async function create(outlet_schedule: NewOutletSchedule): Promise<{
   }
 
   const outlet = await Outlet.get(created.outlet_id);
-  const startTime = created!.start_time ? DateTime.fromJSDate(new Date(created.start_time)).toLocaleString(DateTime.TIME_24_SIMPLE) : "00:00";
-  const endTime = created!.end_time ? DateTime.fromJSDate(new Date(created!.end_time)).toLocaleString(DateTime.TIME_24_SIMPLE) : "23:59";
+  const allDay = created.all_day ?? true;
+  const startTime = !allDay && created.start_time ? DateTime.fromJSDate(new Date(created.start_time)).toLocaleString(DateTime.TIME_24_SIMPLE) : "00:00";
+  const endTime = !allDay && created.end_time ? DateTime.fromJSDate(new Date(created.end_time)).toLocaleString(DateTime.TIME_24_SIMPLE) : "23:59";
 
   return {
     entity: created,
@@ -45,7 +45,7 @@ export async function create(outlet_schedule: NewOutletSchedule): Promise<{
         outlet_id: outlet.pdu_outlet_number,
         command: "set_schedule",
         params: {
-          all_day: created?.all_day ?? true,
+          all_day: allDay,
           start_time: startTime,
           end_time: endTime,
         }
@@ -54,14 +54,44 @@ export async function create(outlet_schedule: NewOutletSchedule): Promise<{
   };
 }
 
-export async function update(id: number, outlet_schedule: OutletScheduleUpdate): Promise<OutletSchedule | undefined> {
-  return await db
+export async function update(id: number, outlet_schedule: OutletScheduleUpdate): Promise<{
+  entity: OutletSchedule | undefined,
+  event: unknown
+} | undefined> {
+  const updated = await db
     .updateTable('outlet_schedule')
     .set(outlet_schedule)
     .where('id', '=', id)
     .where('deleted_by', 'is', null)
     .returningAll()
     .executeTakeFirst();
+
+  if (!updated) {
+    return undefined;
+  }
+
+  const outlet = await Outlet.get(updated.outlet_id);
+  const allDay = updated.all_day ?? true;
+  const startTime = !allDay && updated.start_time ? DateTime.fromJSDate(new Date(updated.start_time)).toLocaleString(DateTime.TIME_24_SIMPLE) : "00:00";
+  const endTime = !allDay && updated.end_time ? DateTime.fromJSDate(new Date(updated!.end_time)).toLocaleString(DateTime.TIME_24_SIMPLE) : "23:59";
+
+  return {
+    entity: updated,
+    // event to dispatch on EventBus on creation
+    // undefined as default to not dispatch any event
+    event: outlet?.bot?.bot_uuid ? {
+      topic: `chargebot/control/${outlet?.bot?.bot_uuid}/outlet`,
+      payload: {
+        outlet_id: outlet.pdu_outlet_number,
+        command: "set_schedule",
+        params: {
+          all_day: allDay,
+          start_time: startTime,
+          end_time: endTime,
+        }
+      }
+    } : undefined
+  };
 }
 
 export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {

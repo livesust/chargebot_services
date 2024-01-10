@@ -62,14 +62,28 @@ export async function create(bot_company: NewBotCompany): Promise<{
     };
 }
 
-export async function update(id: number, bot_company: BotCompanyUpdate): Promise<BotCompany | undefined> {
-    return await db
+export async function update(id: number, bot_company: BotCompanyUpdate): Promise<{
+  entity: BotCompany | undefined,
+  event: unknown
+} | undefined> {
+    const updated = await db
         .updateTable('bot_company')
         .set(bot_company)
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
+
+    if (!updated) {
+      return undefined;
+    }
+
+    return {
+      entity: updated,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {

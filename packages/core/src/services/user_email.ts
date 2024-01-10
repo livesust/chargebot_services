@@ -48,14 +48,28 @@ export async function create(user_email: NewUserEmail): Promise<{
     };
 }
 
-export async function update(id: number, user_email: UserEmailUpdate): Promise<UserEmail | undefined> {
-    return await db
+export async function update(id: number, user_email: UserEmailUpdate): Promise<{
+  entity: UserEmail | undefined,
+  event: unknown
+} | undefined> {
+    const updated = await db
         .updateTable('user_email')
         .set(user_email)
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
+
+    if (!updated) {
+      return undefined;
+    }
+
+    return {
+      entity: updated,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {

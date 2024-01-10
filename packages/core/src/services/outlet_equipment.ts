@@ -62,14 +62,28 @@ export async function create(outlet_equipment: NewOutletEquipment): Promise<{
     };
 }
 
-export async function update(id: number, outlet_equipment: OutletEquipmentUpdate): Promise<OutletEquipment | undefined> {
-    return await db
+export async function update(id: number, outlet_equipment: OutletEquipmentUpdate): Promise<{
+  entity: OutletEquipment | undefined,
+  event: unknown
+} | undefined> {
+    const updated = await db
         .updateTable('outlet_equipment')
         .set(outlet_equipment)
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
+
+    if (!updated) {
+      return undefined;
+    }
+
+    return {
+      entity: updated,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {

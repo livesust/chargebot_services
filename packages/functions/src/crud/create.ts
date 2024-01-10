@@ -33,8 +33,8 @@ const handler = async (event) => {
     throw createError(400, entity_name + " not created", { expose: true });
   }
 
-  if (created?.event) {
-    EventBus.dispatchEvent(entity_name, "created", created?.event);
+  if (created.event) {
+    EventBus.dispatchEvent(entity_name, "created", created.event);
   }
 
   const response = createSuccessResponse(created.entity);

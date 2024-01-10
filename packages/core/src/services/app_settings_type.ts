@@ -38,14 +38,28 @@ export async function create(app_settings_type: NewAppSettingsType): Promise<{
     };
 }
 
-export async function update(id: number, app_settings_type: AppSettingsTypeUpdate): Promise<AppSettingsType | undefined> {
-    return await db
+export async function update(id: number, app_settings_type: AppSettingsTypeUpdate): Promise<{
+  entity: AppSettingsType | undefined,
+  event: unknown
+} | undefined> {
+    const updated = await db
         .updateTable('app_settings_type')
         .set(app_settings_type)
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
+
+    if (!updated) {
+      return undefined;
+    }
+
+    return {
+      entity: updated,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {

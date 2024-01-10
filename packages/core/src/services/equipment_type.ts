@@ -27,14 +27,28 @@ export async function create(equipment_type: NewEquipmentType): Promise<{
     };
 }
 
-export async function update(id: number, equipment_type: EquipmentTypeUpdate): Promise<EquipmentType | undefined> {
-    return await db
+export async function update(id: number, equipment_type: EquipmentTypeUpdate): Promise<{
+  entity: EquipmentType | undefined,
+  event: unknown
+} | undefined> {
+    const updated = await db
         .updateTable('equipment_type')
         .set(equipment_type)
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
+
+    if (!updated) {
+      return undefined;
+    }
+
+    return {
+      entity: updated,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {

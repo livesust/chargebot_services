@@ -39,14 +39,28 @@ export async function create(state_master: NewStateMaster): Promise<{
     };
 }
 
-export async function update(id: number, state_master: StateMasterUpdate): Promise<StateMaster | undefined> {
-    return await db
+export async function update(id: number, state_master: StateMasterUpdate): Promise<{
+  entity: StateMaster | undefined,
+  event: unknown
+} | undefined> {
+    const updated = await db
         .updateTable('state_master')
         .set(state_master)
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
+
+    if (!updated) {
+      return undefined;
+    }
+
+    return {
+      entity: updated,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {
