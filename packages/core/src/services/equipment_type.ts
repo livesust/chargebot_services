@@ -3,14 +3,28 @@ import db from '../database';
 import { EquipmentType, EquipmentTypeUpdate, NewEquipmentType } from "../database/equipment_type";
 
 
-export async function create(equipment_type: NewEquipmentType): Promise<EquipmentType | undefined> {
-    return await db
+export async function create(equipment_type: NewEquipmentType): Promise<{
+  entity: EquipmentType | undefined,
+  event: unknown
+} | undefined> {
+    const created = await db
         .insertInto('equipment_type')
         .values({
             ...equipment_type,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function update(id: number, equipment_type: EquipmentTypeUpdate): Promise<EquipmentType | undefined> {

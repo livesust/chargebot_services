@@ -13,7 +13,10 @@ function withAppSettingsType(eb: ExpressionBuilder<Database, 'universal_app_sett
 }
 
 
-export async function create(universal_app_settings: NewUniversalAppSettings): Promise<UniversalAppSettings | undefined> {
+export async function create(universal_app_settings: NewUniversalAppSettings): Promise<{
+  entity: UniversalAppSettings | undefined,
+  event: unknown
+} | undefined> {
     const exists = await db
         .selectFrom('universal_app_settings')
         .select(['id'])
@@ -25,13 +28,24 @@ export async function create(universal_app_settings: NewUniversalAppSettings): P
     if (exists) {
         throw Error('Entity already exists with unique values');
     }
-    return await db
+    const created = await db
         .insertInto('universal_app_settings')
         .values({
             ...universal_app_settings,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function update(id: number, universal_app_settings: UniversalAppSettingsUpdate): Promise<UniversalAppSettings | undefined> {

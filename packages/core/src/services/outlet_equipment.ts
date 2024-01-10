@@ -38,14 +38,28 @@ function withUser(eb: ExpressionBuilder<Database, 'outlet_equipment'>) {
 }
 
 
-export async function create(outlet_equipment: NewOutletEquipment): Promise<OutletEquipment | undefined> {
-    return await db
+export async function create(outlet_equipment: NewOutletEquipment): Promise<{
+  entity: OutletEquipment | undefined,
+  event: unknown
+} | undefined> {
+    const created = await db
         .insertInto('outlet_equipment')
         .values({
             ...outlet_equipment,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function update(id: number, outlet_equipment: OutletEquipmentUpdate): Promise<OutletEquipment | undefined> {

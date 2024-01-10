@@ -21,14 +21,28 @@ function withHomeMaster(eb: ExpressionBuilder<Database, 'company'>) {
 }
 
 
-export async function create(company: NewCompany): Promise<Company | undefined> {
-    return await db
+export async function create(company: NewCompany): Promise<{
+  entity: Company | undefined,
+  event: unknown
+} | undefined> {
+    const created = await db
         .insertInto('company')
         .values({
             ...company,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function update(id: number, company: CompanyUpdate): Promise<Company | undefined> {

@@ -13,14 +13,28 @@ function withBot(eb: ExpressionBuilder<Database, 'bot_charging_settings'>) {
 }
 
 
-export async function create(bot_charging_settings: NewBotChargingSettings): Promise<BotChargingSettings | undefined> {
-    return await db
+export async function create(bot_charging_settings: NewBotChargingSettings): Promise<{
+  entity: BotChargingSettings | undefined,
+  event: unknown
+} | undefined> {
+    const created = await db
         .insertInto('bot_charging_settings')
         .values({
             ...bot_charging_settings,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function update(id: number, bot_charging_settings: BotChargingSettingsUpdate): Promise<BotChargingSettings | undefined> {

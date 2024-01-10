@@ -3,7 +3,10 @@ import db from '../database';
 import { ScheduledAlert, ScheduledAlertUpdate, NewScheduledAlert } from "../database/scheduled_alert";
 
 
-export async function create(scheduled_alert: NewScheduledAlert): Promise<ScheduledAlert | undefined> {
+export async function create(scheduled_alert: NewScheduledAlert): Promise<{
+  entity: ScheduledAlert | undefined,
+  event: unknown
+} | undefined> {
     const exists = await db
         .selectFrom('scheduled_alert')
         .select(['id'])
@@ -15,13 +18,24 @@ export async function create(scheduled_alert: NewScheduledAlert): Promise<Schedu
     if (exists) {
         throw Error('Entity already exists with unique values');
     }
-    return await db
+    const created = await db
         .insertInto('scheduled_alert')
         .values({
             ...scheduled_alert,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function update(id: number, scheduled_alert: ScheduledAlertUpdate): Promise<ScheduledAlert | undefined> {

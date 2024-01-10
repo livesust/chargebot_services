@@ -9,7 +9,7 @@ import { createNotFoundResponse, createSuccessResponse, isWarmingUp } from "../s
 import { BotUUIDPathParamSchema, SuccessResponseSchema } from "src/shared/schemas";
 import { Bot } from "@chargebot-services/core/services/bot";
 import { Outlet } from "@chargebot-services/core/services/outlet";
-import { IoTControl } from "@chargebot-services/core/services/iot/iot_control";
+import { IoTData } from "@chargebot-services/core/services/aws/iot_data";
 import jsonBodyParser from "@middy/http-json-body-parser";
 import { dateReviver } from "src/shared/middlewares/json-date-parser";
 
@@ -19,7 +19,7 @@ const handler = async (event) => {
   const body = event.body;
 
   try {
-    const bot = await Bot.findOneByCriteria({bot_uuid})
+    const bot = await Bot.findOneByCriteria({ bot_uuid })
 
     if (!bot) {
       return createNotFoundResponse({ "response": "bot not found" });
@@ -30,7 +30,16 @@ const handler = async (event) => {
       return createNotFoundResponse({ "response": "outlet not found" });
     }
 
-    const sent = await IoTControl.sendCommand(bot_uuid, outlet.pdu_outlet_number, body.command)
+    const payload = JSON.stringify({
+      // firmware expects outlet ids from 0 to 7
+      "outlet_id": outlet.pdu_outlet_number - 1,
+      "command": body.command
+    });
+
+    const topic = `chargebot/control/${bot_uuid}/outlet`;
+
+    const sent = await IoTData.publish(topic, payload);
+
     if (sent) {
       return createSuccessResponse({ "response": "success" });
     } else {
@@ -51,7 +60,7 @@ const handler = async (event) => {
 export const main = middy(handler)
   // before
   .use(warmup({ isWarmingUp }))
-  .use(jsonBodyParser({reviver: dateReviver}))
+  .use(jsonBodyParser({ reviver: dateReviver }))
   .use(validator({
     pathParametersSchema: BotUUIDPathParamSchema,
     eventSchema: ControlOutletSchema

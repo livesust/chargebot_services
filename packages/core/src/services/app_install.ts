@@ -13,14 +13,28 @@ function withUser(eb: ExpressionBuilder<Database, 'app_install'>) {
 }
 
 
-export async function create(app_install: NewAppInstall): Promise<AppInstall | undefined> {
-    return await db
+export async function create(app_install: NewAppInstall): Promise<{
+  entity: AppInstall | undefined,
+  event: unknown
+} | undefined> {
+    const created = await db
         .insertInto('app_install')
         .values({
             ...app_install,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function update(id: number, app_install: AppInstallUpdate): Promise<AppInstall | undefined> {

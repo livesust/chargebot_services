@@ -1,6 +1,7 @@
-import { StackContext, Config, Api, use } from "sst/constructs";
+import { StackContext, Config, Api, EventBus, use } from "sst/constructs";
 import { RDSStack } from "./RDSStack";
 import { CognitoStack } from "./CognitoStack";
+
 import { Effect, IRole, Policy, PolicyStatement, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { LayerVersion, Code } from "aws-cdk-lib/aws-lambda";
 
@@ -57,6 +58,30 @@ export function ChargebotStack({ stack }: StackContext) {
     code: Code.fromAsset("layers/luxon"),
   });
 
+  // Event Bus
+  const publishFunction = {
+    function: {
+      handler: "packages/functions/src/iot/publish_event.main",
+      bind: [IOT_ENDPOINT],
+      role: iotRole
+    }
+  };
+
+  const eventBus = new EventBus(stack, "ChargebotEventBus", {
+    rules: {
+      created: {
+        pattern: {
+          source: ["created", "updated"],
+          detailType: ["outlet_schedule"],
+        },
+        targets: {
+          // @ts-expect-error ignore typing
+          publish_outlet_schedule: publishFunction,
+        },
+      },
+    },
+  });
+
   // Create the HTTP API
   const api = new Api(stack, "Api", {
     // customDomain: {
@@ -90,6 +115,7 @@ export function ChargebotStack({ stack }: StackContext) {
       function: {
         bind: [
           rdsCluster,
+          eventBus,
           TIMESCALE_HOST,
           TIMESCALE_USER,
           TIMESCALE_PASSWORD,

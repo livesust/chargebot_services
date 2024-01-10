@@ -21,14 +21,28 @@ function withBot(eb: ExpressionBuilder<Database, 'outlet'>) {
 }
 
 
-export async function create(outlet: NewOutlet): Promise<Outlet | undefined> {
-    return await db
+export async function create(outlet: NewOutlet): Promise<{
+  entity: Outlet | undefined,
+  event: unknown
+} | undefined> {
+    const created = await db
         .insertInto('outlet')
         .values({
             ...outlet,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function update(id: number, outlet: OutletUpdate): Promise<Outlet | undefined> {
@@ -71,8 +85,7 @@ export async function get(id: number): Promise<Outlet | undefined> {
         .selectFrom("outlet")
         .selectAll()
         .select((eb) => withOutletType(eb))
-        // uncoment to enable eager loading
-        //.select((eb) => withBot(eb))
+        .select((eb) => withBot(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
@@ -84,8 +97,7 @@ export async function findByCriteria(criteria: Partial<Outlet>): Promise<Outlet[
   return await query
     .selectAll()
     .select((eb) => withOutletType(eb))
-    // uncoment to enable eager loading
-    //.select((eb) => withBot(eb))
+    .select((eb) => withBot(eb))
     .execute();
 }
 
@@ -95,8 +107,7 @@ export async function findOneByCriteria(criteria: Partial<Outlet>): Promise<Outl
   return await query
     .selectAll()
     .select((eb) => withOutletType(eb))
-    // uncoment to enable eager loading
-    //.select((eb) => withBot(eb))
+    .select((eb) => withBot(eb))
     .limit(1)
     .executeTakeFirst();
 }

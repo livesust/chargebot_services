@@ -3,14 +3,28 @@ import db from '../database';
 import { Component, ComponentUpdate, NewComponent } from "../database/component";
 
 
-export async function create(component: NewComponent): Promise<Component | undefined> {
-    return await db
+export async function create(component: NewComponent): Promise<{
+  entity: Component | undefined,
+  event: unknown
+} | undefined> {
+    const created = await db
         .insertInto('component')
         .values({
             ...component,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function update(id: number, component: ComponentUpdate): Promise<Component | undefined> {

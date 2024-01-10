@@ -13,7 +13,10 @@ function withBotVersion(eb: ExpressionBuilder<Database, 'bot'>) {
 }
 
 
-export async function create(bot: NewBot): Promise<Bot | undefined> {
+export async function create(bot: NewBot): Promise<{
+  entity: Bot | undefined,
+  event: unknown
+} | undefined> {
     const exists = await db
         .selectFrom('bot')
         .select(['id'])
@@ -25,13 +28,24 @@ export async function create(bot: NewBot): Promise<Bot | undefined> {
     if (exists) {
         throw Error('Entity already exists with unique values');
     }
-    return await db
+    const created = await db
         .insertInto('bot')
         .values({
             ...bot,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function update(id: number, bot: BotUpdate): Promise<Bot | undefined> {

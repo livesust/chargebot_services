@@ -13,14 +13,28 @@ function withCompany(eb: ExpressionBuilder<Database, 'user'>) {
 }
 
 
-export async function create(user: NewUser): Promise<User | undefined> {
-    return await db
+export async function create(user: NewUser): Promise<{
+  entity: User | undefined,
+  event: unknown
+} | undefined> {
+    const created = await db
         .insertInto('user')
         .values({
             ...user,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function update(id: number, user: UserUpdate): Promise<User | undefined> {

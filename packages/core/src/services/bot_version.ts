@@ -3,7 +3,10 @@ import db from '../database';
 import { BotVersion, BotVersionUpdate, NewBotVersion } from "../database/bot_version";
 
 
-export async function create(bot_version: NewBotVersion): Promise<BotVersion | undefined> {
+export async function create(bot_version: NewBotVersion): Promise<{
+  entity: BotVersion | undefined,
+  event: unknown
+} | undefined> {
     const exists = await db
         .selectFrom('bot_version')
         .select(['id'])
@@ -16,13 +19,24 @@ export async function create(bot_version: NewBotVersion): Promise<BotVersion | u
     if (exists) {
         throw Error('Entity already exists with unique values');
     }
-    return await db
+    const created = await db
         .insertInto('bot_version')
         .values({
             ...bot_version,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function update(id: number, bot_version: BotVersionUpdate): Promise<BotVersion | undefined> {

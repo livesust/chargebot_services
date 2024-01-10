@@ -21,7 +21,10 @@ function withRole(eb: ExpressionBuilder<Database, 'user_role'>) {
 }
 
 
-export async function create(user_role: NewUserRole): Promise<UserRole | undefined> {
+export async function create(user_role: NewUserRole): Promise<{
+  entity: UserRole | undefined,
+  event: unknown
+} | undefined> {
     // check if many-to-many record already exists
     const existent = await db
           .selectFrom("user_role")
@@ -32,15 +35,31 @@ export async function create(user_role: NewUserRole): Promise<UserRole | undefin
           .executeTakeFirst();
     if (existent) {
         // return existent many-to-many record, do not create a new one
-        return existent;
+        return {
+          entity: existent,
+          // event to dispatch on EventBus on creation
+          // undefined when entity already exists
+          event: undefined
+        };
     }
-    return await db
+    const created = await db
         .insertInto('user_role')
         .values({
             ...user_role,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function update(id: number, user_role: UserRoleUpdate): Promise<UserRole | undefined> {

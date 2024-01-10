@@ -13,14 +13,28 @@ function withBot(eb: ExpressionBuilder<Database, 'bot_firmware'>) {
 }
 
 
-export async function create(bot_firmware: NewBotFirmware): Promise<BotFirmware | undefined> {
-    return await db
+export async function create(bot_firmware: NewBotFirmware): Promise<{
+  entity: BotFirmware | undefined,
+  event: unknown
+} | undefined> {
+    const created = await db
         .insertInto('bot_firmware')
         .values({
             ...bot_firmware,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function update(id: number, bot_firmware: BotFirmwareUpdate): Promise<BotFirmware | undefined> {

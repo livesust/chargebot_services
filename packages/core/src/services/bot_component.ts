@@ -21,7 +21,10 @@ function withComponent(eb: ExpressionBuilder<Database, 'bot_component'>) {
 }
 
 
-export async function create(bot_component: NewBotComponent): Promise<BotComponent | undefined> {
+export async function create(bot_component: NewBotComponent): Promise<{
+  entity: BotComponent | undefined,
+  event: unknown
+} | undefined> {
     // check if many-to-many record already exists
     const existent = await db
           .selectFrom("bot_component")
@@ -32,15 +35,31 @@ export async function create(bot_component: NewBotComponent): Promise<BotCompone
           .executeTakeFirst();
     if (existent) {
         // return existent many-to-many record, do not create a new one
-        return existent;
+        return {
+          entity: existent,
+          // event to dispatch on EventBus on creation
+          // undefined when entity already exists
+          event: undefined
+        };
     }
-    return await db
+    const created = await db
         .insertInto('bot_component')
         .values({
             ...bot_component,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function update(id: number, bot_component: BotComponentUpdate): Promise<BotComponent | undefined> {

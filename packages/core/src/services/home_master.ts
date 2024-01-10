@@ -13,14 +13,28 @@ function withStateMaster(eb: ExpressionBuilder<Database, 'home_master'>) {
 }
 
 
-export async function create(home_master: NewHomeMaster): Promise<HomeMaster | undefined> {
-    return await db
+export async function create(home_master: NewHomeMaster): Promise<{
+  entity: HomeMaster | undefined,
+  event: unknown
+} | undefined> {
+    const created = await db
         .insertInto('home_master')
         .values({
             ...home_master,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function update(id: number, home_master: HomeMasterUpdate): Promise<HomeMaster | undefined> {

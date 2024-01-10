@@ -21,14 +21,28 @@ function withBot(eb: ExpressionBuilder<Database, 'bot_alert'>) {
 }
 
 
-export async function create(bot_alert: NewBotAlert): Promise<BotAlert | undefined> {
-    return await db
+export async function create(bot_alert: NewBotAlert): Promise<{
+  entity: BotAlert | undefined,
+  event: unknown
+} | undefined> {
+    const created = await db
         .insertInto('bot_alert')
         .values({
             ...bot_alert,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function update(id: number, bot_alert: BotAlertUpdate): Promise<BotAlert | undefined> {

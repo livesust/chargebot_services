@@ -3,7 +3,7 @@ import {  JsonResponseSchemaDef } from "../shared/schemas";
 
 const BotOutletSchemaDef = {
     id: Joi.number().allow(null),
-    pdu_outlet_number: Joi.number().allow(null),
+    pdu_outlet_number: Joi.number().valid(1, 2, 3, 4, 5, 6, 7).allow(null),
     force_charge_now: Joi.boolean().allow(null),
     status: Joi.string().allow(null, 'ON', 'OFF'),
     status_timestamp: Joi.date().allow(null)

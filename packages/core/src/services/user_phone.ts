@@ -13,7 +13,10 @@ function withUser(eb: ExpressionBuilder<Database, 'user_phone'>) {
 }
 
 
-export async function create(user_phone: NewUserPhone): Promise<UserPhone | undefined> {
+export async function create(user_phone: NewUserPhone): Promise<{
+  entity: UserPhone | undefined,
+  event: unknown
+} | undefined> {
     const exists = await db
         .selectFrom('user_phone')
         .select(['id'])
@@ -25,13 +28,24 @@ export async function create(user_phone: NewUserPhone): Promise<UserPhone | unde
     if (exists) {
         throw Error('Entity already exists with unique values');
     }
-    return await db
+    const created = await db
         .insertInto('user_phone')
         .values({
             ...user_phone,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function update(id: number, user_phone: UserPhoneUpdate): Promise<UserPhone | undefined> {

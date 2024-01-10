@@ -10,7 +10,7 @@ import { ChargebotBattery } from "@chargebot-services/core/services/analytics/ch
 import { ChargebotInverter } from "@chargebot-services/core/services/analytics/chargebot_inverter";
 import { ChargebotPDU } from "@chargebot-services/core/services/analytics/chargebot_pdu";
 import { ChargebotError } from "@chargebot-services/core/services/analytics/chargebot_error";
-import { IoTShadow } from "@chargebot-services/core/services/iot/iot_shadow";
+import { IoTShadow } from "@chargebot-services/core/services/aws/iot_shadow";
 import { InverterVariable } from "@chargebot-services/core/api/chargebot_inverter";
 import { BotUUIDPathParamSchema } from "src/shared/schemas";
 import { getNumber } from "../shared/rest_utils";

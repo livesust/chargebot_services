@@ -2,71 +2,102 @@ export * as OutletSchedule from "./outlet_schedule";
 import db, { Database } from '../database';
 import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
+import { DateTime } from 'luxon';
 import { OutletSchedule, OutletScheduleUpdate, NewOutletSchedule } from "../database/outlet_schedule";
+import { Outlet } from "./outlet";
 
 function withOutlet(eb: ExpressionBuilder<Database, 'outlet_schedule'>) {
-    return jsonObjectFrom(
-      eb.selectFrom('outlet')
-        .selectAll()
-        .whereRef('outlet.id', '=', 'outlet_schedule.outlet_id')
-    ).as('outlet')
+  return jsonObjectFrom(
+    eb.selectFrom('outlet')
+      .selectAll()
+      .whereRef('outlet.id', '=', 'outlet_schedule.outlet_id')
+  ).as('outlet')
 }
 
 
-export async function create(outlet_schedule: NewOutletSchedule): Promise<OutletSchedule | undefined> {
-    return await db
-        .insertInto('outlet_schedule')
-        .values({
-            ...outlet_schedule,
-        })
-        .returningAll()
-        .executeTakeFirst();
+export async function create(outlet_schedule: NewOutletSchedule): Promise<{
+  entity: OutletSchedule | undefined,
+  event: unknown
+} | undefined> {
+  const created = await db
+    .insertInto('outlet_schedule')
+    .values({
+      ...outlet_schedule,
+    })
+    .returningAll()
+    .executeTakeFirst();
+
+  if (!created) {
+    return undefined;
+  }
+
+  const outlet = await Outlet.get(created.outlet_id);
+  const startTime = created!.start_time ? DateTime.fromJSDate(new Date(created.start_time)).toLocaleString(DateTime.TIME_24_SIMPLE) : "00:00";
+  const endTime = created!.end_time ? DateTime.fromJSDate(new Date(created!.end_time)).toLocaleString(DateTime.TIME_24_SIMPLE) : "23:59";
+
+  return {
+    entity: created,
+    // event to dispatch on EventBus on creation
+    // undefined as default to not dispatch any event
+    event: outlet?.bot?.bot_uuid ? {
+      topic: `chargebot/control/${outlet?.bot?.bot_uuid}/outlet`,
+      payload: {
+        outlet_id: outlet.pdu_outlet_number,
+        command: "set_schedule",
+        params: {
+          all_day: created?.all_day ?? true,
+          start_time: startTime,
+          end_time: endTime,
+        }
+      }
+    } : undefined
+  };
 }
 
 export async function update(id: number, outlet_schedule: OutletScheduleUpdate): Promise<OutletSchedule | undefined> {
-    return await db
-        .updateTable('outlet_schedule')
-        .set(outlet_schedule)
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
-        .returningAll()
-        .executeTakeFirst();
+  return await db
+    .updateTable('outlet_schedule')
+    .set(outlet_schedule)
+    .where('id', '=', id)
+    .where('deleted_by', 'is', null)
+    .returningAll()
+    .executeTakeFirst();
 }
 
 export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {
-    return await db
-        .updateTable('outlet_schedule')
-        .set({ deleted_date: new Date(), deleted_by: user_id })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
-        .returning(['id'])
-        .executeTakeFirst();
+  return await db
+    .updateTable('outlet_schedule')
+    .set({ deleted_date: new Date(), deleted_by: user_id })
+    .where('id', '=', id)
+    .where('deleted_by', 'is', null)
+    .returning(['id'])
+    .executeTakeFirst();
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
-        .deleteFrom('outlet_schedule')
-        .where('id', '=', id)
-        .executeTakeFirst();
+  await db
+    .deleteFrom('outlet_schedule')
+    .where('id', '=', id)
+    .executeTakeFirst();
 }
 
 export async function list(): Promise<OutletSchedule[]> {
-    return await db
-        .selectFrom("outlet_schedule")
-        .selectAll()
-        .where('deleted_by', 'is', null)
-        .execute();
+  return await db
+    .selectFrom("outlet_schedule")
+    .selectAll()
+    .where('deleted_by', 'is', null)
+    .execute();
 }
 
 export async function get(id: number): Promise<OutletSchedule | undefined> {
-    return await db
-        .selectFrom("outlet_schedule")
-        .selectAll()
-        // uncoment to enable eager loading
-        //.select((eb) => withOutlet(eb))
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
-        .executeTakeFirst();
+  return await db
+    .selectFrom("outlet_schedule")
+    .selectAll()
+    // uncoment to enable eager loading
+    //.select((eb) => withOutlet(eb))
+    .where('id', '=', id)
+    .where('deleted_by', 'is', null)
+    .executeTakeFirst();
 }
 
 export async function findByCriteria(criteria: Partial<OutletSchedule>): Promise<OutletSchedule[]> {
@@ -99,8 +130,8 @@ function buildCriteriaQuery(criteria: Partial<OutletSchedule>) {
 
   if (criteria.day_of_week !== undefined) {
     query = query.where(
-      'day_of_week', 
-      criteria.day_of_week === null ? 'is' : '=', 
+      'day_of_week',
+      criteria.day_of_week === null ? 'is' : '=',
       criteria.day_of_week
     );
   }
@@ -124,8 +155,8 @@ function buildCriteriaQuery(criteria: Partial<OutletSchedule>) {
 
   if (criteria.modified_by !== undefined) {
     query = query.where(
-      'modified_by', 
-      criteria.modified_by === null ? 'is' : '=', 
+      'modified_by',
+      criteria.modified_by === null ? 'is' : '=',
       criteria.modified_by
     );
   }
