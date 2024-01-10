@@ -71,7 +71,7 @@ export function ChargebotStack({ stack }: StackContext) {
     rules: {
       created: {
         pattern: {
-          source: ["created", "updated"],
+          source: ["created", "updated", "deleted"],
           detailType: ["outlet_schedule"],
         },
         targets: {

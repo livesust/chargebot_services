@@ -30,28 +30,7 @@ export async function create(outlet_schedule: NewOutletSchedule): Promise<{
     return undefined;
   }
 
-  const outlet = await Outlet.get(created.outlet_id);
-  const allDay = created.all_day ?? true;
-  const startTime = !allDay && created.start_time ? DateTime.fromJSDate(new Date(created.start_time)).toLocaleString(DateTime.TIME_24_SIMPLE) : "00:00";
-  const endTime = !allDay && created.end_time ? DateTime.fromJSDate(new Date(created.end_time)).toLocaleString(DateTime.TIME_24_SIMPLE) : "23:59";
-
-  return {
-    entity: created,
-    // event to dispatch on EventBus on creation
-    // undefined as default to not dispatch any event
-    event: outlet?.bot?.bot_uuid ? {
-      topic: `chargebot/control/${outlet?.bot?.bot_uuid}/outlet`,
-      payload: {
-        outlet_id: outlet.pdu_outlet_number,
-        command: "set_schedule",
-        params: {
-          all_day: allDay,
-          start_time: startTime,
-          end_time: endTime,
-        }
-      }
-    } : undefined
-  };
+  return await buildResponse(created);
 }
 
 export async function update(id: number, outlet_schedule: OutletScheduleUpdate): Promise<{
@@ -70,38 +49,45 @@ export async function update(id: number, outlet_schedule: OutletScheduleUpdate):
     return undefined;
   }
 
-  const outlet = await Outlet.get(updated.outlet_id);
-  const allDay = updated.all_day ?? true;
-  const startTime = !allDay && updated.start_time ? DateTime.fromJSDate(new Date(updated.start_time)).toLocaleString(DateTime.TIME_24_SIMPLE) : "00:00";
-  const endTime = !allDay && updated.end_time ? DateTime.fromJSDate(new Date(updated!.end_time)).toLocaleString(DateTime.TIME_24_SIMPLE) : "23:59";
+  return await buildResponse(updated);
+}
+
+export async function remove(id: number, user_id: string): Promise<{
+  entity: OutletSchedule | undefined,
+  event: unknown
+} | undefined> {
+  const deleted = await db
+    .updateTable('outlet_schedule')
+    .set({ deleted_date: new Date(), deleted_by: user_id })
+    .where('id', '=', id)
+    .where('deleted_by', 'is', null)
+    .returningAll()
+    .executeTakeFirst();
+
+  if (!deleted) {
+    return undefined;
+  }
+
+  const outlet = await Outlet.get(deleted.outlet_id);
 
   return {
-    entity: updated,
+    entity: deleted,
     // event to dispatch on EventBus on creation
     // undefined as default to not dispatch any event
     event: outlet?.bot?.bot_uuid ? {
       topic: `chargebot/control/${outlet?.bot?.bot_uuid}/outlet`,
       payload: {
-        outlet_id: outlet.pdu_outlet_number,
+        // firmware expect outlet id from 0
+        outlet_id: outlet.pdu_outlet_number - 1,
         command: "set_schedule",
         params: {
-          all_day: allDay,
-          start_time: startTime,
-          end_time: endTime,
+          all_day: true,
+          start_time: "00:00",
+          end_time: "23:59",
         }
       }
     } : undefined
-  };
-}
-
-export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {
-  return await db
-    .updateTable('outlet_schedule')
-    .set({ deleted_date: new Date(), deleted_by: user_id })
-    .where('id', '=', id)
-    .where('deleted_by', 'is', null)
-    .returning(['id'])
-    .executeTakeFirst();
+  };;
 }
 
 export async function hard_remove(id: number): Promise<void> {
@@ -192,4 +178,30 @@ function buildCriteriaQuery(criteria: Partial<OutletSchedule>) {
   }
 
   return query;
+}
+
+async function buildResponse(schedule: OutletSchedule) {
+  const outlet = await Outlet.get(schedule.outlet_id);
+  const allDay = schedule.all_day ?? true;
+  const startTime = !allDay && schedule.start_time ? DateTime.fromJSDate(new Date(schedule.start_time)).toLocaleString(DateTime.TIME_24_SIMPLE) : "00:00";
+  const endTime = !allDay && schedule.end_time ? DateTime.fromJSDate(new Date(schedule.end_time)).toLocaleString(DateTime.TIME_24_SIMPLE) : "23:59";
+
+  return {
+    entity: schedule,
+    // event to dispatch on EventBus on creation
+    // undefined as default to not dispatch any event
+    event: outlet?.bot?.bot_uuid ? {
+      topic: `chargebot/control/${outlet?.bot?.bot_uuid}/outlet`,
+      payload: {
+        // firmware expect outlet id from 0
+        outlet_id: outlet.pdu_outlet_number - 1,
+        command: "set_schedule",
+        params: {
+          all_day: allDay,
+          start_time: startTime,
+          end_time: endTime,
+        }
+      }
+    } : undefined
+  };
 }
