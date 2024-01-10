@@ -13,34 +13,76 @@ function withCompany(eb: ExpressionBuilder<Database, 'user'>) {
 }
 
 
-export async function create(user: NewUser): Promise<User | undefined> {
-    return await db
+export async function create(user: NewUser): Promise<{
+  entity: User | undefined,
+  event: unknown
+} | undefined> {
+    const created = await db
         .insertInto('user')
         .values({
             ...user,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
-export async function update(id: number, user: UserUpdate): Promise<User | undefined> {
-    return await db
+export async function update(id: number, user: UserUpdate): Promise<{
+  entity: User | undefined,
+  event: unknown
+} | undefined> {
+    const updated = await db
         .updateTable('user')
         .set(user)
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
+
+    if (!updated) {
+      return undefined;
+    }
+
+    return {
+      entity: updated,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
-export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function remove(id: number, user_id: string): Promise<{
+  entity: User | undefined,
+  event: unknown
+} | undefined> {
+    const deleted = await db
         .updateTable('user')
         .set({ deleted_date: new Date(), deleted_by: user_id })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
-        .returning(['id'])
+        .returningAll()
         .executeTakeFirst();
+
+  if (!deleted) {
+    return undefined;
+  }
+
+  return {
+    entity: deleted,
+    // event to dispatch on EventBus on creation
+    // undefined as default to not dispatch any event
+    event: undefined
+  };
 }
 
 export async function hard_remove(id: number): Promise<void> {

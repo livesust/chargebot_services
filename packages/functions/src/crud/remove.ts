@@ -7,6 +7,7 @@ import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { loadService } from "@chargebot-services/core/services";
+import { EventBus } from "@chargebot-services/core/services/aws/event_bus";
 
 
 // @ts-expect-error ignore any type for event
@@ -17,19 +18,23 @@ const handler = async (event) => {
 
     const service = await loadService(entity_name);
 
-    let record;
+    let deleted;
 
     try {
-        record = await service.remove(id, user_id);
+        deleted = await service.remove(id, user_id);
     } catch (error) {
         const httpError = createError(500, "cannot remove " + entity_name, { expose: true });
         httpError.details = (<Error>error).message;
         throw httpError;
     }
 
-    if (!record) {
+    if (!deleted?.entity) {
         const error = createError(400, entity_name + " not found", { expose: true });
         throw error;
+    }
+
+    if (deleted.event) {
+      EventBus.dispatchEvent(entity_name, "deleted", deleted.event);
     }
 
     return createSuccessResponse({ "response": "success" });

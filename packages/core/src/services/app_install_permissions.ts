@@ -21,7 +21,10 @@ function withPermission(eb: ExpressionBuilder<Database, 'app_install_permissions
 }
 
 
-export async function create(app_install_permissions: NewAppInstallPermissions): Promise<AppInstallPermissions | undefined> {
+export async function create(app_install_permissions: NewAppInstallPermissions): Promise<{
+  entity: AppInstallPermissions | undefined,
+  event: unknown
+} | undefined> {
     // check if many-to-many record already exists
     const existent = await db
           .selectFrom("app_install_permissions")
@@ -32,35 +35,79 @@ export async function create(app_install_permissions: NewAppInstallPermissions):
           .executeTakeFirst();
     if (existent) {
         // return existent many-to-many record, do not create a new one
-        return existent;
+        return {
+          entity: existent,
+          // event to dispatch on EventBus on creation
+          // undefined when entity already exists
+          event: undefined
+        };
     }
-    return await db
+    const created = await db
         .insertInto('app_install_permissions')
         .values({
             ...app_install_permissions,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
-export async function update(id: number, app_install_permissions: AppInstallPermissionsUpdate): Promise<AppInstallPermissions | undefined> {
-    return await db
+export async function update(id: number, app_install_permissions: AppInstallPermissionsUpdate): Promise<{
+  entity: AppInstallPermissions | undefined,
+  event: unknown
+} | undefined> {
+    const updated = await db
         .updateTable('app_install_permissions')
         .set(app_install_permissions)
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
+
+    if (!updated) {
+      return undefined;
+    }
+
+    return {
+      entity: updated,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
-export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function remove(id: number, user_id: string): Promise<{
+  entity: AppInstallPermissions | undefined,
+  event: unknown
+} | undefined> {
+    const deleted = await db
         .updateTable('app_install_permissions')
         .set({ deleted_date: new Date(), deleted_by: user_id })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
-        .returning(['id'])
+        .returningAll()
         .executeTakeFirst();
+
+  if (!deleted) {
+    return undefined;
+  }
+
+  return {
+    entity: deleted,
+    // event to dispatch on EventBus on creation
+    // undefined as default to not dispatch any event
+    event: undefined
+  };
 }
 
 export async function hard_remove(id: number): Promise<void> {

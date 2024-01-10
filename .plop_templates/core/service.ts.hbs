@@ -37,7 +37,10 @@ function with{{pascalCase second_entity}}(eb: ExpressionBuilder<Database, '{{sna
   {{/when}}
 {{/each}}
 
-export async function create({{snakeCase name}}: New{{pascalCase name}}): Promise<{{pascalCase name}} | undefined> {
+export async function create({{snakeCase name}}: New{{pascalCase name}}): Promise<{
+  entity: {{pascalCase name}} | undefined,
+  event: unknown
+} | undefined> {
     {{#any attributes 'unique' 'eq' true}}
     const exists = await db
         .selectFrom('{{snakeCase name}}')
@@ -67,11 +70,16 @@ export async function create({{snakeCase name}}: New{{pascalCase name}}): Promis
           .executeTakeFirst();
     if (existent) {
         // return existent many-to-many record, do not create a new one
-        return existent;
+        return {
+          entity: existent,
+          // event to dispatch on EventBus on creation
+          // undefined when entity already exists
+          event: undefined
+        };
     }
       {{/when}}
     {{/each}}
-    return await db
+    const created = await db
         .insertInto('{{snakeCase name}}')
         .values({
             ...{{snakeCase name}},
@@ -83,26 +91,65 @@ export async function create({{snakeCase name}}: New{{pascalCase name}}): Promis
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
-export async function update(id: number, {{snakeCase name}}: {{pascalCase name}}Update): Promise<{{pascalCase name}} | undefined> {
-    return await db
+export async function update(id: number, {{snakeCase name}}: {{pascalCase name}}Update): Promise<{
+  entity: {{pascalCase name}} | undefined,
+  event: unknown
+} | undefined> {
+    const updated = await db
         .updateTable('{{snakeCase name}}')
         .set({{snakeCase name}})
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
+
+    if (!updated) {
+      return undefined;
+    }
+
+    return {
+      entity: updated,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
-export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function remove(id: number, user_id: string): Promise<{
+  entity: {{pascalCase name}} | undefined,
+  event: unknown
+} | undefined> {
+    const deleted = await db
         .updateTable('{{snakeCase name}}')
         .set({ deleted_date: new Date(), deleted_by: user_id })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
-        .returning(['id'])
+        .returningAll()
         .executeTakeFirst();
+
+  if (!deleted) {
+    return undefined;
+  }
+
+  return {
+    entity: deleted,
+    // event to dispatch on EventBus on creation
+    // undefined as default to not dispatch any event
+    event: undefined
+  };
 }
 
 export async function hard_remove(id: number): Promise<void> {

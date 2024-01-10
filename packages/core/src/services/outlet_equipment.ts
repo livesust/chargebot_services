@@ -38,34 +38,76 @@ function withUser(eb: ExpressionBuilder<Database, 'outlet_equipment'>) {
 }
 
 
-export async function create(outlet_equipment: NewOutletEquipment): Promise<OutletEquipment | undefined> {
-    return await db
+export async function create(outlet_equipment: NewOutletEquipment): Promise<{
+  entity: OutletEquipment | undefined,
+  event: unknown
+} | undefined> {
+    const created = await db
         .insertInto('outlet_equipment')
         .values({
             ...outlet_equipment,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
-export async function update(id: number, outlet_equipment: OutletEquipmentUpdate): Promise<OutletEquipment | undefined> {
-    return await db
+export async function update(id: number, outlet_equipment: OutletEquipmentUpdate): Promise<{
+  entity: OutletEquipment | undefined,
+  event: unknown
+} | undefined> {
+    const updated = await db
         .updateTable('outlet_equipment')
         .set(outlet_equipment)
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
+
+    if (!updated) {
+      return undefined;
+    }
+
+    return {
+      entity: updated,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
-export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function remove(id: number, user_id: string): Promise<{
+  entity: OutletEquipment | undefined,
+  event: unknown
+} | undefined> {
+    const deleted = await db
         .updateTable('outlet_equipment')
         .set({ deleted_date: new Date(), deleted_by: user_id })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
-        .returning(['id'])
+        .returningAll()
         .executeTakeFirst();
+
+  if (!deleted) {
+    return undefined;
+  }
+
+  return {
+    entity: deleted,
+    // event to dispatch on EventBus on creation
+    // undefined as default to not dispatch any event
+    event: undefined
+  };
 }
 
 export async function hard_remove(id: number): Promise<void> {

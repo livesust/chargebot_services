@@ -10,6 +10,7 @@ import { dateReviver } from "../shared/middlewares/json-date-parser";
 import { createSuccessResponse, validateUpdateBody, validateResponse, isWarmingUp } from "../shared/rest_utils";
 import { loadService } from "@chargebot-services/core/services";
 import jsonBodyParser from "@middy/http-json-body-parser";
+import { EventBus } from "@chargebot-services/core/services/aws/event_bus";
 
 
 // @ts-expect-error ignore any type for event
@@ -22,21 +23,25 @@ const handler = async (event) => {
 
     const service = await loadService(entity_name);
 
-    let record;
+    let updated;
 
     try {
-        record = await service.update(id, body);
+        updated = await service.update(id, body);
     } catch (error) {
         const httpError = createError(500, "cannot update " + entity_name, { expose: true });
         httpError.details = (<Error>error).message;
         throw httpError;
     }
 
-    if (!record) {
+    if (!updated?.entity) {
         throw createError(400, entity_name + " not found", { expose: true });
     }
 
-    const response = createSuccessResponse(record);
+    if (updated.event) {
+      EventBus.dispatchEvent(entity_name, "updated", updated.event);
+    }
+
+    const response = createSuccessResponse(updated.entity);
 
     await validateResponse(response, entity_name);
 

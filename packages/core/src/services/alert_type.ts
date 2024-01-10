@@ -3,7 +3,10 @@ import db from '../database';
 import { AlertType, AlertTypeUpdate, NewAlertType } from "../database/alert_type";
 
 
-export async function create(alert_type: NewAlertType): Promise<AlertType | undefined> {
+export async function create(alert_type: NewAlertType): Promise<{
+  entity: AlertType | undefined,
+  event: unknown
+} | undefined> {
     const exists = await db
         .selectFrom('alert_type')
         .select(['id'])
@@ -15,33 +18,72 @@ export async function create(alert_type: NewAlertType): Promise<AlertType | unde
     if (exists) {
         throw Error('Entity already exists with unique values');
     }
-    return await db
+    const created = await db
         .insertInto('alert_type')
         .values({
             ...alert_type,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
-export async function update(id: number, alert_type: AlertTypeUpdate): Promise<AlertType | undefined> {
-    return await db
+export async function update(id: number, alert_type: AlertTypeUpdate): Promise<{
+  entity: AlertType | undefined,
+  event: unknown
+} | undefined> {
+    const updated = await db
         .updateTable('alert_type')
         .set(alert_type)
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
+
+    if (!updated) {
+      return undefined;
+    }
+
+    return {
+      entity: updated,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
-export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function remove(id: number, user_id: string): Promise<{
+  entity: AlertType | undefined,
+  event: unknown
+} | undefined> {
+    const deleted = await db
         .updateTable('alert_type')
         .set({ deleted_date: new Date(), deleted_by: user_id })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
-        .returning(['id'])
+        .returningAll()
         .executeTakeFirst();
+
+  if (!deleted) {
+    return undefined;
+  }
+
+  return {
+    entity: deleted,
+    // event to dispatch on EventBus on creation
+    // undefined as default to not dispatch any event
+    event: undefined
+  };
 }
 
 export async function hard_remove(id: number): Promise<void> {

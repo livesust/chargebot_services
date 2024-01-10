@@ -3,7 +3,10 @@ import db from '../database';
 import { AppSettingsType, AppSettingsTypeUpdate, NewAppSettingsType } from "../database/app_settings_type";
 
 
-export async function create(app_settings_type: NewAppSettingsType): Promise<AppSettingsType | undefined> {
+export async function create(app_settings_type: NewAppSettingsType): Promise<{
+  entity: AppSettingsType | undefined,
+  event: unknown
+} | undefined> {
     const exists = await db
         .selectFrom('app_settings_type')
         .select(['id'])
@@ -15,33 +18,72 @@ export async function create(app_settings_type: NewAppSettingsType): Promise<App
     if (exists) {
         throw Error('Entity already exists with unique values');
     }
-    return await db
+    const created = await db
         .insertInto('app_settings_type')
         .values({
             ...app_settings_type,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
-export async function update(id: number, app_settings_type: AppSettingsTypeUpdate): Promise<AppSettingsType | undefined> {
-    return await db
+export async function update(id: number, app_settings_type: AppSettingsTypeUpdate): Promise<{
+  entity: AppSettingsType | undefined,
+  event: unknown
+} | undefined> {
+    const updated = await db
         .updateTable('app_settings_type')
         .set(app_settings_type)
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
+
+    if (!updated) {
+      return undefined;
+    }
+
+    return {
+      entity: updated,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
-export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function remove(id: number, user_id: string): Promise<{
+  entity: AppSettingsType | undefined,
+  event: unknown
+} | undefined> {
+    const deleted = await db
         .updateTable('app_settings_type')
         .set({ deleted_date: new Date(), deleted_by: user_id })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
-        .returning(['id'])
+        .returningAll()
         .executeTakeFirst();
+
+  if (!deleted) {
+    return undefined;
+  }
+
+  return {
+    entity: deleted,
+    // event to dispatch on EventBus on creation
+    // undefined as default to not dispatch any event
+    event: undefined
+  };
 }
 
 export async function hard_remove(id: number): Promise<void> {

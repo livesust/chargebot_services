@@ -13,34 +13,76 @@ function withStateMaster(eb: ExpressionBuilder<Database, 'home_master'>) {
 }
 
 
-export async function create(home_master: NewHomeMaster): Promise<HomeMaster | undefined> {
-    return await db
+export async function create(home_master: NewHomeMaster): Promise<{
+  entity: HomeMaster | undefined,
+  event: unknown
+} | undefined> {
+    const created = await db
         .insertInto('home_master')
         .values({
             ...home_master,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
-export async function update(id: number, home_master: HomeMasterUpdate): Promise<HomeMaster | undefined> {
-    return await db
+export async function update(id: number, home_master: HomeMasterUpdate): Promise<{
+  entity: HomeMaster | undefined,
+  event: unknown
+} | undefined> {
+    const updated = await db
         .updateTable('home_master')
         .set(home_master)
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
+
+    if (!updated) {
+      return undefined;
+    }
+
+    return {
+      entity: updated,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
-export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function remove(id: number, user_id: string): Promise<{
+  entity: HomeMaster | undefined,
+  event: unknown
+} | undefined> {
+    const deleted = await db
         .updateTable('home_master')
         .set({ deleted_date: new Date(), deleted_by: user_id })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
-        .returning(['id'])
+        .returningAll()
         .executeTakeFirst();
+
+  if (!deleted) {
+    return undefined;
+  }
+
+  return {
+    entity: deleted,
+    // event to dispatch on EventBus on creation
+    // undefined as default to not dispatch any event
+    event: undefined
+  };
 }
 
 export async function hard_remove(id: number): Promise<void> {

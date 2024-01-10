@@ -1,8 +1,7 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
 import { EntitySchema as OutletTypeSchema } from "./outlet_type.schema";
-// uncoment to enable eager loading
-//import { EntitySchema as BotSchema } from "./bot.schema";
+import { EntitySchema as BotSchema } from "./bot.schema";
 
 const OutletSchemaDef = {
     pdu_outlet_number: Joi.number(),
@@ -15,8 +14,7 @@ export const EntitySchema = Joi.object({
     outlet_type_id: Joi.number(),
     bot_id: Joi.number(),
     outlet_type: OutletTypeSchema,
-    // uncoment to enable eager loading
-    //bot: BotSchema,
+    bot: BotSchema,
 });
 
 export const CreateSchema = Joi.object({

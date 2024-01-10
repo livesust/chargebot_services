@@ -21,7 +21,10 @@ function withCompany(eb: ExpressionBuilder<Database, 'bot_company'>) {
 }
 
 
-export async function create(bot_company: NewBotCompany): Promise<BotCompany | undefined> {
+export async function create(bot_company: NewBotCompany): Promise<{
+  entity: BotCompany | undefined,
+  event: unknown
+} | undefined> {
     // check if many-to-many record already exists
     const existent = await db
           .selectFrom("bot_company")
@@ -32,35 +35,79 @@ export async function create(bot_company: NewBotCompany): Promise<BotCompany | u
           .executeTakeFirst();
     if (existent) {
         // return existent many-to-many record, do not create a new one
-        return existent;
+        return {
+          entity: existent,
+          // event to dispatch on EventBus on creation
+          // undefined when entity already exists
+          event: undefined
+        };
     }
-    return await db
+    const created = await db
         .insertInto('bot_company')
         .values({
             ...bot_company,
         })
         .returningAll()
         .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
+
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
-export async function update(id: number, bot_company: BotCompanyUpdate): Promise<BotCompany | undefined> {
-    return await db
+export async function update(id: number, bot_company: BotCompanyUpdate): Promise<{
+  entity: BotCompany | undefined,
+  event: unknown
+} | undefined> {
+    const updated = await db
         .updateTable('bot_company')
         .set(bot_company)
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
+
+    if (!updated) {
+      return undefined;
+    }
+
+    return {
+      entity: updated,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
-export async function remove(id: number, user_id: string): Promise<{ id: number | undefined } | undefined> {
-    return await db
+export async function remove(id: number, user_id: string): Promise<{
+  entity: BotCompany | undefined,
+  event: unknown
+} | undefined> {
+    const deleted = await db
         .updateTable('bot_company')
         .set({ deleted_date: new Date(), deleted_by: user_id })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
-        .returning(['id'])
+        .returningAll()
         .executeTakeFirst();
+
+  if (!deleted) {
+    return undefined;
+  }
+
+  return {
+    entity: deleted,
+    // event to dispatch on EventBus on creation
+    // undefined as default to not dispatch any event
+    event: undefined
+  };
 }
 
 export async function hard_remove(id: number): Promise<void> {
