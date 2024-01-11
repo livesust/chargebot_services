@@ -25,3 +25,7 @@ relationships:
     relation_type: many-to-one
     eager: true
     not_null: true
+  - entity: vehicle
+    relation_type: many-to-one
+    eager: true
+    not_null: false

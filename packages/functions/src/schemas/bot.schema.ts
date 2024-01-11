@@ -1,6 +1,7 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
 import { EntitySchema as BotVersionSchema } from "./bot_version.schema";
+import { EntitySchema as VehicleSchema } from "./vehicle.schema";
 
 const BotSchemaDef = {
     bot_uuid: Joi.string(),
@@ -13,7 +14,9 @@ export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
     ...BotSchemaDef,
     bot_version_id: Joi.number(),
+    vehicle_id: Joi.number().allow(null),
     bot_version: BotVersionSchema,
+    vehicle: VehicleSchema,
 });
 
 export const CreateSchema = Joi.object({
@@ -25,17 +28,20 @@ export const CreateSchema = Joi.object({
     initials: Joi.string().max(2).required(),
     name: Joi.string().max(255).required(),
     bot_version_id: Joi.number().required(),
+    vehicle_id: Joi.number(),
 });
 
 export const UpdateSchema = Joi.object({
     ...AuditedEntityUpdateSchemaDef,
     ...BotSchemaDef,
     bot_version_id: Joi.number(),
+    vehicle_id: Joi.number(),
 });
 
 export const SearchSchema = Joi.object({
     id: Joi.number(),
     bot_version_id: Joi.number(),
+    vehicle_id: Joi.number(),
     ...BotSchemaDef
 });
 

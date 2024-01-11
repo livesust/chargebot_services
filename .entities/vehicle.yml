@@ -1,0 +1,22 @@
+name: vehicle
+attributes:
+  - attribute: name
+    type: text
+    tsType: string
+    unique: false
+    not_null: true
+  - attribute: license_plate
+    type: text
+    tsType: string
+    unique: true
+    not_null: true
+  - attribute: notes
+    type: text
+    tsType: string
+    unique: false
+    not_null: false
+relationships:
+  - entity: vehicle_type
+    relation_type: many-to-one
+    eager: true
+    not_null: true
