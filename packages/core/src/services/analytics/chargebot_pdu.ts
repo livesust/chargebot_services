@@ -28,6 +28,7 @@ export async function getPDUStatus(bot_uuid: string): Promise<ChargebotPDU[] | u
     .where('variable', 'in', [
       PDUVariable.STATE,
       PDUVariable.CURRENT,
+      PDUVariable.OUTLET_PRIORITY,
       PDUVariable.OUTLET_1_STATE,
       PDUVariable.OUTLET_2_STATE,
       PDUVariable.OUTLET_3_STATE,
@@ -84,6 +85,23 @@ export async function getOutletStatus(bot_uuid: string, outlet_id: number): Prom
     ])
     .where('device_id', '=', bot_uuid)
     .where('variable', '=', translateOutletId(outlet_id))
+    .orderBy('timestamp', 'desc')
+    .limit(1)
+    .executeTakeFirst();
+
+  return status;
+}
+
+export async function getOutletPriorityCharging(bot_uuid: string): Promise<{timestamp: Date, outlet_id: number} | undefined> {
+  // @ts-expect-error not overloads match
+  const status: {timestamp: Date, outlet_id: number} | undefined = await db
+    .selectFrom("chargebot_pdu")
+    .select([
+      'timestamp',
+      sql`value_int as outlet_id`
+    ])
+    .where('device_id', '=', bot_uuid)
+    .where('variable', '=', PDUVariable.OUTLET_PRIORITY)
     .orderBy('timestamp', 'desc')
     .limit(1)
     .executeTakeFirst();

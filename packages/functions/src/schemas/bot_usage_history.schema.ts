@@ -34,6 +34,6 @@ export const ArrayResponseSchema = Joi.object({
 });
 
 export const PathParamSchema = Joi.object({
-  bot_uuid: Joi.string().uuid().required(),
+  bot_uuid: Joi.string().required(),
   date: Joi.date().required()
 });

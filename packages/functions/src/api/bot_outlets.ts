@@ -6,21 +6,33 @@ import { IdPathParamSchema } from "../shared/schemas";
 import { ArrayResponseSchema } from "../schemas/bot_outlets.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
-import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
+import { createNotFoundResponse, createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { Outlet } from "@chargebot-services/core/services/outlet";
+import { ChargebotPDU } from "@chargebot-services/core/services/analytics/chargebot_pdu";
+import { Bot } from "@chargebot-services/core/services/bot";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
   const bot_id = +event.pathParameters!.id!;
 
   try {
-    const outlets = await Outlet.findByCriteria({bot_id: bot_id});
+    const bot = await Bot.get(bot_id);
+
+    if (!bot){
+      return createNotFoundResponse({ "response": "bot not found" });
+    }
+
+    const [outlets, outletPriority] = await Promise.all([
+      Outlet.findByCriteria({bot_id: bot.id}),
+      ChargebotPDU.getOutletPriorityCharging(bot.bot_uuid)
+    ]);
+
     const response = [];
     for (const outlet of outlets) {
       response.push({
         id: outlet.id,
         pdu_outlet_number: outlet.pdu_outlet_number,
-        force_charge_now: false,
+        priority_charge: outletPriority?.outlet_id === outlet.pdu_outlet_number - 1,
         status: 'OFF',
         status_timestamp: new Date()
       });
