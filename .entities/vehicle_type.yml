@@ -1,0 +1,11 @@
+name: vehicle_type
+attributes:
+  - attribute: type
+    type: varchar
+    varchar_length: '255'
+    tsType: string
+    not_null: true
+  - attribute: description
+    type: text
+    tsType: string
+    not_null: false
