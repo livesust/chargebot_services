@@ -2,13 +2,13 @@ import Joi from 'joi';
 import { JsonResponseSchemaDef } from "../shared/schemas";
 
 export const PathParamSchema = Joi.object({
-  bot_uuid: Joi.string().uuid().required(),
+  bot_uuid: Joi.string().required(),
   from: Joi.date().required(),
   to: Joi.date().required()
 });
 
 const BotLocationHistorySchemaDef = {
-  bot_uuid: Joi.string().uuid().required(),
+  bot_uuid: Joi.string().required(),
   date: Joi.date().required(),
   route: Joi.array().items({
     timestamp: Joi.date().allow(null),

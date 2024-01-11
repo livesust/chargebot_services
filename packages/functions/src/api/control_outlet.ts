@@ -30,11 +30,11 @@ const handler = async (event) => {
       return createNotFoundResponse({ "response": "outlet not found" });
     }
 
-    const payload = JSON.stringify({
+    const payload = {
       // firmware expects outlet ids from 0 to 7
       "outlet_id": outlet.pdu_outlet_number - 1,
       "command": body.command
-    });
+    };
 
     const topic = `chargebot/control/${bot_uuid}/outlet`;
 

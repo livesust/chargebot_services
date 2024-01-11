@@ -18,23 +18,25 @@ const handler = async (event) => {
   const outlet_id = +event.pathParameters!.outlet_id!;
 
   try {
-    const [outlet, outletStatus, outletSchedule, outletEquipment] = await Promise.all([
-      Outlet.get(outlet_id),
-      ChargebotPDU.getOutletStatus(bot_uuid, outlet_id),
-      OutletSchedule.findOneByCriteria({outlet_id: outlet_id}),
-      OutletEquipment.findOneByCriteria({outlet_id: outlet_id})
-    ]);
-
-    const equipment = outletEquipment ? outletEquipment.equipment : undefined;
+    const outlet = await Outlet.get(outlet_id);
 
     if (!outlet) {
       return createNotFoundResponse({ "response": "outlet not found" });
     }
 
+    const [outletStatus, outletPriority, outletSchedule, outletEquipment] = await Promise.all([
+      ChargebotPDU.getOutletStatus(bot_uuid, outlet.pdu_outlet_number - 1),
+      ChargebotPDU.getOutletPriorityCharging(bot_uuid),
+      OutletSchedule.findOneByCriteria({outlet_id: outlet.id}),
+      OutletEquipment.findOneByCriteria({outlet_id: outlet.id})
+    ]);
+
+    const equipment = outletEquipment ? outletEquipment.equipment : undefined;
+
     const response = {
       id: outlet.id,
       pdu_outlet_number: outlet.pdu_outlet_number,
-      force_charge_now: false,
+      priority_charge: outletPriority?.outlet_id === outlet.pdu_outlet_number - 1,
       status: outletStatus?.status,
       status_timestamp: outletStatus?.timestamp,
       equipment: equipment && {
