@@ -11,51 +11,55 @@ import { createSuccessResponse, validateUpdateBody, validateResponse, isWarmingU
 import { loadService } from "@chargebot-services/core/services";
 import jsonBodyParser from "@middy/http-json-body-parser";
 import { EventBus } from "@chargebot-services/core/services/aws/event_bus";
+import { BusinessError } from "@chargebot-services/core/errors/business_error";
 
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
-    const id = +event.pathParameters!.id!;
-    const entity_name = event.pathParameters!.entity!;
-    const body = event.body;
+  const id = +event.pathParameters!.id!;
+  const entity_name = event.pathParameters!.entity!;
+  const body = event.body;
 
-    await validateUpdateBody(body, entity_name);
+  await validateUpdateBody(body, entity_name);
 
-    const service = await loadService(entity_name);
+  const service = await loadService(entity_name);
 
-    let updated;
+  let updated;
 
-    try {
-        updated = await service.update(id, body);
-    } catch (error) {
-        const httpError = createError(500, "cannot update " + entity_name, { expose: true });
-        httpError.details = (<Error>error).message;
-        throw httpError;
+  try {
+    updated = await service.update(id, body);
+  } catch (error) {
+    if (error instanceof BusinessError) {
+      throw createError(404, error.message, { expose: true });
     }
+    const httpError = createError(500, "cannot update " + entity_name, { expose: true });
+    httpError.details = (<Error>error).message;
+    throw httpError;
+  }
 
-    if (!updated?.entity) {
-        throw createError(400, entity_name + " not found", { expose: true });
-    }
+  if (!updated?.entity) {
+    throw createError(400, entity_name + " not found", { expose: true });
+  }
 
-    if (updated.event) {
-      EventBus.dispatchEvent(entity_name, "updated", updated.event);
-    }
+  if (updated.event) {
+    EventBus.dispatchEvent(entity_name, "updated", updated.event);
+  }
 
-    const response = createSuccessResponse(updated.entity);
+  const response = createSuccessResponse(updated.entity);
 
-    await validateResponse(response, entity_name);
+  await validateResponse(response, entity_name);
 
-    return response;
+  return response;
 };
 
 export const main = middy(handler)
-    // before
-    .use(warmup({ isWarmingUp }))
-    .use(validator({ pathParametersSchema: EntityAndIdPathParamSchema }))
-    .use(jsonBodyParser({reviver: dateReviver}))
-    .use(auditCreation())
-    // after: inverse order execution
-    .use(jsonBodySerializer())
-    // httpErrorHandler must be the last error handler attached, first to execute.
-    // When non-http errors (those without statusCode) occur they will be returned with a 500 status code.
-    .use(httpErrorHandler());
+  // before
+  .use(warmup({ isWarmingUp }))
+  .use(validator({ pathParametersSchema: EntityAndIdPathParamSchema }))
+  .use(jsonBodyParser({ reviver: dateReviver }))
+  .use(auditCreation())
+  // after: inverse order execution
+  .use(jsonBodySerializer())
+  // httpErrorHandler must be the last error handler attached, first to execute.
+  // When non-http errors (those without statusCode) occur they will be returned with a 500 status code.
+  .use(httpErrorHandler());

@@ -11,6 +11,7 @@ import { createSuccessResponse, validateCreateBody, validateResponse, isWarmingU
 import { loadService } from "@chargebot-services/core/services";
 import jsonBodyParser from "@middy/http-json-body-parser";
 import { EventBus } from "@chargebot-services/core/services/aws/event_bus";
+import { BusinessError } from "@chargebot-services/core/errors/business_error";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
@@ -26,6 +27,9 @@ const handler = async (event) => {
   try {
     created = await service.create(body);
   } catch (error) {
+    if (error instanceof BusinessError) {
+      throw createError(404, error.message, { expose: true });
+    }
     throw createError(500, (<Error>error).message, { expose: true });
   }
 
