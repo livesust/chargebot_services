@@ -1,4 +1,4 @@
-import { StackContext, Config, Api, EventBus, use } from "sst/constructs";
+import { StackContext, Config, Api, EventBus, Bucket, use } from "sst/constructs";
 import { RDSStack } from "./RDSStack";
 import { CognitoStack } from "./CognitoStack";
 
@@ -48,14 +48,20 @@ export function ChargebotStack({ stack }: StackContext) {
   });
   iotPolicy.attachToRole(iotRole);
 
-  // axios lambda layer to make http requests
+  // Lambda layers
+  // axios layer: to make http requests
   const axiosLayer = new LayerVersion(stack, "axios-layer", {
     code: Code.fromAsset("layers/axios"),
   });
 
-
+  // luxon layer: to manage dates
   const luxonLayer = new LayerVersion(stack, "luxon-layer", {
     code: Code.fromAsset("layers/luxon"),
+  });
+
+  // sharp layer: to resize images
+  const sharpLayer = new LayerVersion(stack, "sharp-layer", {
+    code: Code.fromAsset("layers/sharp"),
   });
 
   // Event Bus
@@ -81,6 +87,27 @@ export function ChargebotStack({ stack }: StackContext) {
       },
     },
   });
+
+  // S3 Bucket
+  const bucket = new Bucket(stack, "userBucket", {
+    notifications: {
+      resize: {
+        function: {
+          handler: "packages/functions/src/s3_resize.main",
+          nodejs: {
+            esbuild: {
+              external: ["sharp"],
+            },
+          },
+          // @ts-expect-error ignore type errors
+          layers: [sharpLayer],
+        },
+        events: ["object_created"],
+      },
+    },
+  });
+  // Allow the notification functions to access the bucket
+  bucket.attachPermissions([bucket]);
 
   // Create the HTTP API
   const api = new Api(stack, "Api", {
@@ -171,6 +198,23 @@ export function ChargebotStack({ stack }: StackContext) {
       },
       "GET /user/{user_id}/profile": "packages/functions/src/api/get_user_profile.main",
       "PATCH /user/{user_id}/profile": "packages/functions/src/api/update_user_profile.main",
+      "GET /user/{user_id}/photo": {
+        function: {
+          handler: "packages/functions/src/api/download_user_photo.main",
+          bind: [bucket]
+        }
+      },
+      "PUT /user/{user_id}/photo": {
+        function: {
+          handler: "packages/functions/src/api/upload_user_photo.main",
+          // @ts-expect-error ignore type errors
+          layers: [sharpLayer],
+          nodejs: {
+            install: ["sharp"],
+          },
+          bind: [bucket]
+        }
+      },
     }
   });
 
@@ -179,6 +223,7 @@ export function ChargebotStack({ stack }: StackContext) {
 
   stack.addOutputs({
     ApiEndpoint: api.url,
-    ApiDomainUrl: api.customDomainUrl
+    ApiDomainUrl: api.customDomainUrl,
+    BucketName: bucket.bucketName,
   });
 }
