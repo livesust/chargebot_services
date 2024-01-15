@@ -19,11 +19,11 @@ export const AuditedEntityUpdateSchemaDef = {
 };
 
 export const AuditedEntitySchemaDef = {
-    id: Joi.number().required(),
-    created_by: Joi.string().required(),
-    created_date: Joi.date().required(),
-    modified_by: Joi.string().required(),
-    modified_date: Joi.date().required(),
+    id: Joi.number().optional().allow(null),
+    created_by: Joi.string().optional().allow(null),
+    created_date: Joi.date().optional().allow(null),
+    modified_by: Joi.string().optional().allow(null),
+    modified_date: Joi.date().optional().allow(null),
     deleted_by: Joi.string().optional().allow(null),
     deleted_date: Joi.date().optional().allow(null),
 };

@@ -4,7 +4,7 @@ import { createError } from '@middy/util';
 import httpErrorHandler from "@middy/http-error-handler";
 import { EntityAndIdPathParamSchema } from "../shared/schemas";
 import validator from "../shared/middlewares/joi-validator";
-import auditCreation from "../shared/middlewares/audit-create";
+import auditUpdate from "../shared/middlewares/audit-update";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import { dateReviver } from "../shared/middlewares/json-date-parser";
 import { createSuccessResponse, validateUpdateBody, validateResponse, isWarmingUp } from "../shared/rest_utils";
@@ -57,7 +57,7 @@ export const main = middy(handler)
   .use(warmup({ isWarmingUp }))
   .use(validator({ pathParametersSchema: EntityAndIdPathParamSchema }))
   .use(jsonBodyParser({ reviver: dateReviver }))
-  .use(auditCreation())
+  .use(auditUpdate())
   // after: inverse order execution
   .use(jsonBodySerializer())
   // httpErrorHandler must be the last error handler attached, first to execute.

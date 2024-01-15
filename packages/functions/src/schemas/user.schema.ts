@@ -2,7 +2,7 @@ import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
 import { EntitySchema as CompanySchema } from "./company.schema";
 
-const UserSchemaDef = {
+export const UserSchemaDef = {
     first_name: Joi.string().max(255),
     last_name: Joi.string().max(255),
     title: Joi.string().max(255).allow(null),

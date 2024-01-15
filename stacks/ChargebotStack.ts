@@ -169,6 +169,8 @@ export function ChargebotStack({ stack }: StackContext) {
           role: iotRole
         }
       },
+      "GET /user/{user_id}/profile": "packages/functions/src/api/get_user_profile.main",
+      "PATCH /user/{user_id}/profile": "packages/functions/src/api/update_user_profile.main",
     }
   });
 
