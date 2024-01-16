@@ -59,7 +59,12 @@ const handler = async (event) => {
       user_id: user!.id!,
     });
 
-    return createSuccessResponse(created?.entity);
+    return createSuccessResponse({
+      ...created?.entity,
+      equipment: null,
+      outlet: null,
+      user: null,
+    });
 
   } catch (error) {
     if (error instanceof HttpError) {
