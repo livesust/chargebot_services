@@ -9,6 +9,8 @@ import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { OutletEquipment } from "@chargebot-services/core/services/outlet_equipment";
 import { User } from "@chargebot-services/core/services/user";
+import { Equipment } from "@chargebot-services/core/services/equipment";
+import { Outlet } from "@chargebot-services/core/services/outlet";
 
 
 // @ts-expect-error ignore any type for event
@@ -20,24 +22,34 @@ const handler = async (event) => {
   try {
     const user = await User.findOneByCriteria({user_id})
 
-    let existent = await OutletEquipment.findOneByCriteria({ equipment_id, outlet_id });
-    if (existent) {
-      return createSuccessResponse(existent);
+    const equipment = await Equipment.get(equipment_id);
+    if (!equipment) {
+      throw createError(400, "equipment does not exists", { expose: true });
     }
 
-    existent = await OutletEquipment.findOneByCriteria({ equipment_id });
-    if (existent) {
+    const outlet = await Outlet.get(outlet_id);
+    if (!outlet) {
+      throw createError(400, "outlet does not exists", { expose: true });
+    }
+
+    let outletEquipment = await OutletEquipment.findOneByCriteria({ equipment_id, outlet_id });
+    if (outletEquipment) {
+      return createSuccessResponse(outletEquipment);
+    }
+
+    outletEquipment = await OutletEquipment.findOneByCriteria({ equipment_id });
+    if (outletEquipment) {
       throw createError(400, "equipment assigned to another outlet", { expose: true });
     }
 
-    existent = await OutletEquipment.findOneByCriteria({ outlet_id });
-    if (existent) {
+    outletEquipment = await OutletEquipment.findOneByCriteria({ outlet_id });
+    if (outletEquipment) {
       // if outlet has another equipment assigned, unassign it
-      await OutletEquipment.remove(existent.id!, user_id);
+      await OutletEquipment.remove(outletEquipment.id!, user_id);
     }
 
     const now = new Date();
-    const outlet_equipment = await OutletEquipment.create({
+    const created = await OutletEquipment.create({
       created_by: user_id,
       created_date: now,
       modified_by: user_id,
@@ -47,7 +59,12 @@ const handler = async (event) => {
       user_id: user!.id!,
     });
 
-    return createSuccessResponse(outlet_equipment);
+    return createSuccessResponse({
+      ...created?.entity,
+      equipment: null,
+      outlet: null,
+      user: null,
+    });
 
   } catch (error) {
     if (error instanceof HttpError) {
