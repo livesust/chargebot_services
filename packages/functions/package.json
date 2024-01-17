@@ -18,6 +18,7 @@
     "@middy/http-json-body-parser": "^4.6.5",
     "@middy/input-output-logger": "^4.6.5",
     "@middy/validator": "^4.6.5",
-    "joi": "^17.11.0"
+    "joi": "^17.11.0",
+    "lambda-multipart-parser": "^1.0.1"
   }
 }

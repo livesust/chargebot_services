@@ -6,28 +6,33 @@ import { PathParamSchema, ResponseSchema } from "../schemas/update_user_profile.
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
+import { Bucket } from "sst/node/bucket";
+import { S3 } from "@chargebot-services/core/services/aws/s3";
 import { User } from "@chargebot-services/core/services/user";
 import { UserEmail } from "@chargebot-services/core/services/user_email";
 import { UserPhone } from "@chargebot-services/core/services/user_phone";
 import { UserRole } from "@chargebot-services/core/services/user_role";
-
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
   const user_id = +event.pathParameters!.user_id!;
 
   try {
-    const user = await User.get(user_id);
-    const userEmail = await UserEmail.findOneByCriteria({user_id, primary: true});
-    const userPhone = await UserPhone.findOneByCriteria({user_id, primary: true});
-    const userRole = await UserRole.findOneByCriteria({user_id});
+    const filename = `profile_user_${user_id}`;
+    const [user, userEmail, userPhone, userRole, photoUrl] = await Promise.all([
+      await User.get(user_id),
+      await UserEmail.findOneByCriteria({user_id, primary: true}),
+      await UserPhone.findOneByCriteria({user_id, primary: true}),
+      await UserRole.findOneByCriteria({user_id}),
+      await S3.getDownloadUrl(Bucket.userBucket.bucketName, filename),
+    ]);
 
     const response = {
       id: user?.id,
       first_name: user?.first_name,
       last_name: user?.last_name,
       title: user?.title,
-      photo: user?.photo,
+      photo: photoUrl,
       email_address: userEmail?.email_address,
       phone_number: userPhone?.phone_number,
       role_id: userRole?.role_id,
