@@ -1,4 +1,5 @@
 import middy from "@middy/core";
+import sharp from "sharp";
 import warmup from "@middy/warmup";
 import { createError, HttpError } from '@middy/util';
 import httpErrorHandler from "@middy/http-error-handler";
@@ -9,25 +10,30 @@ import { createNotFoundResponse, createSuccessResponse, isWarmingUp } from "../s
 import { User } from "@chargebot-services/core/services/user";
 import { S3 } from "@chargebot-services/core/services/aws/s3";
 import { Bucket } from "sst/node/bucket";
+import parser from "lambda-multipart-parser";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
+  const fileContent = await parser.parse(event);
   const user_id = +event.pathParameters!.user_id!;
-  const file = event.body;
 
-  if (!file) {
+  if (fileContent?.files?.length == 0) {
     return createNotFoundResponse("file missing");
   }
 
-  const buffer = Buffer.from(file);
+  const user = await User.get(user_id);
+  if (!user) {
+    return createNotFoundResponse("user not found");
+  }
 
   try {
-    const user = await User.get(user_id);
-    if (!user) {
-      return createNotFoundResponse("user not found");
-    }
+    const imageBuffer = fileContent.files[0].content;
+    const resizedImage = await sharp(imageBuffer)
+      .resize(400)
+      .jpeg({ mozjpeg: true })
+      .toBuffer();
     
-    const upload = await S3.putObject(Bucket.userBucket.bucketName, `profile_user_${user.id}`, buffer);
+    const upload = await S3.putObject(Bucket.userBucket.bucketName, `profile_user_${user.id}`, resizedImage, 'image/jpeg');
 
     return upload ? createSuccessResponse({ "response": "success" }) : createError(500, "Error uploading file to S3");
 
@@ -36,7 +42,7 @@ const handler = async (event) => {
       // re-throw when is a http error generated above
       throw error;
     }
-    const httpError = createError(500, "cannot get user profile", { expose: true });
+    const httpError = createError(500, "cannot upload user profile picture", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;
   }

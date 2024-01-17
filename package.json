@@ -39,6 +39,8 @@
   ],
   "dependencies": {
     "@aws-sdk/client-rds-data": "^3.431.0",
+    "@aws-sdk/client-s3": "^3.490.0",
+    "@aws-sdk/s3-request-presigner": "^3.490.0",
     "@middy/warmup": "^5.0.1",
     "axios": "^1.6.2",
     "handlebars-helper-pluralize": "^1.0.3",
