@@ -2,7 +2,7 @@ import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import { createError } from '@middy/util';
 import httpErrorHandler from "@middy/http-error-handler";
-import { PathParamSchema, ArrayResponseSchema } from "../schemas/bot_hast_usage.schema";
+import { PathParamSchema, ArrayResponseSchema } from "../schemas/bot_usage_days_info.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import { DateTime } from "luxon";
@@ -10,7 +10,7 @@ import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { ChargebotInverter } from "@chargebot-services/core/services/analytics/chargebot_inverter";
 import { getNumber } from "../shared/rest_utils";
 
-export interface DaysWithUsage {
+interface DaysWithUsage {
   date: Date;
   has_data: boolean;
 }

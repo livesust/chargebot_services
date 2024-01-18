@@ -133,6 +133,28 @@ export async function getSummaryByBot(bot_uuid: string, from: Date, to: Date): P
     .execute();
 }
 
+export async function getDaysWithData(bot_uuid: string, from: Date, to: Date): Promise<{
+  bucket: Date,
+  number_of_records: number
+}[]> {
+  // @ts-expect-error not overloads match
+  const query = db
+    .selectFrom("chargebot_gps")
+    .select(({ fn }) => [
+      sql`time_bucket_gapfill('1 day', "timestamp") AS bucket`,
+      fn.count<number>('id').as('number_of_records'),
+    ])
+    .where('device_id', '=', bot_uuid)
+    .where((eb) => eb.between('timestamp', from, to))
+    .groupBy('bucket')
+    .orderBy('bucket', 'asc');
+  
+  // console.log('Query', await query.explain(), query.compile())
+
+  // @ts-expect-error not overloads match
+  return await query.execute();
+}
+
 async function getArrivedAtWhenAtHome(location: ChargebotGps) {
   // Vehicle is currently AT_HOME
   // We need to find the first AT_HOME in the current bucket of reports

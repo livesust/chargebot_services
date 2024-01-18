@@ -196,7 +196,7 @@ export async function getEnergyUsageByHourBucket(bot_uuid: string, from: Date, t
     .groupBy(['bucket', 'variable'])
     .orderBy('bucket', 'asc');
   
-  console.log('Query', await query.explain(), query.compile())
+  // console.log('Query', await query.explain(), query.compile())
 
   // @ts-expect-error not overloads match
   return await query.execute();
@@ -413,7 +413,7 @@ export async function getDaysWithData(bot_uuid: string, from: Date, to: Date): P
     .groupBy('bucket')
     .orderBy('bucket', 'asc');
   
-  console.log('Query', await query.explain(), query.compile())
+  // console.log('Query', await query.explain(), query.compile())
 
   // @ts-expect-error not overloads match
   return await query.execute();
