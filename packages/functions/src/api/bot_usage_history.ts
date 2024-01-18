@@ -12,6 +12,17 @@ import { getNumber } from "../shared/rest_utils";
 import { InverterVariable } from "@chargebot-services/core/api/chargebot_inverter";
 import { ChargebotBattery } from "@chargebot-services/core/services/analytics/chargebot_battery";
 
+interface DailyUsage {
+  bot_uuid: string,
+  timestamp: Date,
+  energy_usage: number,
+  total_charging: number,
+  grid_charging: number,
+  solar_charging: number,
+  battery_level: number,
+  hourly: HourlyUsage[]
+}
+
 export class HourlyUsage {
   hour_of_day = 0;
   energy_usage = 0;
@@ -53,7 +64,7 @@ const handler = async (event) => {
       }
 
       if (obj.variable === InverterVariable.ENERGY_USAGE) {
-        hour_record.energy_usage = obj.avg_value;
+        hour_record.energy_usage = obj.sum_value;
       }
       if (obj.variable === InverterVariable.GRID_CHARGE_DIFF) {
         hour_record.total_charging += obj.avg_value;
@@ -77,14 +88,14 @@ const handler = async (event) => {
     const grid_charging = getNumber(energyUsageVariables[InverterVariable.GRID_CHARGE_DIFF]);
     const solar_charging = getNumber(energyUsageVariables[InverterVariable.SOLAR_CHARGE_DIFF]);
 
-    const response = {
+    const response: DailyUsage = {
       bot_uuid: bot_uuid,
-      timestamp: date,
+      timestamp: from,
       energy_usage: getNumber(energyUsageVariables[InverterVariable.ENERGY_USAGE]),
       total_charging: grid_charging + solar_charging,
       grid_charging: grid_charging,
       solar_charging: solar_charging,
-      battery_level: batteryLevelSoc,
+      battery_level: getNumber(batteryLevelSoc),
       hourly: hourly
     };
 

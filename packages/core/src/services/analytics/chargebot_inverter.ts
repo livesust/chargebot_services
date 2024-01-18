@@ -130,8 +130,7 @@ export async function getTotalEnergyUsage(bot_uuid: string, from: Date, to: Date
       ).as('value'),
     ])
     .where('device_id', '=', bot_uuid)
-    .where('timestamp', '>=', from)
-    .where('timestamp', '<=', to)
+    .where((eb) => eb.between('timestamp', from, to))
     .where('variable', 'in', [
       InverterVariable.BATTERY_CHARGE_DIFF,
       InverterVariable.BATTERY_DISCHARGE_DIFF,
@@ -148,16 +147,24 @@ export async function getTotalEnergyUsage(bot_uuid: string, from: Date, to: Date
 export async function getEnergyUsageByHourBucket(bot_uuid: string, from: Date, to: Date): Promise<{
   bucket: Date,
   variable: string,
+  sum_value: number,
   min_value: number,
   max_value: number,
   avg_value: number
 }[]> {
   // @ts-expect-error not overloads match
-  return await db
+  const query = db
     .selectFrom("chargebot_inverter")
     .select(({ fn }) => [
       sql`time_bucket('1 hour', "timestamp") AS bucket`,
       'variable',
+      // @ts-expect-error not overloads match
+      fn.sum(fn.coalesce(
+          'value_int',
+          'value_long',
+          'value_float',
+          'value_double'
+      )).as('sum_value'),
       // @ts-expect-error not overloads match
       fn.min(fn.coalesce(
           'value_int',
@@ -180,16 +187,19 @@ export async function getEnergyUsageByHourBucket(bot_uuid: string, from: Date, t
       )).as('avg_value'),
     ])
     .where('device_id', '=', bot_uuid)
-    .where('timestamp', '>=', from)
-    .where('timestamp', '<=', to)
+    .where((eb) => eb.between('timestamp', from, to))
     .where('variable', 'in', [
       InverterVariable.SOLAR_CHARGE_DIFF,
       InverterVariable.GRID_CHARGE_DIFF,
       InverterVariable.ENERGY_USAGE
     ])
     .groupBy(['bucket', 'variable'])
-    .orderBy('bucket', 'asc')
-    .execute();
+    .orderBy('bucket', 'asc');
+  
+  console.log('Query', await query.explain(), query.compile())
+
+  // @ts-expect-error not overloads match
+  return await query.execute();
 }
 
 export async function getMonthlyEnergyUsage(bot_uuid: string): Promise<ChargebotInverter> {
@@ -335,8 +345,7 @@ export async function getAvgBatteryLevel(bot_uuid: string, from: Date, to: Date)
     ])
     .where('device_id', '=', bot_uuid)
     .where('variable', '=', InverterVariable.BATTERY_LEVEL_SOC)
-    .where('timestamp', '>=', from)
-    .where('timestamp', '<=', to)
+    .where((eb) => eb.between('timestamp', from, to))
     .executeTakeFirst();
 
   return levelSoc?.value ? Math.round(levelSoc?.value as number) : undefined;
@@ -377,9 +386,35 @@ export async function getBatteryLevelByHourBucket(bot_uuid: string, from: Date, 
     ])
     .where('device_id', '=', bot_uuid)
     .where('variable', '=', InverterVariable.BATTERY_LEVEL_SOC)
-    .where('timestamp', '>=', from)
-    .where('timestamp', '<=', to)
+    .where((eb) => eb.between('timestamp', from, to))
     .groupBy('bucket')
     .orderBy('bucket', 'asc')
     .execute();
+}
+
+export async function getDaysWithData(bot_uuid: string, from: Date, to: Date): Promise<{
+  bucket: Date,
+  number_of_records: number
+}[]> {
+  // @ts-expect-error not overloads match
+  const query = db
+    .selectFrom("chargebot_inverter")
+    .select(({ fn }) => [
+      sql`time_bucket_gapfill('1 day', "timestamp") AS bucket`,
+      fn.count<number>('id').as('number_of_records'),
+    ])
+    .where('device_id', '=', bot_uuid)
+    .where((eb) => eb.between('timestamp', from, to))
+    .where('variable', 'in', [
+      InverterVariable.SOLAR_CHARGE_DIFF,
+      InverterVariable.GRID_CHARGE_DIFF,
+      InverterVariable.ENERGY_USAGE
+    ])
+    .groupBy('bucket')
+    .orderBy('bucket', 'asc');
+  
+  console.log('Query', await query.explain(), query.compile())
+
+  // @ts-expect-error not overloads match
+  return await query.execute();
 }
