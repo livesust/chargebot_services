@@ -63,8 +63,7 @@ export async function getRouteByBot(bot_uuid: string, from: Date, to: Date): Pro
       `
     ])
     .where('device_id', '=', bot_uuid)
-    .where('timestamp', '>=', from)
-    .where('timestamp', '<=', to)
+    .where((eb) => eb.between('timestamp', from, to))
     .orderBy('timestamp', 'desc')
     .execute();
 }
@@ -94,8 +93,7 @@ export async function getSummaryByBot(bot_uuid: string, from: Date, to: Date): P
           `
         ])
         .where('device_id', '=', bot_uuid)
-        .where('timestamp', '>=', from)
-        .where('timestamp', '<=', to)
+        .where((eb) => eb.between('timestamp', from, to))
         .orderBy('timestamp', 'desc')
     )
     .with(
