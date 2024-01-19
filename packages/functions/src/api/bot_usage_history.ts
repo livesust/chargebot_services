@@ -64,15 +64,15 @@ const handler = async (event) => {
       }
 
       if (obj.variable === InverterVariable.ENERGY_USAGE) {
-        hour_record.energy_usage = obj.sum_value;
+        hour_record.energy_usage = getNumber(obj.sum_value);
       }
       if (obj.variable === InverterVariable.GRID_CHARGE_DIFF) {
-        hour_record.total_charging += obj.avg_value;
-        hour_record.grid_charging = obj.avg_value;
+        hour_record.total_charging += getNumber(obj.avg_value);
+        hour_record.grid_charging = getNumber(obj.avg_value);
       }
       if (obj.variable === InverterVariable.SOLAR_CHARGE_DIFF) {
-        hour_record.total_charging += obj.avg_value;
-        hour_record.solar_charging = obj.avg_value;
+        hour_record.total_charging += getNumber(obj.avg_value);
+        hour_record.solar_charging = getNumber(obj.avg_value);
       }
     });
 
@@ -82,7 +82,7 @@ const handler = async (event) => {
       const hour_record: HourlyUsage =
         hourly?.find((e) => e.hour_of_day === hour_of_day)
         ?? Object.assign(new HourlyUsage(), { hour_of_day: hour_of_day });
-      hour_record.battery_level = obj.avg_value;
+        hour_record.battery_level = getNumber(obj.avg_value);
     });
 
     const grid_charging = getNumber(energyUsageVariables[InverterVariable.GRID_CHARGE_DIFF]);

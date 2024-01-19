@@ -5,7 +5,7 @@ import httpErrorHandler from "@middy/http-error-handler";
 import { ResponseSchema } from "../schemas/bot_usage_totals.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
-import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
+import { createSuccessResponse, getNumber, isWarmingUp } from "../shared/rest_utils";
 import { BotUUIDPathParamSchema } from "src/shared/schemas";
 import { ChargebotInverter } from "@chargebot-services/core/services/analytics/chargebot_inverter";
 
@@ -24,16 +24,16 @@ const handler = async (event) => {
 
     const response = {
       bot_uuid: bot_uuid,
-      monthly_energy_usage: monthlyEnergyUsage?.value ?? 0,
-      yearly_energy_usage: yearlyEnergyUsage?.value ?? 0,
+      monthly_energy_usage: getNumber(monthlyEnergyUsage?.value),
+      yearly_energy_usage: getNumber(yearlyEnergyUsage?.value),
       monthly: monthlyDays && monthlyDays.length > 0 ? monthlyDays.map((dayOfMonth) => ({
         day_of_month: dayOfMonth.timestamp.getUTCDate(),
-        energy_usage: dayOfMonth?.value ?? 0
+        energy_usage: getNumber(dayOfMonth?.value)
       })) : [],
       yearly: yearlyMonths && yearlyMonths.length > 0 ? yearlyMonths.map((monthOfYear) => ({
         // getUTCMonth() returns an integer between 0 and 11
         month_of_year: monthOfYear.timestamp.getUTCMonth() + 1,
-        energy_usage: monthOfYear?.value ?? 0
+        energy_usage: getNumber(monthOfYear?.value)
       })) : [],
     };
 
