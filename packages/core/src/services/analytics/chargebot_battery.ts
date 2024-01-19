@@ -66,7 +66,7 @@ export async function getBatteryLevelByHourBucket(bot_uuid: string, from: Date, 
     .selectFrom("chargebot_battery")
     // @ts-expect-error implicit any
     .select(({ fn }) => [
-      sql`time_bucket('1 hour', "timestamp") AS bucket`,
+      sql`time_bucket_gapfill('1 hour', "timestamp") AS bucket`,
       // @ts-expect-error not overloads match
       fn.min(fn.coalesce(
           'value_int',

@@ -156,7 +156,7 @@ export async function getEnergyUsageByHourBucket(bot_uuid: string, from: Date, t
   const query = db
     .selectFrom("chargebot_inverter")
     .select(({ fn }) => [
-      sql`time_bucket('1 hour', "timestamp") AS bucket`,
+      sql`time_bucket_gapfill('1 hour', "timestamp") AS bucket`,
       'variable',
       // @ts-expect-error not overloads match
       fn.sum(fn.coalesce(
