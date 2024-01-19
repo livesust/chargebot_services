@@ -161,7 +161,7 @@ async function getArrivedAtWhenAtHome(location: ChargebotGps) {
 
   // Get the last report where vehicle was not AT_HOME
   /*
-  WITH block_groups AS (
+  WITH vehicle_status_groups AS (
       SELECT
           "timestamp",
           lat,

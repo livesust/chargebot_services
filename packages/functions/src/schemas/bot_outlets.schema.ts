@@ -6,7 +6,8 @@ const BotOutletSchemaDef = {
     pdu_outlet_number: Joi.number().valid(1, 2, 3, 4, 5, 6, 7, 8).allow(null),
     priority_charge: Joi.boolean().allow(null),
     status: Joi.string().allow(null, 'ON', 'OFF'),
-    status_timestamp: Joi.date().allow(null)
+    status_timestamp: Joi.date().allow(null),
+    equipment_name: Joi.string().allow(null)
 };
 
 export const EntitySchema = Joi.object({

@@ -10,6 +10,7 @@ import { createNotFoundResponse, createSuccessResponse, isWarmingUp } from "../s
 import { Outlet } from "@chargebot-services/core/services/outlet";
 import { ChargebotPDU } from "@chargebot-services/core/services/analytics/chargebot_pdu";
 import { Bot } from "@chargebot-services/core/services/bot";
+import { OutletEquipment } from "@chargebot-services/core/services/outlet_equipment";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
@@ -24,17 +25,27 @@ const handler = async (event) => {
 
     const [outlets, outletPriority] = await Promise.all([
       Outlet.findByCriteria({bot_id: bot.id}),
-      ChargebotPDU.getOutletPriorityCharging(bot.bot_uuid)
+      ChargebotPDU.getOutletPriorityCharging(bot.bot_uuid),      
     ]);
 
     const response = [];
     for (const outlet of outlets) {
+      const pdu_outlet_number = outlet.pdu_outlet_number - 1;
+
+      const [outletStatus, outletEquipment] = await Promise.all([
+        ChargebotPDU.getOutletStatus(bot.bot_uuid, pdu_outlet_number),
+        OutletEquipment.findOneByCriteria({outlet_id: outlet.id})
+      ]);
+
+      const equipment = outletEquipment ? outletEquipment.equipment : undefined;
+
       response.push({
         id: outlet.id,
         pdu_outlet_number: outlet.pdu_outlet_number,
         priority_charge: outletPriority?.outlet_id === outlet.pdu_outlet_number - 1,
-        status: 'OFF',
-        status_timestamp: new Date()
+        status: outletStatus?.status,
+        status_timestamp: outletStatus?.timestamp,
+        equipment_name: equipment?.name
       });
     }
     return createSuccessResponse(response);

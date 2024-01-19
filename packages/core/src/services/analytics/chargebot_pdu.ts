@@ -76,16 +76,51 @@ export async function getPDUCurrent(bot_uuid: string): Promise<number | undefine
 }
 
 export async function getOutletStatus(bot_uuid: string, outlet_id: number): Promise<{timestamp: Date, status: string} | undefined> {
+  // Returns the current status of an outlet and since when is in that status
+  /*
+  WITH status_groups AS (
+      SELECT
+          "timestamp",
+          (case when value_int = 0 then 'OFF' else 'ON' end) as status,
+          ROW_NUMBER() OVER (ORDER BY timestamp DESC) - 
+          ROW_NUMBER() OVER (PARTITION BY value_int ORDER BY "timestamp" DESC) AS block
+      FROM
+          chargebot_pdu
+      where device_id = 'dev_device_33db2037-35b7-4d57-9844-9e08d99de3d1'
+      and variable = 'outlet_state_0'
+  )
+  SELECT
+      "timestamp",
+      status
+  FROM
+      status_groups
+  where block = 0
+  ORDER BY
+      timestamp ASC
+  LIMIT 1;
+  */
   // @ts-expect-error not overloads match
   const status: {timestamp: Date, status: string} | undefined = await db
-    .selectFrom("chargebot_pdu")
-    .select([
-      'timestamp',
-      sql`(case when value_int = 0 then 'OFF' else 'ON' end) as status`
-    ])
-    .where('device_id', '=', bot_uuid)
-    .where('variable', '=', translateOutletId(outlet_id))
-    .orderBy('timestamp', 'desc')
+    .with(
+      'status_groups',
+      (db) => db
+        .selectFrom('chargebot_pdu')
+        // @ts-expect-error ignore overload not mapping
+        .select([
+          'timestamp',
+          sql`(case when value_int = 0 then 'OFF' else 'ON' end) as status`,
+          sql`
+            ROW_NUMBER() OVER (ORDER BY timestamp DESC) -
+            ROW_NUMBER() OVER (PARTITION BY value_int ORDER BY "timestamp" DESC) AS block
+          `
+        ])
+        .where('device_id', '=', bot_uuid)
+        .where('variable', '=', translateOutletId(outlet_id))
+    )
+    .selectFrom('status_groups')
+    .select(['timestamp', 'status'])
+    .where('block', '=', 0)
+    .orderBy('timestamp', 'asc')
     .limit(1)
     .executeTakeFirst();
 
@@ -108,8 +143,6 @@ export async function getOutletPriorityCharging(bot_uuid: string): Promise<{time
 
   return status;
 }
-
-
 
 export function translateOutletId(outlet_id: number): PDUVariable {
   if (!outlet_id) {
