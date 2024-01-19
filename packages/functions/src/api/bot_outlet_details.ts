@@ -25,7 +25,7 @@ const handler = async (event) => {
     }
 
     const [outletStatus, outletPriority, outletSchedule, outletEquipment] = await Promise.all([
-      ChargebotPDU.getOutletStatus(bot_uuid, outlet.pdu_outlet_number - 1),
+      ChargebotPDU.getOutletStatus(bot_uuid, outlet.pdu_outlet_number),
       ChargebotPDU.getOutletPriorityCharging(bot_uuid),
       OutletSchedule.findOneByCriteria({outlet_id: outlet.id}),
       OutletEquipment.findOneByCriteria({outlet_id: outlet.id})

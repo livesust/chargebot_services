@@ -144,7 +144,7 @@ export async function getOutletPriorityCharging(bot_uuid: string): Promise<{time
   return status;
 }
 
-export function translateOutletId(outlet_id: number): PDUVariable {
+export function translateOutletId(outlet_id: number=0): PDUVariable {
   if (!outlet_id) {
     return PDUVariable.OUTLET_1_STATE;
   }

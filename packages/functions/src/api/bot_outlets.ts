@@ -30,10 +30,8 @@ const handler = async (event) => {
 
     const response = [];
     for (const outlet of outlets) {
-      const pdu_outlet_number = outlet.pdu_outlet_number - 1;
-
       const [outletStatus, outletEquipment] = await Promise.all([
-        ChargebotPDU.getOutletStatus(bot.bot_uuid, pdu_outlet_number),
+        ChargebotPDU.getOutletStatus(bot.bot_uuid, outlet.pdu_outlet_number),
         OutletEquipment.findOneByCriteria({outlet_id: outlet.id})
       ]);
 
