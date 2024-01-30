@@ -10,10 +10,11 @@ import { ChargebotBattery } from "@chargebot-services/core/services/analytics/ch
 import { ChargebotInverter } from "@chargebot-services/core/services/analytics/chargebot_inverter";
 import { ChargebotPDU } from "@chargebot-services/core/services/analytics/chargebot_pdu";
 import { ChargebotError } from "@chargebot-services/core/services/analytics/chargebot_error";
-import { IoTShadow } from "@chargebot-services/core/services/aws/iot_shadow";
+import { IoTData } from "@chargebot-services/core/services/aws/iot_data";
 import { InverterVariable } from "@chargebot-services/core/api/chargebot_inverter";
 import { BotUUIDPathParamSchema } from "src/shared/schemas";
 import { getNumber } from "../shared/rest_utils";
+import { DateTime } from "luxon";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
@@ -28,7 +29,7 @@ const handler = async (event) => {
       ChargebotPDU.getPDUCurrent(bot_uuid),
       ChargebotError.getConnectionStatus(bot_uuid),
       ChargebotError.getSystemStatus(bot_uuid),
-      IoTShadow.getSystemStatus(bot_uuid),
+      IoTData.getSystemStatus(bot_uuid, 'system'),
     ]);
 
     const inverterVariables: { [key: string]: unknown } = inverterStatus.reduce((acc: { [key: string]: unknown }, obj) => {
@@ -48,6 +49,12 @@ const handler = async (event) => {
     const battery_charging = getNumber(inverterTotalVariables[InverterVariable.BATTERY_CHARGE_DIFF]);
     const battery_discharging = getNumber(inverterTotalVariables[InverterVariable.BATTERY_DISCHARGE_DIFF]);
 
+    const iotConnectedTime = iot_status?.metadata?.reported?.connected?.timestamp;
+    const inverterLastReport = inverterStatus?.length > 0 ? DateTime.fromJSDate(inverterStatus[0].timestamp) : null;
+    const lastSeen = inverterLastReport
+      ? inverterLastReport.toISO()
+      : (iotConnectedTime ? DateTime.fromSeconds(iotConnectedTime).toISO() : null);
+
     const response = {
       bot_uuid,
       battery_level: getNumber(battery_level),
@@ -62,7 +69,8 @@ const handler = async (event) => {
       today_battery_charging: battery_charging,
       today_battery_discharging: battery_discharging,
       connection_status: (conn_status === 'OK' && iotConnected) ? 'OK' : 'ERROR',
-      system_status: system_status
+      system_status: system_status,
+      last_seen: lastSeen
     };
 
     return createSuccessResponse(response);

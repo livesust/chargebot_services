@@ -50,9 +50,9 @@ export function ChargebotStack({ stack }: StackContext) {
 
   // Lambda layers
   // axios layer: to make http requests
-  const axiosLayer = new LayerVersion(stack, "axios-layer", {
-    code: Code.fromAsset("layers/axios"),
-  });
+  // const axiosLayer = new LayerVersion(stack, "axios-layer", {
+  //   code: Code.fromAsset("layers/axios"),
+  // });
 
   // luxon layer: to manage dates
   const luxonLayer = new LayerVersion(stack, "luxon-layer", {
@@ -153,15 +153,9 @@ export function ChargebotStack({ stack }: StackContext) {
       "GET /bot/{bot_uuid}/status": {
         function: {
           handler: "packages/functions/src/api/bot_status.main",
-          // @ts-expect-error ignore type errors
-          layers: [axiosLayer],
-          nodejs: {
-            install: ["axios"],
-          },
-          bind: [
-            IOT_API_URL,
-            IOT_API_KEY
-          ],
+          bind: [IOT_ENDPOINT],
+          // @ts-expect-error ignore error
+          role: iotRole,
         }
       },
       "GET /bot/{id}/outlets": "packages/functions/src/api/bot_outlets.main",

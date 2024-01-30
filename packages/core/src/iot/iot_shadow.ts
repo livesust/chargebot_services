@@ -1,3 +1,7 @@
+export interface BotStateMetadata {
+  connected: {timestamp: number};
+}
+
 export interface BotState {
   connected: string;
   cpu: string;
@@ -12,6 +16,7 @@ export interface BotState {
 
 export interface IoTShadow {
   state: {reported: BotState};
+  metadata: {reported: BotStateMetadata};
   version: string;
   timestamp: number;
 }
