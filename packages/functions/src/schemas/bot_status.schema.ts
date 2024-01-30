@@ -16,6 +16,7 @@ const BotStatusSchemaDef = {
     today_battery_discharging: Joi.number().allow(null),
     connection_status: Joi.string().allow(null),
     system_status: Joi.string().allow(null),
+    last_seen: Joi.date().allow(null),
 };
 
 export const EntitySchema = Joi.object({
