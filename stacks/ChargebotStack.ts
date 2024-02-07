@@ -17,9 +17,10 @@ export function ChargebotStack({ stack }: StackContext) {
   const TIMESCALE_DATABASE = new Config.Secret(stack, "TIMESCALE_DATABASE");
 
   // IoT Keys
-  const IOT_API_URL = new Config.Secret(stack, "IOT_API_URL");
-  const IOT_API_KEY = new Config.Secret(stack, "IOT_API_KEY");
   const IOT_ENDPOINT = new Config.Secret(stack, "IOT_ENDPOINT");
+
+  // Secret Keys
+  const SECRET_KEY = new Config.Secret(stack, "SECRET_KEY");
 
   // Create an IAM role
   const iamRole: IRole = new Role(stack, "ApiRole", {
@@ -53,6 +54,11 @@ export function ChargebotStack({ stack }: StackContext) {
   // const axiosLayer = new LayerVersion(stack, "axios-layer", {
   //   code: Code.fromAsset("layers/axios"),
   // });
+
+  // crypto-es layer: to encrypt/decrypt data
+  const cryptoLayer = new LayerVersion(stack, "crypto-es-layer", {
+    code: Code.fromAsset("layers/crypto-es"),
+  });
 
   // luxon layer: to manage dates
   const luxonLayer = new LayerVersion(stack, "luxon-layer", {
@@ -132,13 +138,14 @@ export function ChargebotStack({ stack }: StackContext) {
           TIMESCALE_PASSWORD,
           TIMESCALE_PORT,
           TIMESCALE_DATABASE,
+          SECRET_KEY,
         ],
         // @ts-expect-error ignore error
         role: iamRole
       },
-      layers: [luxonLayer],
+      layers: [luxonLayer, cryptoLayer],
       nodejs: {
-        install: ["luxon"],
+        install: ["luxon", "crypto-es"],
       },
     },
     routes: {
@@ -158,6 +165,14 @@ export function ChargebotStack({ stack }: StackContext) {
           role: iotRole,
         }
       },
+      "GET /bot/{bot_uuid}/status/encrypted": {
+        function: {
+          handler: "packages/functions/src/api/bot_status_encrypted.main",
+          bind: [IOT_ENDPOINT],
+          // @ts-expect-error ignore error
+          role: iotRole,
+        }
+      },
       "GET /bot/{id}/outlets": "packages/functions/src/api/bot_outlets.main",
       "GET /bot/{bot_uuid}/outlet/{outlet_id}": "packages/functions/src/api/bot_outlet_details.main",
       "GET /bot/{bot_uuid}/location/from/{from}/to/{to}": "packages/functions/src/api/bot_location_history.main",
@@ -172,6 +187,14 @@ export function ChargebotStack({ stack }: StackContext) {
       "POST /bot/{bot_uuid}/control": {
         function: {
           handler: "packages/functions/src/api/control_outlet.main",
+          bind: [IOT_ENDPOINT],
+          // @ts-expect-error ignore error
+          role: iotRole
+        }
+      },
+      "POST /bot/{bot_uuid}/control/encrypted": {
+        function: {
+          handler: "packages/functions/src/api/control_outlet_encrypted.main",
           bind: [IOT_ENDPOINT],
           // @ts-expect-error ignore error
           role: iotRole
