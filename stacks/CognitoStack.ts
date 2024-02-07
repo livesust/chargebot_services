@@ -70,6 +70,8 @@ export function CognitoStack({ app, stack }: StackContext) {
       cognito.cdk.userPool.addDomain("chargebotdev", { cognitoDomain: { domainPrefix: "chargebotdev" } })
     }
 
+    cognito.attachPermissionsForAuthUsers(stack, ["ssm"])
+
     stack.addOutputs({
         CognitoUserPoolId: cognito.userPoolId,
         CognitoIdentityPoolId: cognito.cognitoIdentityPoolId,
