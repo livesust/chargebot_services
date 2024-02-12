@@ -81,7 +81,11 @@ Ask for access to Sust Pro postman account. There's a postman Collection `Charge
 ### ZAProxy (Zed Attack Proxy)
 
 1. Go to `zaproxy` dir
-2. Create a `.env` file
+2. Export API Gateway OpenApi file
+```bash
+aws apigateway get-export --parameters extensions='apigateway' --rest-api-id <your-dev-api-id> --stage-name "$default" --export-type oas30 oas30.json
+```
+3. Create a `.env` file
 ```
 COGNITO_USER=cognito user name
 PASSWORD=cognito password
@@ -89,8 +93,7 @@ USER_POOL_ID=cognito user pool id
 CLIENT_ID=cognito client id
 REGION=us-east-1
 ```
-
-3. Run security test with docker
+4. Run security test with docker
 
 ```bash
 docker-compose up
