@@ -7,6 +7,8 @@ import { PathParamSchema } from "../schemas/bot_location_history.schema";
 import { ArrayResponseSchema } from "../schemas/bot_location_history.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
+import httpSecurityHeaders from '@middy/http-security-headers';
+import httpEventNormalizer from '@middy/http-event-normalizer';
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { ChargebotGps } from "@chargebot-services/core/services/analytics/chargebot_gps";
 
@@ -43,7 +45,7 @@ const handler = async (event) => {
 
     return createSuccessResponse(response);
   } catch (error) {
-    const httpError = createError(500, "cannot query bot location ", { expose: true });
+    const httpError = createError(406, "cannot query bot location ", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;
   }
@@ -52,9 +54,11 @@ const handler = async (event) => {
 export const main = middy(handler)
   // before
   .use(warmup({ isWarmingUp }))
+  .use(httpEventNormalizer())
   .use(validator({ pathParametersSchema: PathParamSchema }))
   // after: inverse order execution
   .use(jsonBodySerializer())
+  .use(httpSecurityHeaders())
   .use(validator({ responseSchema: ArrayResponseSchema }))
   // httpErrorHandler must be the last error handler attached, first to execute.
   // When non-http errors (those without statusCode) occur they will be returned with a 500 status code.

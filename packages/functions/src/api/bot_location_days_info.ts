@@ -5,6 +5,8 @@ import httpErrorHandler from "@middy/http-error-handler";
 import { PathParamSchema, ArrayResponseSchema } from "../schemas/bot_location_days_info.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
+import httpSecurityHeaders from '@middy/http-security-headers';
+import httpEventNormalizer from '@middy/http-event-normalizer';
 import { DateTime } from "luxon";
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { getNumber } from "../shared/rest_utils";
@@ -37,7 +39,7 @@ const handler = async (event) => {
 
     return createSuccessResponse(response);
   } catch (error) {
-    const httpError = createError(500, "cannot query bot has location data by day", { expose: true });
+    const httpError = createError(406, "cannot query bot has location data by day", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;
   }
@@ -46,9 +48,11 @@ const handler = async (event) => {
 export const main = middy(handler)
   // before
   .use(warmup({ isWarmingUp }))
+  .use(httpEventNormalizer())
   .use(validator({ pathParametersSchema: PathParamSchema }))
   // after: inverse order execution
   .use(jsonBodySerializer())
+  .use(httpSecurityHeaders())
   .use(validator({ responseSchema: ArrayResponseSchema }))
   // httpErrorHandler must be the last error handler attached, first to execute.
   // When non-http errors (those without statusCode) occur they will be returned with a 500 status code.

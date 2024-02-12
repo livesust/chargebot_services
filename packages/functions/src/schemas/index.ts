@@ -75,7 +75,7 @@ export const loadSchemas = (entity_name: string) => {
 // DO NOT REMOVE THIS LINE: PLOP SCHEMA IF
 
     if (!schema) {
-        const error = createError(500, "Service not supported");
+        const error = createError(406, "Service not supported");
         throw error;
     }
     return schema;

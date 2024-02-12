@@ -5,7 +5,7 @@ import { CognitoStack } from "./CognitoStack";
 import { Effect, IRole, Policy, PolicyStatement, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { LayerVersion, Code } from "aws-cdk-lib/aws-lambda";
 
-export function ChargebotStack({ stack }: StackContext) {
+export function ChargebotStack({ app, stack }: StackContext) {
   const { rdsCluster } = use(RDSStack);
   const { cognito } = use(CognitoStack);
 
@@ -130,6 +130,7 @@ export function ChargebotStack({ stack }: StackContext) {
         burst: 100,
       },
       function: {
+        timeout: app.stage == "prod" ? "10 seconds" : "30 seconds",
         bind: [
           rdsCluster,
           eventBus,
@@ -147,6 +148,10 @@ export function ChargebotStack({ stack }: StackContext) {
       nodejs: {
         install: ["luxon", "crypto-es"],
       },
+    },
+    cors: {
+      allowMethods: ["ANY"],
+      allowOrigins: ["*"],
     },
     routes: {
       "GET /{entity}": "packages/functions/src/crud/list.main",

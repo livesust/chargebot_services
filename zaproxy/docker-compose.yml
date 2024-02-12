@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  zap:
+    image: owasp/zap2docker-stable:latest
+    environment:
+      - COGNITO_USER=${COGNITO_USER}
+      - PASSWORD=${PASSWORD}
+      - USER_POOL_ID=${USER_POOL_ID}
+      - CLIENT_ID=${CLIENT_ID}
+      - REGION=${REGION}
+    volumes:
+      - ./api_oas30.json:/zap/wrk/api_oas30.json
+      - ./authenticate_and_scan.sh:/zap/wrk/authenticate_and_scan.sh
+      - ./reports:/zap/wrk/reports
+    command: bash -c '/zap/wrk/authenticate_and_scan.sh'
