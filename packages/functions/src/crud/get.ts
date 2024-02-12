@@ -5,6 +5,8 @@ import httpErrorHandler from "@middy/http-error-handler";
 import { EntityAndIdPathParamSchema } from "../shared/schemas";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
+import httpSecurityHeaders from '@middy/http-security-headers';
+import httpEventNormalizer from '@middy/http-event-normalizer';
 import { createSuccessResponse, validateResponse, isWarmingUp } from "../shared/rest_utils";
 import { loadService } from "@chargebot-services/core/services";
 
@@ -21,7 +23,7 @@ const handler = async (event) => {
     try {
         record = await service.get(id);
     } catch (error) {
-        const httpError = createError(500, "cannot get " + entity_name, { expose: true });
+        const httpError = createError(406, "cannot get " + entity_name, { expose: true });
         httpError.details = (<Error>error).message;
         throw httpError;
     }
@@ -41,9 +43,11 @@ const handler = async (event) => {
 export const main = middy(handler)
     // before
     .use(warmup({ isWarmingUp }))
+    .use(httpEventNormalizer())
     .use(validator({ pathParametersSchema: EntityAndIdPathParamSchema }))
     // after: inverse order execution
     .use(jsonBodySerializer())
+    .use(httpSecurityHeaders())
     // httpErrorHandler must be the last error handler attached, first to execute.
     // When non-http errors (those without statusCode) occur they will be returned with a 500 status code.
     .use(httpErrorHandler());

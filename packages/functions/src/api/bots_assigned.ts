@@ -5,6 +5,8 @@ import httpErrorHandler from "@middy/http-error-handler";
 import { ArrayResponseSchema } from "../schemas/bot_assigned.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
+import httpSecurityHeaders from '@middy/http-security-headers';
+import httpEventNormalizer from '@middy/http-event-normalizer';
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { User } from "@chargebot-services/core/services/user";
 import { BotUser } from "@chargebot-services/core/services/bot_user";
@@ -64,7 +66,7 @@ const handler = async ({ requestContext }) => {
         }
 
         // create and throw database errors
-        const httpError = createError(500, "cannot query bots for user", { expose: true });
+        const httpError = createError(406, "cannot query bots for user", { expose: true });
         httpError.details = (<Error>error).message;
         throw httpError;
     }
@@ -74,8 +76,10 @@ const handler = async ({ requestContext }) => {
 export const main = middy(handler)
     // before
     .use(warmup({ isWarmingUp }))
+  .use(httpEventNormalizer())
     // after: inverse order execution
     .use(jsonBodySerializer())
+    .use(httpSecurityHeaders())
     .use(validator({ responseSchema: ArrayResponseSchema }))
     // httpErrorHandler must be the last error handler attached, first to execute.
     // When non-http errors (those without statusCode) occur they will be returned with a 500 status code.

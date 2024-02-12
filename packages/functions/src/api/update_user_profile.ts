@@ -5,6 +5,8 @@ import httpErrorHandler from "@middy/http-error-handler";
 import { PathParamSchema, EntitySchema, ResponseSchema } from "../schemas/update_user_profile.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
+import httpSecurityHeaders from '@middy/http-security-headers';
+import httpEventNormalizer from '@middy/http-event-normalizer';
 import { createNotFoundResponse, createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { User } from "@chargebot-services/core/services/user";
 import { UserEmail } from "@chargebot-services/core/services/user_email";
@@ -101,7 +103,7 @@ const handler = async (event) => {
       // re-throw when is a http error generated above
       throw error;
     }
-    const httpError = createError(500, "cannot get user profile", { expose: true });
+    const httpError = createError(406, "cannot get user profile", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;
   }
@@ -110,11 +112,13 @@ const handler = async (event) => {
 export const main = middy(handler)
   // before
   .use(warmup({ isWarmingUp }))
+  .use(httpEventNormalizer())
   .use(validator({ pathParametersSchema: PathParamSchema }))
   .use(jsonBodyParser({ reviver: dateReviver }))
   .use(validator({ eventSchema: EntitySchema }))
   // after: inverse order execution
   .use(jsonBodySerializer())
+  .use(httpSecurityHeaders())
   .use(validator({ responseSchema: ResponseSchema }))
   // httpErrorHandler must be the last error handler attached, first to execute.
   // When non-http errors (those without statusCode) occur they will be returned with a 500 status code.

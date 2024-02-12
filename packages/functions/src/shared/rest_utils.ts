@@ -30,7 +30,7 @@ export const validateCreateBody = async (body, entity_name: string) => {
     const { error: validationError } = responseSchema.validate(body);
     if (validationError) {
         // Bad Request
-        const error = createError(500, validationError.message, { expose: true });
+        const error = createError(406, validationError.message, { expose: true });
         const errorDetails = validationError.details.map(detail => detail.message);
         error.details = errorDetails;
         throw error;
@@ -44,7 +44,7 @@ export const validateUpdateBody = async (body, entity_name: string) => {
     const { error: validationError } = responseSchema.validate(body);
     if (validationError) {
         // Bad Request
-        const error = createError(500, validationError.message, { expose: true });
+        const error = createError(406, validationError.message, { expose: true });
         const errorDetails = validationError.details.map(detail => detail.message);
         error.details = errorDetails;
         throw error;
@@ -58,7 +58,7 @@ export const validateSearchBody = async (body, entity_name: string) => {
     const { error: validationError } = responseSchema.validate(body);
     if (validationError) {
         // Bad Request
-        const error = createError(500, validationError.message, { expose: true });
+        const error = createError(406, validationError.message, { expose: true });
         const errorDetails = validationError.details.map(detail => detail.message);
         error.details = errorDetails;
         throw error;
@@ -72,7 +72,7 @@ export const validateResponse = async (response, entity_name: string) => {
     const { error: validationError } = responseSchema.validate(response);
     if (validationError) {
         // Bad Request
-        const error = createError(500, validationError.message, { expose: true });
+        const error = createError(406, validationError.message, { expose: true });
         const errorDetails = validationError.details.map(detail => detail.message);
         error.details = errorDetails;
         throw error;
@@ -86,7 +86,7 @@ export const validateArrayResponse = async (response, entity_name: string) => {
     const { error: validationError } = responseSchema.validate(response);
     if (validationError) {
         // Bad Request
-        const error = createError(500, validationError.message, { expose: true });
+        const error = createError(406, validationError.message, { expose: true });
         const errorDetails = validationError.details.map(detail => detail.message);
         error.details = errorDetails;
         throw error;

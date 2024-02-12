@@ -6,6 +6,8 @@ import { ResponseSchema } from "../schemas/bot_status.schema";
 import validator from "../shared/middlewares/joi-validator";
 import encrypt from "../shared/middlewares/encrypt";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
+import httpSecurityHeaders from '@middy/http-security-headers';
+import httpEventNormalizer from '@middy/http-event-normalizer';
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { ChargebotBattery } from "@chargebot-services/core/services/analytics/chargebot_battery";
 import { ChargebotInverter } from "@chargebot-services/core/services/analytics/chargebot_inverter";
@@ -77,7 +79,7 @@ const handler = async (event) => {
     return createSuccessResponse(response);
   } catch (error) {
     // create and throw database errors
-    const httpError = createError(500, "cannot query bot status", { expose: true });
+    const httpError = createError(406, "cannot query bot status", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;
   }
@@ -86,8 +88,10 @@ const handler = async (event) => {
 export const main = middy(handler)
   // before
   .use(warmup({ isWarmingUp }))
+  .use(httpEventNormalizer())
   .use(validator({ pathParametersSchema: BotUUIDPathParamSchema }))
   // after: inverse order execution
+  .use(httpSecurityHeaders())
   .use(encrypt())
   .use(jsonBodySerializer())
   .use(validator({ responseSchema: ResponseSchema }))

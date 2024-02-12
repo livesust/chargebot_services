@@ -5,6 +5,8 @@ import httpErrorHandler from "@middy/http-error-handler";
 import { PathParamSchema } from "../schemas/assign_equipment_outlet.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
+import httpSecurityHeaders from '@middy/http-security-headers';
+import httpEventNormalizer from '@middy/http-event-normalizer';
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { OutletEquipment } from "@chargebot-services/core/services/outlet_equipment";
 
@@ -30,7 +32,7 @@ const handler = async (event) => {
       // re-throw when is a http error generated above
       throw error;
     }
-    const httpError = createError(500, "cannot unassign equipment from outlet", { expose: true });
+    const httpError = createError(406, "cannot unassign equipment from outlet", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;
   }
@@ -39,9 +41,11 @@ const handler = async (event) => {
 export const main = middy(handler)
   // before
   .use(warmup({ isWarmingUp }))
+  .use(httpEventNormalizer())
   .use(validator({ pathParametersSchema: PathParamSchema }))
   // after: inverse order execution
   .use(jsonBodySerializer())
+  .use(httpSecurityHeaders())
   // httpErrorHandler must be the last error handler attached, first to execute.
   // When non-http errors (those without statusCode) occur they will be returned with a 500 status code.
   .use(httpErrorHandler());

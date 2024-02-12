@@ -76,7 +76,7 @@ export const loadService = async (entity_name: string) => {
 // DO NOT REMOVE THIS LINE: PLOP SERVICE IF
 
     if (!service) {
-        const error = createError(500, "Service not supported");
+        const error = createError(406, "Service not supported");
         throw error;
     }
     return service;
