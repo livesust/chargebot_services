@@ -80,7 +80,17 @@ Ask for access to Sust Pro postman account. There's a postman Collection `Charge
 ## Security
 ### ZAProxy (Zed Attack Proxy)
 
-Go to `zaproxy` dir and run docker compose.
+1. Go to `zaproxy` dir
+2. Create a `.env` file
+```
+COGNITO_USER=cognito user name
+PASSWORD=cognito password
+USER_POOL_ID=cognito user pool id
+CLIENT_ID=cognito client id
+REGION=us-east-1
+```
+
+3. Run security test with docker
 
 ```bash
 docker-compose up
