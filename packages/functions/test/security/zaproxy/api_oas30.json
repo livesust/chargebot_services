@@ -1,0 +1,826 @@
+{
+  "openapi" : "3.0.1",
+  "info" : {
+    "title" : "dev-chargebot-services-Api",
+    "version" : "2024-02-08 19:03:46UTC"
+  },
+  "servers" : [ {
+    "url" : "https://rfrtoqe0a9.execute-api.us-east-1.amazonaws.com/{basePath}",
+    "variables" : {
+      "basePath" : {
+        "default" : ""
+      }
+    }
+  } ],
+  "tags" : [ {
+    "name" : "aws:cloudformation:stack-name",
+    "x-amazon-apigateway-tag-value" : "dev-chargebot-services-ChargebotStack"
+  }, {
+    "name" : "aws:cloudformation:logical-id",
+    "x-amazon-apigateway-tag-value" : "ApiCD79AAA0"
+  }, {
+    "name" : "sst:app",
+    "x-amazon-apigateway-tag-value" : "chargebot-services"
+  }, {
+    "name" : "sst:stage",
+    "x-amazon-apigateway-tag-value" : "dev"
+  }, {
+    "name" : "aws:cloudformation:stack-id",
+    "x-amazon-apigateway-tag-value" : "arn:aws:cloudformation:us-east-1:881739832873:stack/dev-chargebot-services-ChargebotStack/0292f0a0-9f6d-11ee-8cd8-12b55b8b770d"
+  } ],
+  "paths" : {
+    "/equipment/{equipment_id}/outlet/{outlet_id}" : {
+      "post" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for POST /equipment/{equipment_id}/outlet/{outlet_id}"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaPOSTequipmenteq-RlluuaFmuuwU/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "delete" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for DELETE /equipment/{equipment_id}/outlet/{outlet_id}"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaDELETEequipment-pqUHzgDk546A/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "parameters" : [ {
+        "name" : "equipment_id",
+        "in" : "path",
+        "description" : "Generated path parameter for equipment_id",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      }, {
+        "name" : "outlet_id",
+        "in" : "path",
+        "description" : "Generated path parameter for outlet_id",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    },
+    "/customer/{id}" : {
+      "get" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for GET /customer/{id}"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaGETentityidC9D8-scU0c60Q0z1p/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "delete" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for DELETE /customer/{id}"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaDELETEentityidC-VKcMJ96GTpnN/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "patch" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for PATCH /customer/{id}"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaPATCHentityid5B-Godru0FoiuN6/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "parameters" : [ {
+        "name" : "entity",
+        "in" : "path",
+        "description" : "Generated path parameter for entity",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      }, {
+        "name" : "id",
+        "in" : "path",
+        "description" : "Generated path parameter for id",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    },
+    "/bot/assigned" : {
+      "get" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for GET /bot/assigned"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaGETbotassignedF-oHlvPc7g5z7F/invocations",
+          "connectionType" : "INTERNET"
+        }
+      }
+    },
+    "/bot/{bot_uuid}/location" : {
+      "get" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for GET /bot/{bot_uuid}/location"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaGETbotbotuuidlo-QhL8gI0Wc1PK/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "parameters" : [ {
+        "name" : "bot_uuid",
+        "in" : "path",
+        "description" : "Generated path parameter for bot_uuid",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    },
+    "/bot/{bot_uuid}/location/days_info/from/{from}/to/{to}" : {
+      "get" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for GET /bot/{bot_uuid}/location/days_info/from/{from}/to/{to}"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaGETbotbotuuidlo-F02RUGIW5fHT/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "parameters" : [ {
+        "name" : "bot_uuid",
+        "in" : "path",
+        "description" : "Generated path parameter for bot_uuid",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      }, {
+        "name" : "from",
+        "in" : "path",
+        "description" : "Generated path parameter for from",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      }, {
+        "name" : "to",
+        "in" : "path",
+        "description" : "Generated path parameter for to",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    },
+    "/bot/{bot_uuid}/location/from/{from}/to/{to}" : {
+      "get" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for GET /bot/{bot_uuid}/location/from/{from}/to/{to}"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaGETbotbotuuidlo-2V22wm4L9jwL/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "parameters" : [ {
+        "name" : "bot_uuid",
+        "in" : "path",
+        "description" : "Generated path parameter for bot_uuid",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      }, {
+        "name" : "from",
+        "in" : "path",
+        "description" : "Generated path parameter for from",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      }, {
+        "name" : "to",
+        "in" : "path",
+        "description" : "Generated path parameter for to",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    },
+    "/bot/{bot_uuid}/outlet/{outlet_id}" : {
+      "get" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for GET /bot/{bot_uuid}/outlet/{outlet_id}"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaGETbotbotuuidou-t96tarAXZhIS/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "parameters" : [ {
+        "name" : "bot_uuid",
+        "in" : "path",
+        "description" : "Generated path parameter for bot_uuid",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      }, {
+        "name" : "outlet_id",
+        "in" : "path",
+        "description" : "Generated path parameter for outlet_id",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    },
+    "/bot/{bot_uuid}/status" : {
+      "get" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for GET /bot/{bot_uuid}/status"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaGETbotbotuuidst-kc5hAiqZFJmW/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "parameters" : [ {
+        "name" : "bot_uuid",
+        "in" : "path",
+        "description" : "Generated path parameter for bot_uuid",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    },
+    "/bot/{bot_uuid}/status/encrypted" : {
+      "get" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for GET /bot/{bot_uuid}/status/encrypted"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaGETbotbotuuidst-Foz55ZQnN5rf/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "parameters" : [ {
+        "name" : "bot_uuid",
+        "in" : "path",
+        "description" : "Generated path parameter for bot_uuid",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    },
+    "/bot/{bot_uuid}/usage/day/{date}" : {
+      "get" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for GET /bot/{bot_uuid}/usage/day/{date}"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaGETbotbotuuidus-ZaYBu5IuqgJ4/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "parameters" : [ {
+        "name" : "bot_uuid",
+        "in" : "path",
+        "description" : "Generated path parameter for bot_uuid",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      }, {
+        "name" : "date",
+        "in" : "path",
+        "description" : "Generated path parameter for date",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    },
+    "/bot/{bot_uuid}/usage/days_info/from/{from}/to/{to}" : {
+      "get" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for GET /bot/{bot_uuid}/usage/days_info/from/{from}/to/{to}"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaGETbotbotuuidus-5pcTVaMVYdKl/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "parameters" : [ {
+        "name" : "bot_uuid",
+        "in" : "path",
+        "description" : "Generated path parameter for bot_uuid",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      }, {
+        "name" : "from",
+        "in" : "path",
+        "description" : "Generated path parameter for from",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      }, {
+        "name" : "to",
+        "in" : "path",
+        "description" : "Generated path parameter for to",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    },
+    "/bot/{bot_uuid}/usage/interval/from/{from}/to/{to}" : {
+      "get" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for GET /bot/{bot_uuid}/usage/interval/from/{from}/to/{to}"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaGETbotbotuuidus-vpxRExNGUgpP/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "parameters" : [ {
+        "name" : "bot_uuid",
+        "in" : "path",
+        "description" : "Generated path parameter for bot_uuid",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      }, {
+        "name" : "from",
+        "in" : "path",
+        "description" : "Generated path parameter for from",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      }, {
+        "name" : "to",
+        "in" : "path",
+        "description" : "Generated path parameter for to",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    },
+    "/bot/{bot_uuid}/usage/totals" : {
+      "get" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for GET /bot/{bot_uuid}/usage/totals"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaGETbotbotuuidus-jBvnk370wmHW/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "parameters" : [ {
+        "name" : "bot_uuid",
+        "in" : "path",
+        "description" : "Generated path parameter for bot_uuid",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    },
+    "/bot/{id}/outlets" : {
+      "get" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for GET /bot/{id}/outlets"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaGETbotidoutlets-Rn2iztifumA5/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "parameters" : [ {
+        "name" : "id",
+        "in" : "path",
+        "description" : "Generated path parameter for id",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    },
+    "/equipment/customer/{customer_id}" : {
+      "get" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for GET /equipment/customer/{customer_id}"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaGETequipmentcus-b9ftpIzPznmB/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "parameters" : [ {
+        "name" : "customer_id",
+        "in" : "path",
+        "description" : "Generated path parameter for customer_id",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    },
+    "/user/{user_id}/profile" : {
+      "get" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for GET /user/{user_id}/profile"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaGETuseruseridpr-hfQYho2iyqls/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "patch" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for PATCH /user/{user_id}/profile"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaPATCHuseruserid-BUv6wacp9SVs/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "parameters" : [ {
+        "name" : "user_id",
+        "in" : "path",
+        "description" : "Generated path parameter for user_id",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    },
+    "/customer" : {
+      "get" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for GET /customer"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaGETentityF7C51F-pheWyb53j19B/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "post" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for POST /customer"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaPOSTentityEC03A-vgZn0yYYi7Wo/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "parameters" : [ {
+        "name" : "entity",
+        "in" : "path",
+        "description" : "Generated path parameter for entity",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    },
+    "/bot/{bot_uuid}/control" : {
+      "post" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for POST /bot/{bot_uuid}/control"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaPOSTbotbotuuidc-NW1WF3EXmzoQ/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "parameters" : [ {
+        "name" : "bot_uuid",
+        "in" : "path",
+        "description" : "Generated path parameter for bot_uuid",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    },
+    "/bot/{bot_uuid}/control/encrypted" : {
+      "post" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for POST /bot/{bot_uuid}/control/encrypted"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaPOSTbotbotuuidc-fhSa8ocUIMlo/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "parameters" : [ {
+        "name" : "bot_uuid",
+        "in" : "path",
+        "description" : "Generated path parameter for bot_uuid",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    },
+    "/customer/search" : {
+      "post" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for POST /customer/search"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaPOSTentitysearc-PKN0lRdVPfC5/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "parameters" : [ {
+        "name" : "entity",
+        "in" : "path",
+        "description" : "Generated path parameter for entity",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    },
+    "/user/{user_id}/photo" : {
+      "put" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for PUT /user/{user_id}/photo"
+          }
+        },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaPUTuseruseridph-bLJhI1abq74r/invocations",
+          "connectionType" : "INTERNET"
+        }
+      },
+      "parameters" : [ {
+        "name" : "user_id",
+        "in" : "path",
+        "description" : "Generated path parameter for user_id",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    }
+  },
+  "components" : {
+    "securitySchemes" : {
+      "jwt" : {
+        "type" : "oauth2",
+        "flows" : { },
+        "x-amazon-apigateway-authorizer" : {
+          "identitySource" : "$request.header.Authorization",
+          "jwtConfiguration" : {
+            "audience" : [ "5i9455f6nnctsg0jckotho42ho" ],
+            "issuer" : "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_xIsDQ7O8z"
+          },
+          "type" : "jwt"
+        }
+      }
+    },
+    "x-amazon-apigateway-integrations" : {
+      "unusedIntegration_g6ez4tn" : {
+        "payloadFormatVersion" : "2.0",
+        "type" : "aws_proxy",
+        "httpMethod" : "POST",
+        "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:881739832873:function:dev-chargebot-services-Ch-ApiLambdaGETattacksayhel-eSnsUuNQaj8Y/invocations",
+        "connectionType" : "INTERNET"
+      }
+    }
+  },
+  "x-amazon-apigateway-cors" : {
+    "allowMethods" : [ "*" ],
+    "allowHeaders" : [ "*" ],
+    "maxAge" : -42,
+    "allowCredentials" : false,
+    "allowOrigins" : [ "*" ]
+  },
+  "x-amazon-apigateway-importexport-version" : "1.0"
+}

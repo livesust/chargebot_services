@@ -12,5 +12,4 @@ const handler = async (event) => {
   return {};
 };
 
-export const main = middy(handler).use(warmup({ isWarmingUp }))
-  .use(httpEventNormalizer());
+export const main = middy(handler).use(warmup({ isWarmingUp }));

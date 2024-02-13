@@ -73,7 +73,8 @@ export function ChargebotStack({ app, stack }: StackContext) {
   // Event Bus
   const publishFunction = {
     function: {
-      handler: "packages/functions/src/iot/publish_event.main",
+      handler: "packages/functions/src/events/publish_event.main",
+      timeout: app.stage == "prod" ? "10 seconds" : "30 seconds",
       bind: [IOT_ENDPOINT],
       role: iotRole
     }
@@ -81,7 +82,7 @@ export function ChargebotStack({ app, stack }: StackContext) {
 
   const eventBus = new EventBus(stack, "ChargebotEventBus", {
     rules: {
-      created: {
+      outlet_schedule: {
         pattern: {
           source: ["created", "updated", "deleted"],
           detailType: ["outlet_schedule"],
@@ -91,6 +92,21 @@ export function ChargebotStack({ app, stack }: StackContext) {
           publish_outlet_schedule: publishFunction,
         },
       },
+      bot_created: {
+        pattern: {
+          source: ["created"],
+          detailType: ["bot"],
+        },
+        targets: {
+          on_bot_created: {
+            function: {
+              handler: "packages/functions/src/events/on_bot_created.main",
+              timeout: app.stage == "prod" ? "10 seconds" : "30 seconds",
+              bind: [rdsCluster],
+            }
+          },
+        },        
+      }
     },
   });
 

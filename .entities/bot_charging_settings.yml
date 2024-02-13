@@ -4,19 +4,19 @@ attributes:
     type: varchar
     varchar_length: '255'
     tsType: string
-    not_null: false
+    not_null: true
   - attribute: all day
     type: boolean
     tsType: boolean
-    not_null: false
+    not_null: true
   - attribute: start time
     type: timestamp
     tsType: Date
-    not_null: true
+    not_null: false
   - attribute: end time
     type: timestamp
     tsType: Date
-    not_null: true
+    not_null: false
 relationships:
   - entity: bot
     relation_type: many-to-one

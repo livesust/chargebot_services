@@ -4,10 +4,10 @@ import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEnti
 //import { EntitySchema as BotSchema } from "./bot.schema";
 
 const BotChargingSettingsSchemaDef = {
-    day_of_week: Joi.string().max(255).allow(null),
-    all_day: Joi.boolean().allow(null),
-    start_time: Joi.date(),
-    end_time: Joi.date(),
+    day_of_week: Joi.string().max(255),
+    all_day: Joi.boolean(),
+    start_time: Joi.date().allow(null),
+    end_time: Joi.date().allow(null),
 };
 
 export const EntitySchema = Joi.object({
@@ -23,8 +23,8 @@ export const CreateSchema = Joi.object({
     ...BotChargingSettingsSchemaDef
 }).keys({
     // overwrite keys for required attributes
-    start_time: Joi.date().required(),
-    end_time: Joi.date().required(),
+    day_of_week: Joi.string().max(255).required(),
+    all_day: Joi.boolean().required(),
     bot_id: Joi.number().required(),
 });
 
