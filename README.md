@@ -80,7 +80,7 @@ Ask for access to Sust Pro postman account. There's a postman Collection `Charge
 ## Security
 ### ZAProxy (Zed Attack Proxy)
 
-1. Go to `zaproxy` dir
+1. Go to `packages/core/functions/security/zaproxy` dir
 2. Export API Gateway OpenApi file
 ```bash
 aws apigateway get-export --parameters extensions='apigateway' --rest-api-id <your-dev-api-id> --stage-name "$default" --export-type oas30 oas30.json
@@ -102,10 +102,30 @@ docker-compose up
 The result of all tests will be in the terminal, also some reports are generated into `zaproxy/reports`.
 
 ### SQLMap
+1. Clone SQLMap
 ```bash
-python sqlmap.py \
-  -u https://rfrtoqe0a9.execute-api.us-east-1.amazonaws.com/user \
-  --level 5 \
-  --risk 3 \
-  --batch
+git clone --depth 1 https://github.com/sqlmapproject/sqlmap.git sqlmap-dev
 ```
+1. Go to `packages/core/functions/security/sqlmap`
+2. Install dependencies
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install openapi3-parser
+```
+3. Create/Edit `.env`file
+```
+COGNITO_USER=cognito user name
+PASSWORD=cognito password
+USER_POOL_ID=cognito user pool id
+CLIENT_ID=cognito client id
+REGION=us-east-1
+API_URL=your api base endpoint
+SQLMAP_DIR=/git-clone-dir-to/sqlmap-dev
+```
+4. Run `run_test.sh`
+```bash
+chmod+x run_test.sh && ./run_test.sh
+```
+
+More info about SQLMap usage [here](https://github.com/sqlmapproject/sqlmap/wiki/Usage)

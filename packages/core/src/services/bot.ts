@@ -71,8 +71,7 @@ export async function create(bot: NewBot): Promise<{
   return {
     entity: created,
     // event to dispatch on EventBus on creation
-    // undefined as default to not dispatch any event
-    event: undefined
+    event: created
   };
 }
 

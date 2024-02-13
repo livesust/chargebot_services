@@ -2,10 +2,10 @@ import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 
 export interface BotChargingSettingsTable extends AuditedEntity {
-  day_of_week?: string;
-  all_day?: boolean;
-  start_time: Date;
-  end_time: Date;
+  day_of_week: string;
+  all_day: boolean;
+  start_time?: Date;
+  end_time?: Date;
   bot_id: number;
 }
 
