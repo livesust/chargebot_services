@@ -6,6 +6,15 @@ import { getRandom } from './utils';
 // @ts-expect-error ignore any type error
 let entity_id;
 
+export async function getOrCreateCustomer() {
+    let customer = await Customer.findOneByCriteria({})
+    if (!customer) {
+      // @ts-expect-error ignore error
+      customer = await createAndSaveCustomer();
+    }
+    return customer;
+}
+
 export async function createAndSaveCustomer() {
     // @ts-expect-error ignore error
     return Customer.create(getCustomerInstance());
@@ -34,8 +43,9 @@ describe('Customer Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveCustomer();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -44,7 +54,8 @@ describe('Customer Tests', () => {
             { "name": getRandom('text') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

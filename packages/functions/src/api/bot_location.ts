@@ -2,6 +2,7 @@ import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import { createError } from '@middy/util';
 import httpErrorHandler from "@middy/http-error-handler";
+import inputOutputLogger from "@middy/input-output-logger";
 import { BotUUIDPathParamSchema } from "../shared/schemas";
 import { ResponseSchema } from "../schemas/bot_location.schema";
 import validator from "../shared/middlewares/joi-validator";
@@ -41,6 +42,9 @@ const handler = async (event) => {
 export const main = middy(handler)
   // before
   .use(warmup({ isWarmingUp }))
+  .use(inputOutputLogger({
+    omitPaths: ["event.headers", "event.requestContext", "response.headers", "response.body"]
+  }))
   .use(httpEventNormalizer())
   .use(validator({ pathParametersSchema: BotUUIDPathParamSchema }))
   // after: inverse order execution

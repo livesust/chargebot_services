@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { HomeMaster } from "../src/services/home_master";
 import { getRandom } from './utils';
-import { createAndSaveStateMaster, removeStateMaster } from "./state_master.test";
+import { getOrCreateStateMaster } from "./state_master.test";
 
 
 // @ts-expect-error ignore any type error
@@ -9,8 +9,17 @@ let entity_id;
 // @ts-expect-error ignore any type error
 let state_master;
 
+export async function getOrCreateHomeMaster() {
+    let home_master = await HomeMaster.findOneByCriteria({})
+    if (!home_master) {
+      // @ts-expect-error ignore error
+      home_master = await createAndSaveHomeMaster();
+    }
+    return home_master;
+}
+
 export async function createAndSaveHomeMaster() {
-    state_master = await createAndSaveStateMaster();
+    state_master = await getOrCreateStateMaster();
     // @ts-expect-error ignore error
     return HomeMaster.create(getHomeMasterInstance());
 }
@@ -18,8 +27,6 @@ export async function createAndSaveHomeMaster() {
 export async function removeHomeMaster(id: number) {
     // run delete query to clean database
     await HomeMaster.hard_remove(id);
-    // @ts-expect-error ignore any type error
-    await removeStateMaster(state_master.id);
 }
 
 function getHomeMasterInstance() {
@@ -45,8 +52,9 @@ describe('HomeMaster Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveHomeMaster();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -55,7 +63,8 @@ describe('HomeMaster Tests', () => {
             { "address_line_1": getRandom('text') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

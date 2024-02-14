@@ -2,6 +2,7 @@ import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import { createError } from '@middy/util';
 import httpErrorHandler from "@middy/http-error-handler";
+import inputOutputLogger from "@middy/input-output-logger";
 import { EntityPathParamSchema } from "../shared/schemas";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
@@ -15,39 +16,42 @@ import jsonBodyParser from "@middy/http-json-body-parser";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
-    const body = event.body ?? {};
-    const entity_name = event.pathParameters!.entity!;
+  const body = event.body ?? {};
+  const entity_name = event.pathParameters!.entity!;
 
-    await validateSearchBody(body, entity_name);
+  await validateSearchBody(body, entity_name);
 
-    const service = await loadService(entity_name);
+  const service = await loadService(entity_name);
 
-    let records;
+  let records;
 
-    try {
-        records = await service.findByCriteria(body);
-    } catch (error) {
-        const httpError = createError(406, "cannot search " + entity_name, { expose: true });
-        httpError.details = (<Error>error).message;
-        throw httpError;
-    }
+  try {
+    records = await service.findByCriteria(body);
+  } catch (error) {
+    const httpError = createError(406, "cannot search " + entity_name, { expose: true });
+    httpError.details = (<Error>error).message;
+    throw httpError;
+  }
 
-    const response = createSuccessResponse(records);
+  const response = createSuccessResponse(records);
 
-    await validateArrayResponse(response, entity_name);
+  await validateArrayResponse(response, entity_name);
 
-    return response;
+  return response;
 };
 
 export const main = middy(handler)
-    // before
-    .use(warmup({ isWarmingUp }))
-    .use(httpEventNormalizer())
-    .use(validator({ pathParametersSchema: EntityPathParamSchema }))
-    .use(jsonBodyParser({reviver: dateReviver}))
-    // after: inverse order execution
-    .use(jsonBodySerializer())
-    .use(httpSecurityHeaders())
-    // httpErrorHandler must be the last error handler attached, first to execute.
-    // When non-http errors (those without statusCode) occur they will be returned with a 500 status code.
-    .use(httpErrorHandler());
+  // before
+  .use(warmup({ isWarmingUp }))
+  .use(inputOutputLogger({
+    omitPaths: ["event.headers", "event.requestContext", "response.headers", "response.body"]
+  }))
+  .use(httpEventNormalizer())
+  .use(validator({ pathParametersSchema: EntityPathParamSchema }))
+  .use(jsonBodyParser({ reviver: dateReviver }))
+  // after: inverse order execution
+  .use(jsonBodySerializer())
+  .use(httpSecurityHeaders())
+  // httpErrorHandler must be the last error handler attached, first to execute.
+  // When non-http errors (those without statusCode) occur they will be returned with a 500 status code.
+  .use(httpErrorHandler());

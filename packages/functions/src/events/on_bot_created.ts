@@ -1,6 +1,7 @@
 import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import { isWarmingUp } from "../shared/rest_utils";
+import inputOutputLogger from "@middy/input-output-logger";
 import { Info } from "luxon";
 import { BotChargingSettings } from "@chargebot-services/core/services/bot_charging_settings";
 import { OutletType } from "@chargebot-services/core/services/outlet_type";
@@ -60,4 +61,8 @@ const handler = async (event) => {
   }
 };
 
-export const main = middy(handler).use(warmup({ isWarmingUp }));
+export const main = middy(handler)
+  .use(warmup({ isWarmingUp }))
+  .use(inputOutputLogger({
+    omitPaths: ["event.headers", "event.requestContext", "response.headers", "response.body"]
+  }));

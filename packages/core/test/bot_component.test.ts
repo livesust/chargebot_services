@@ -1,8 +1,8 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { BotComponent } from "../src/services/bot_component";
 import { getRandom } from './utils';
-import { createAndSaveBot, removeBot } from "./bot.test";
-import { createAndSaveComponent, removeComponent } from "./component.test";
+import { getOrCreateBot } from "./bot.test";
+import { getOrCreateComponent } from "./component.test";
 
 
 // @ts-expect-error ignore any type error
@@ -12,9 +12,18 @@ let bot;
 // @ts-expect-error ignore any type error
 let component;
 
+export async function getOrCreateBotComponent() {
+    let bot_component = await BotComponent.findOneByCriteria({})
+    if (!bot_component) {
+      // @ts-expect-error ignore error
+      bot_component = await createAndSaveBotComponent();
+    }
+    return bot_component;
+}
+
 export async function createAndSaveBotComponent() {
-    bot = await createAndSaveBot();
-    component = await createAndSaveComponent();
+    bot = await getOrCreateBot();
+    component = await getOrCreateComponent();
     // @ts-expect-error ignore error
     return BotComponent.create(getBotComponentInstance());
 }
@@ -22,10 +31,6 @@ export async function createAndSaveBotComponent() {
 export async function removeBotComponent(id: number) {
     // run delete query to clean database
     await BotComponent.hard_remove(id);
-    // @ts-expect-error ignore any type error
-    await removeBot(bot.id);
-    // @ts-expect-error ignore any type error
-    await removeComponent(component.id);
 }
 
 function getBotComponentInstance() {
@@ -49,8 +54,9 @@ describe('BotComponent Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveBotComponent();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -59,7 +65,8 @@ describe('BotComponent Tests', () => {
             { "install_date": getRandom('timestamptz') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

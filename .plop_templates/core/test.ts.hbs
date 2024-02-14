@@ -4,13 +4,13 @@ import { getRandom } from './utils';
 {{#each relationships}}
   {{#when relation_type 'eq' 'many-to-one'}}
     {{#if not_null}}
-import { createAndSave{{pascalCase entity}}, remove{{pascalCase entity}} } from "./{{snakeCase entity}}.test";
+import { getOrCreate{{pascalCase entity}} } from "./{{snakeCase entity}}.test";
     {{/if}}
   {{/when}}
   {{#when relation_type 'eq' 'many-to-many'}}
     {{#if not_null}}
-import { createAndSave{{pascalCase first_entity}}, remove{{pascalCase first_entity}} } from "./{{snakeCase first_entity}}.test";
-import { createAndSave{{pascalCase second_entity}}, remove{{pascalCase second_entity}} } from "./{{snakeCase second_entity}}.test";
+import { getOrCreate{{pascalCase first_entity}} } from "./{{snakeCase first_entity}}.test";
+import { getOrCreate{{pascalCase second_entity}} } from "./{{snakeCase second_entity}}.test";
     {{/if}}
   {{/when}}
 {{/each}}
@@ -35,17 +35,26 @@ let {{snakeCase second_entity}};
   {{/when}}
 {{/each}}
 
+export async function getOrCreate{{pascalCase name}}() {
+    let {{snakeCase name}} = await {{pascalCase name}}.findOneByCriteria({})
+    if (!{{snakeCase name}}) {
+      // @ts-expect-error ignore error
+      {{snakeCase name}} = await createAndSave{{pascalCase name}}();
+    }
+    return {{snakeCase name}};
+}
+
 export async function createAndSave{{pascalCase name}}() {
     {{#each relationships}}
       {{#when relation_type 'eq' 'many-to-one'}}
         {{#if not_null}}
-    {{snakeCase entity}} = await createAndSave{{pascalCase entity}}();
+    {{snakeCase entity}} = await getOrCreate{{pascalCase entity}}();
         {{/if}}
       {{/when}}
       {{#when relation_type 'eq' 'many-to-many'}}
         {{#if not_null}}
-    {{snakeCase first_entity}} = await createAndSave{{pascalCase first_entity}}();
-    {{snakeCase second_entity}} = await createAndSave{{pascalCase second_entity}}();
+    {{snakeCase first_entity}} = await getOrCreate{{pascalCase first_entity}}();
+    {{snakeCase second_entity}} = await getOrCreate{{pascalCase second_entity}}();
         {{/if}}
       {{/when}}
     {{/each}}
@@ -56,22 +65,6 @@ export async function createAndSave{{pascalCase name}}() {
 export async function remove{{pascalCase name}}(id: number) {
     // run delete query to clean database
     await {{pascalCase name}}.hard_remove(id);
-    {{#each relationships}}
-      {{#when relation_type 'eq' 'many-to-one'}}
-        {{#if not_null}}
-    // @ts-expect-error ignore any type error
-    await remove{{pascalCase entity}}({{snakeCase entity}}.id);
-        {{/if}}
-      {{/when}}
-      {{#when relation_type 'eq' 'many-to-many'}}
-        {{#if not_null}}
-    // @ts-expect-error ignore any type error
-    await remove{{pascalCase first_entity}}({{snakeCase first_entity}}.id);
-    // @ts-expect-error ignore any type error
-    await remove{{pascalCase second_entity}}({{snakeCase second_entity}}.id);
-        {{/if}}
-      {{/when}}
-    {{/each}}
 }
 
 function get{{pascalCase name}}Instance() {
@@ -108,8 +101,9 @@ describe('{{pascalCase name}} Tests', () => {
     it("Create", async () => {
         const response = await createAndSave{{pascalCase name}}();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -118,7 +112,8 @@ describe('{{pascalCase name}} Tests', () => {
             { "{{snakeCase attributes.0.attribute}}": getRandom('{{attributes.0.type}}') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

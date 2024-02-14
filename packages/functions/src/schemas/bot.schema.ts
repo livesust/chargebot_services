@@ -16,7 +16,7 @@ export const EntitySchema = Joi.object({
     bot_version_id: Joi.number(),
     vehicle_id: Joi.number().allow(null),
     bot_version: BotVersionSchema,
-    vehicle: VehicleSchema.allow(null),
+    vehicle: VehicleSchema,
 });
 
 export const CreateSchema = Joi.object({

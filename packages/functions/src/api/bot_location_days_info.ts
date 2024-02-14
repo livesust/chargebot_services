@@ -2,6 +2,7 @@ import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import { createError } from '@middy/util';
 import httpErrorHandler from "@middy/http-error-handler";
+import inputOutputLogger from "@middy/input-output-logger";
 import { PathParamSchema, ArrayResponseSchema } from "../schemas/bot_location_days_info.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
@@ -48,6 +49,9 @@ const handler = async (event) => {
 export const main = middy(handler)
   // before
   .use(warmup({ isWarmingUp }))
+  .use(inputOutputLogger({
+    omitPaths: ["event.headers", "event.requestContext", "response.headers", "response.body"]
+  }))
   .use(httpEventNormalizer())
   .use(validator({ pathParametersSchema: PathParamSchema }))
   // after: inverse order execution

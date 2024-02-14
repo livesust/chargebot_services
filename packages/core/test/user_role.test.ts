@@ -1,8 +1,8 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { UserRole } from "../src/services/user_role";
 import { getRandom } from './utils';
-import { createAndSaveUser, removeUser } from "./user.test";
-import { createAndSaveRole, removeRole } from "./role.test";
+import { getOrCreateUser } from "./user.test";
+import { getOrCreateRole } from "./role.test";
 
 
 // @ts-expect-error ignore any type error
@@ -12,9 +12,18 @@ let user;
 // @ts-expect-error ignore any type error
 let role;
 
+export async function getOrCreateUserRole() {
+    let user_role = await UserRole.findOneByCriteria({})
+    if (!user_role) {
+      // @ts-expect-error ignore error
+      user_role = await createAndSaveUserRole();
+    }
+    return user_role;
+}
+
 export async function createAndSaveUserRole() {
-    user = await createAndSaveUser();
-    role = await createAndSaveRole();
+    user = await getOrCreateUser();
+    role = await getOrCreateRole();
     // @ts-expect-error ignore error
     return UserRole.create(getUserRoleInstance());
 }
@@ -22,10 +31,6 @@ export async function createAndSaveUserRole() {
 export async function removeUserRole(id: number) {
     // run delete query to clean database
     await UserRole.hard_remove(id);
-    // @ts-expect-error ignore any type error
-    await removeUser(user.id);
-    // @ts-expect-error ignore any type error
-    await removeRole(role.id);
 }
 
 function getUserRoleInstance() {
@@ -48,8 +53,9 @@ describe('UserRole Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveUserRole();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -58,7 +64,8 @@ describe('UserRole Tests', () => {
             { "all_bots": getRandom('boolean') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

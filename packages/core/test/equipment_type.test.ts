@@ -6,6 +6,15 @@ import { getRandom } from './utils';
 // @ts-expect-error ignore any type error
 let entity_id;
 
+export async function getOrCreateEquipmentType() {
+    let equipment_type = await EquipmentType.findOneByCriteria({})
+    if (!equipment_type) {
+      // @ts-expect-error ignore error
+      equipment_type = await createAndSaveEquipmentType();
+    }
+    return equipment_type;
+}
+
 export async function createAndSaveEquipmentType() {
     // @ts-expect-error ignore error
     return EquipmentType.create(getEquipmentTypeInstance());
@@ -33,8 +42,9 @@ describe('EquipmentType Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveEquipmentType();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -43,7 +53,8 @@ describe('EquipmentType Tests', () => {
             { "type": getRandom('varchar') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

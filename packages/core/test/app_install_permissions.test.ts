@@ -1,8 +1,8 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { AppInstallPermissions } from "../src/services/app_install_permissions";
 import { getRandom } from './utils';
-import { createAndSaveAppInstall, removeAppInstall } from "./app_install.test";
-import { createAndSavePermission, removePermission } from "./permission.test";
+import { getOrCreateAppInstall } from "./app_install.test";
+import { getOrCreatePermission } from "./permission.test";
 
 
 // @ts-expect-error ignore any type error
@@ -12,9 +12,18 @@ let app_install;
 // @ts-expect-error ignore any type error
 let permission;
 
+export async function getOrCreateAppInstallPermissions() {
+    let app_install_permissions = await AppInstallPermissions.findOneByCriteria({})
+    if (!app_install_permissions) {
+      // @ts-expect-error ignore error
+      app_install_permissions = await createAndSaveAppInstallPermissions();
+    }
+    return app_install_permissions;
+}
+
 export async function createAndSaveAppInstallPermissions() {
-    app_install = await createAndSaveAppInstall();
-    permission = await createAndSavePermission();
+    app_install = await getOrCreateAppInstall();
+    permission = await getOrCreatePermission();
     // @ts-expect-error ignore error
     return AppInstallPermissions.create(getAppInstallPermissionsInstance());
 }
@@ -22,10 +31,6 @@ export async function createAndSaveAppInstallPermissions() {
 export async function removeAppInstallPermissions(id: number) {
     // run delete query to clean database
     await AppInstallPermissions.hard_remove(id);
-    // @ts-expect-error ignore any type error
-    await removeAppInstall(app_install.id);
-    // @ts-expect-error ignore any type error
-    await removePermission(permission.id);
 }
 
 function getAppInstallPermissionsInstance() {
@@ -48,8 +53,9 @@ describe('AppInstallPermissions Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveAppInstallPermissions();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -58,7 +64,8 @@ describe('AppInstallPermissions Tests', () => {
             { "permission_status": getRandom('boolean') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

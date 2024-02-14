@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { AppInstall } from "../src/services/app_install";
 import { getRandom } from './utils';
-import { createAndSaveUser, removeUser } from "./user.test";
+import { getOrCreateUser } from "./user.test";
 
 
 // @ts-expect-error ignore any type error
@@ -9,8 +9,17 @@ let entity_id;
 // @ts-expect-error ignore any type error
 let user;
 
+export async function getOrCreateAppInstall() {
+    let app_install = await AppInstall.findOneByCriteria({})
+    if (!app_install) {
+      // @ts-expect-error ignore error
+      app_install = await createAndSaveAppInstall();
+    }
+    return app_install;
+}
+
 export async function createAndSaveAppInstall() {
-    user = await createAndSaveUser();
+    user = await getOrCreateUser();
     // @ts-expect-error ignore error
     return AppInstall.create(getAppInstallInstance());
 }
@@ -18,8 +27,6 @@ export async function createAndSaveAppInstall() {
 export async function removeAppInstall(id: number) {
     // run delete query to clean database
     await AppInstall.hard_remove(id);
-    // @ts-expect-error ignore any type error
-    await removeUser(user.id);
 }
 
 function getAppInstallInstance() {
@@ -43,8 +50,9 @@ describe('AppInstall Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveAppInstall();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -53,7 +61,8 @@ describe('AppInstall Tests', () => {
             { "app_version": getRandom('varchar') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {
