@@ -6,6 +6,15 @@ import { getRandom } from './utils';
 // @ts-expect-error ignore any type error
 let entity_id;
 
+export async function getOrCreateBotVersion() {
+    let bot_version = await BotVersion.findOneByCriteria({})
+    if (!bot_version) {
+      // @ts-expect-error ignore error
+      bot_version = await createAndSaveBotVersion();
+    }
+    return bot_version;
+}
+
 export async function createAndSaveBotVersion() {
     // @ts-expect-error ignore error
     return BotVersion.create(getBotVersionInstance());
@@ -35,8 +44,9 @@ describe('BotVersion Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveBotVersion();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -45,7 +55,8 @@ describe('BotVersion Tests', () => {
             { "version_number": getRandom('varchar') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

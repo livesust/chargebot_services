@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { UniversalAppSettings } from "../src/services/universal_app_settings";
 import { getRandom } from './utils';
-import { createAndSaveAppSettingsType, removeAppSettingsType } from "./app_settings_type.test";
+import { getOrCreateAppSettingsType } from "./app_settings_type.test";
 
 
 // @ts-expect-error ignore any type error
@@ -9,8 +9,17 @@ let entity_id;
 // @ts-expect-error ignore any type error
 let app_settings_type;
 
+export async function getOrCreateUniversalAppSettings() {
+    let universal_app_settings = await UniversalAppSettings.findOneByCriteria({})
+    if (!universal_app_settings) {
+      // @ts-expect-error ignore error
+      universal_app_settings = await createAndSaveUniversalAppSettings();
+    }
+    return universal_app_settings;
+}
+
 export async function createAndSaveUniversalAppSettings() {
-    app_settings_type = await createAndSaveAppSettingsType();
+    app_settings_type = await getOrCreateAppSettingsType();
     // @ts-expect-error ignore error
     return UniversalAppSettings.create(getUniversalAppSettingsInstance());
 }
@@ -18,8 +27,6 @@ export async function createAndSaveUniversalAppSettings() {
 export async function removeUniversalAppSettings(id: number) {
     // run delete query to clean database
     await UniversalAppSettings.hard_remove(id);
-    // @ts-expect-error ignore any type error
-    await removeAppSettingsType(app_settings_type.id);
 }
 
 function getUniversalAppSettingsInstance() {
@@ -40,8 +47,9 @@ describe('UniversalAppSettings Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveUniversalAppSettings();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -50,7 +58,8 @@ describe('UniversalAppSettings Tests', () => {
             { "setting_value": getRandom('varchar') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

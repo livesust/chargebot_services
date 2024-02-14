@@ -6,6 +6,15 @@ import { getRandom } from './utils';
 // @ts-expect-error ignore any type error
 let entity_id;
 
+export async function getOrCreateComponent() {
+    let component = await Component.findOneByCriteria({})
+    if (!component) {
+      // @ts-expect-error ignore error
+      component = await createAndSaveComponent();
+    }
+    return component;
+}
+
 export async function createAndSaveComponent() {
     // @ts-expect-error ignore error
     return Component.create(getComponentInstance());
@@ -37,8 +46,9 @@ describe('Component Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveComponent();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -47,7 +57,8 @@ describe('Component Tests', () => {
             { "name": getRandom('varchar') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

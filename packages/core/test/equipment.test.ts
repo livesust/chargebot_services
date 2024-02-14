@@ -1,8 +1,8 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { Equipment } from "../src/services/equipment";
 import { getRandom } from './utils';
-import { createAndSaveEquipmentType, removeEquipmentType } from "./equipment_type.test";
-import { createAndSaveCustomer, removeCustomer } from "./customer.test";
+import { getOrCreateEquipmentType } from "./equipment_type.test";
+import { getOrCreateCustomer } from "./customer.test";
 
 
 // @ts-expect-error ignore any type error
@@ -12,9 +12,18 @@ let equipment_type;
 // @ts-expect-error ignore any type error
 let customer;
 
+export async function getOrCreateEquipment() {
+    let equipment = await Equipment.findOneByCriteria({})
+    if (!equipment) {
+      // @ts-expect-error ignore error
+      equipment = await createAndSaveEquipment();
+    }
+    return equipment;
+}
+
 export async function createAndSaveEquipment() {
-    equipment_type = await createAndSaveEquipmentType();
-    customer = await createAndSaveCustomer();
+    equipment_type = await getOrCreateEquipmentType();
+    customer = await getOrCreateCustomer();
     // @ts-expect-error ignore error
     return Equipment.create(getEquipmentInstance());
 }
@@ -22,10 +31,6 @@ export async function createAndSaveEquipment() {
 export async function removeEquipment(id: number) {
     // run delete query to clean database
     await Equipment.hard_remove(id);
-    // @ts-expect-error ignore any type error
-    await removeEquipmentType(equipment_type.id);
-    // @ts-expect-error ignore any type error
-    await removeCustomer(customer.id);
 }
 
 function getEquipmentInstance() {
@@ -52,8 +57,9 @@ describe('Equipment Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveEquipment();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -62,7 +68,8 @@ describe('Equipment Tests', () => {
             { "name": getRandom('varchar') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

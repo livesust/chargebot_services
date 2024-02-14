@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { Company } from "../src/services/company";
 import { getRandom } from './utils';
-import { createAndSaveCustomer, removeCustomer } from "./customer.test";
+import { getOrCreateCustomer } from "./customer.test";
 
 
 // @ts-expect-error ignore any type error
@@ -9,8 +9,17 @@ let entity_id;
 // @ts-expect-error ignore any type error
 let customer;
 
+export async function getOrCreateCompany() {
+    let company = await Company.findOneByCriteria({})
+    if (!company) {
+      // @ts-expect-error ignore error
+      company = await createAndSaveCompany();
+    }
+    return company;
+}
+
 export async function createAndSaveCompany() {
-    customer = await createAndSaveCustomer();
+    customer = await getOrCreateCustomer();
     // @ts-expect-error ignore error
     return Company.create(getCompanyInstance());
 }
@@ -18,8 +27,6 @@ export async function createAndSaveCompany() {
 export async function removeCompany(id: number) {
     // run delete query to clean database
     await Company.hard_remove(id);
-    // @ts-expect-error ignore any type error
-    await removeCustomer(customer.id);
 }
 
 function getCompanyInstance() {
@@ -42,8 +49,9 @@ describe('Company Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveCompany();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -52,7 +60,8 @@ describe('Company Tests', () => {
             { "name": getRandom('varchar') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { Bot } from "../src/services/bot";
 import { getRandom } from './utils';
-import { createAndSaveBotVersion, removeBotVersion } from "./bot_version.test";
+import { getOrCreateBotVersion } from "./bot_version.test";
 
 
 // @ts-expect-error ignore any type error
@@ -9,8 +9,17 @@ let entity_id;
 // @ts-expect-error ignore any type error
 let bot_version;
 
+export async function getOrCreateBot() {
+    let bot = await Bot.findOneByCriteria({})
+    if (!bot) {
+      // @ts-expect-error ignore error
+      bot = await createAndSaveBot();
+    }
+    return bot;
+}
+
 export async function createAndSaveBot() {
-    bot_version = await createAndSaveBotVersion();
+    bot_version = await getOrCreateBotVersion();
     // @ts-expect-error ignore error
     return Bot.create(getBotInstance());
 }
@@ -18,8 +27,6 @@ export async function createAndSaveBot() {
 export async function removeBot(id: number) {
     // run delete query to clean database
     await Bot.hard_remove(id);
-    // @ts-expect-error ignore any type error
-    await removeBotVersion(bot_version.id);
 }
 
 function getBotInstance() {
@@ -43,8 +50,9 @@ describe('Bot Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveBot();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -53,7 +61,8 @@ describe('Bot Tests', () => {
             { "bot_uuid": getRandom('text') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { BotFirmware } from "../src/services/bot_firmware";
 import { getRandom } from './utils';
-import { createAndSaveBot, removeBot } from "./bot.test";
+import { getOrCreateBot } from "./bot.test";
 
 
 // @ts-expect-error ignore any type error
@@ -9,8 +9,17 @@ let entity_id;
 // @ts-expect-error ignore any type error
 let bot;
 
+export async function getOrCreateBotFirmware() {
+    let bot_firmware = await BotFirmware.findOneByCriteria({})
+    if (!bot_firmware) {
+      // @ts-expect-error ignore error
+      bot_firmware = await createAndSaveBotFirmware();
+    }
+    return bot_firmware;
+}
+
 export async function createAndSaveBotFirmware() {
-    bot = await createAndSaveBot();
+    bot = await getOrCreateBot();
     // @ts-expect-error ignore error
     return BotFirmware.create(getBotFirmwareInstance());
 }
@@ -18,8 +27,6 @@ export async function createAndSaveBotFirmware() {
 export async function removeBotFirmware(id: number) {
     // run delete query to clean database
     await BotFirmware.hard_remove(id);
-    // @ts-expect-error ignore any type error
-    await removeBot(bot.id);
 }
 
 function getBotFirmwareInstance() {
@@ -45,8 +52,9 @@ describe('BotFirmware Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveBotFirmware();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -55,7 +63,8 @@ describe('BotFirmware Tests', () => {
             { "inverter_version": getRandom('varchar') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

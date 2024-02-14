@@ -6,6 +6,15 @@ import { getRandom } from './utils';
 // @ts-expect-error ignore any type error
 let entity_id;
 
+export async function getOrCreateRole() {
+    let role = await Role.findOneByCriteria({})
+    if (!role) {
+      // @ts-expect-error ignore error
+      role = await createAndSaveRole();
+    }
+    return role;
+}
+
 export async function createAndSaveRole() {
     // @ts-expect-error ignore error
     return Role.create(getRoleInstance());
@@ -33,8 +42,9 @@ describe('Role Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveRole();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -43,7 +53,8 @@ describe('Role Tests', () => {
             { "role": getRandom('varchar') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

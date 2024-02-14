@@ -1,8 +1,8 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { BotCompany } from "../src/services/bot_company";
 import { getRandom } from './utils';
-import { createAndSaveBot, removeBot } from "./bot.test";
-import { createAndSaveCompany, removeCompany } from "./company.test";
+import { getOrCreateBot } from "./bot.test";
+import { getOrCreateCompany } from "./company.test";
 
 
 // @ts-expect-error ignore any type error
@@ -12,9 +12,18 @@ let bot;
 // @ts-expect-error ignore any type error
 let company;
 
+export async function getOrCreateBotCompany() {
+    let bot_company = await BotCompany.findOneByCriteria({})
+    if (!bot_company) {
+      // @ts-expect-error ignore error
+      bot_company = await createAndSaveBotCompany();
+    }
+    return bot_company;
+}
+
 export async function createAndSaveBotCompany() {
-    bot = await createAndSaveBot();
-    company = await createAndSaveCompany();
+    bot = await getOrCreateBot();
+    company = await getOrCreateCompany();
     // @ts-expect-error ignore error
     return BotCompany.create(getBotCompanyInstance());
 }
@@ -22,10 +31,6 @@ export async function createAndSaveBotCompany() {
 export async function removeBotCompany(id: number) {
     // run delete query to clean database
     await BotCompany.hard_remove(id);
-    // @ts-expect-error ignore any type error
-    await removeBot(bot.id);
-    // @ts-expect-error ignore any type error
-    await removeCompany(company.id);
 }
 
 function getBotCompanyInstance() {
@@ -48,8 +53,9 @@ describe('BotCompany Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveBotCompany();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -58,7 +64,8 @@ describe('BotCompany Tests', () => {
             { "acquire_date": getRandom('timestamptz') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

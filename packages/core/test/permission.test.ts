@@ -6,6 +6,15 @@ import { getRandom } from './utils';
 // @ts-expect-error ignore any type error
 let entity_id;
 
+export async function getOrCreatePermission() {
+    let permission = await Permission.findOneByCriteria({})
+    if (!permission) {
+      // @ts-expect-error ignore error
+      permission = await createAndSavePermission();
+    }
+    return permission;
+}
+
 export async function createAndSavePermission() {
     // @ts-expect-error ignore error
     return Permission.create(getPermissionInstance());
@@ -33,8 +42,9 @@ describe('Permission Tests', () => {
     it("Create", async () => {
         const response = await createAndSavePermission();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -43,7 +53,8 @@ describe('Permission Tests', () => {
             { "permission_name": getRandom('varchar') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

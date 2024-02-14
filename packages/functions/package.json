@@ -18,7 +18,7 @@
     "@middy/http-event-normalizer": "^5.2.4",
     "@middy/http-json-body-parser": "^4.6.5",
     "@middy/http-security-headers": "^5.2.4",
-    "@middy/input-output-logger": "^4.6.5",
+    "@middy/input-output-logger": "^4.7.0",
     "@middy/validator": "^4.6.5",
     "crypto-es": "^2.1.0",
     "joi": "^17.11.0",

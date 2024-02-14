@@ -2,6 +2,7 @@ import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import { createError, HttpError } from '@middy/util';
 import httpErrorHandler from "@middy/http-error-handler";
+import inputOutputLogger from "@middy/input-output-logger";
 import { ControlOutletSchema } from "../schemas/control_outlet.schema";
 import validator from "../shared/middlewares/joi-validator";
 import decrypt from "../shared/middlewares/decrypt";
@@ -63,6 +64,9 @@ const handler = async (event) => {
 export const main = middy(handler)
   // before
   .use(warmup({ isWarmingUp }))
+  .use(inputOutputLogger({
+    omitPaths: ["event.headers", "event.requestContext", "response.headers", "response.body"]
+  }))
   .use(httpEventNormalizer())
   .use(decrypt())
   .use(jsonBodyParser({ reviver: dateReviver }))

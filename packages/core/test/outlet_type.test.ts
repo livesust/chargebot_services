@@ -6,6 +6,15 @@ import { getRandom } from './utils';
 // @ts-expect-error ignore any type error
 let entity_id;
 
+export async function getOrCreateOutletType() {
+    let outlet_type = await OutletType.findOneByCriteria({})
+    if (!outlet_type) {
+      // @ts-expect-error ignore error
+      outlet_type = await createAndSaveOutletType();
+    }
+    return outlet_type;
+}
+
 export async function createAndSaveOutletType() {
     // @ts-expect-error ignore error
     return OutletType.create(getOutletTypeInstance());
@@ -36,8 +45,9 @@ describe('OutletType Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveOutletType();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -46,7 +56,8 @@ describe('OutletType Tests', () => {
             { "type": getRandom('varchar') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

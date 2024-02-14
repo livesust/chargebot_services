@@ -1,8 +1,8 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { UserScheduledAlerts } from "../src/services/user_scheduled_alerts";
 import { getRandom } from './utils';
-import { createAndSaveScheduledAlert, removeScheduledAlert } from "./scheduled_alert.test";
-import { createAndSaveUser, removeUser } from "./user.test";
+import { getOrCreateScheduledAlert } from "./scheduled_alert.test";
+import { getOrCreateUser } from "./user.test";
 
 
 // @ts-expect-error ignore any type error
@@ -12,9 +12,18 @@ let scheduled_alert;
 // @ts-expect-error ignore any type error
 let user;
 
+export async function getOrCreateUserScheduledAlerts() {
+    let user_scheduled_alerts = await UserScheduledAlerts.findOneByCriteria({})
+    if (!user_scheduled_alerts) {
+      // @ts-expect-error ignore error
+      user_scheduled_alerts = await createAndSaveUserScheduledAlerts();
+    }
+    return user_scheduled_alerts;
+}
+
 export async function createAndSaveUserScheduledAlerts() {
-    scheduled_alert = await createAndSaveScheduledAlert();
-    user = await createAndSaveUser();
+    scheduled_alert = await getOrCreateScheduledAlert();
+    user = await getOrCreateUser();
     // @ts-expect-error ignore error
     return UserScheduledAlerts.create(getUserScheduledAlertsInstance());
 }
@@ -22,10 +31,6 @@ export async function createAndSaveUserScheduledAlerts() {
 export async function removeUserScheduledAlerts(id: number) {
     // run delete query to clean database
     await UserScheduledAlerts.hard_remove(id);
-    // @ts-expect-error ignore any type error
-    await removeScheduledAlert(scheduled_alert.id);
-    // @ts-expect-error ignore any type error
-    await removeUser(user.id);
 }
 
 function getUserScheduledAlertsInstance() {
@@ -49,8 +54,9 @@ describe('UserScheduledAlerts Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveUserScheduledAlerts();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -59,7 +65,8 @@ describe('UserScheduledAlerts Tests', () => {
             { "alert_status": getRandom('boolean') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

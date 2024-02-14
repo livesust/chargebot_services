@@ -6,6 +6,15 @@ import { getRandom } from './utils';
 // @ts-expect-error ignore any type error
 let entity_id;
 
+export async function getOrCreateAlertType() {
+    let alert_type = await AlertType.findOneByCriteria({})
+    if (!alert_type) {
+      // @ts-expect-error ignore error
+      alert_type = await createAndSaveAlertType();
+    }
+    return alert_type;
+}
+
 export async function createAndSaveAlertType() {
     // @ts-expect-error ignore error
     return AlertType.create(getAlertTypeInstance());
@@ -39,8 +48,9 @@ describe('AlertType Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveAlertType();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -49,7 +59,8 @@ describe('AlertType Tests', () => {
             { "name": getRandom('varchar') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

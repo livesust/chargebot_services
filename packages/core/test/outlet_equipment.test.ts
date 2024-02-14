@@ -1,9 +1,9 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { OutletEquipment } from "../src/services/outlet_equipment";
 import { getRandom } from './utils';
-import { createAndSaveEquipment, removeEquipment } from "./equipment.test";
-import { createAndSaveOutlet, removeOutlet } from "./outlet.test";
-import { createAndSaveUser, removeUser } from "./user.test";
+import { getOrCreateEquipment } from "./equipment.test";
+import { getOrCreateOutlet } from "./outlet.test";
+import { getOrCreateUser } from "./user.test";
 
 
 // @ts-expect-error ignore any type error
@@ -15,10 +15,19 @@ let outlet;
 // @ts-expect-error ignore any type error
 let user;
 
+export async function getOrCreateOutletEquipment() {
+    let outlet_equipment = await OutletEquipment.findOneByCriteria({})
+    if (!outlet_equipment) {
+      // @ts-expect-error ignore error
+      outlet_equipment = await createAndSaveOutletEquipment();
+    }
+    return outlet_equipment;
+}
+
 export async function createAndSaveOutletEquipment() {
-    equipment = await createAndSaveEquipment();
-    outlet = await createAndSaveOutlet();
-    user = await createAndSaveUser();
+    equipment = await getOrCreateEquipment();
+    outlet = await getOrCreateOutlet();
+    user = await getOrCreateUser();
     // @ts-expect-error ignore error
     return OutletEquipment.create(getOutletEquipmentInstance());
 }
@@ -26,12 +35,6 @@ export async function createAndSaveOutletEquipment() {
 export async function removeOutletEquipment(id: number) {
     // run delete query to clean database
     await OutletEquipment.hard_remove(id);
-    // @ts-expect-error ignore any type error
-    await removeEquipment(equipment.id);
-    // @ts-expect-error ignore any type error
-    await removeOutlet(outlet.id);
-    // @ts-expect-error ignore any type error
-    await removeUser(user.id);
 }
 
 function getOutletEquipmentInstance() {
@@ -56,8 +59,9 @@ describe('OutletEquipment Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveOutletEquipment();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -66,7 +70,8 @@ describe('OutletEquipment Tests', () => {
             { "notes": getRandom('text') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

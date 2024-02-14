@@ -1,8 +1,8 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { BotAlert } from "../src/services/bot_alert";
 import { getRandom } from './utils';
-import { createAndSaveAlertType, removeAlertType } from "./alert_type.test";
-import { createAndSaveBot, removeBot } from "./bot.test";
+import { getOrCreateAlertType } from "./alert_type.test";
+import { getOrCreateBot } from "./bot.test";
 
 
 // @ts-expect-error ignore any type error
@@ -12,9 +12,18 @@ let alert_type;
 // @ts-expect-error ignore any type error
 let bot;
 
+export async function getOrCreateBotAlert() {
+    let bot_alert = await BotAlert.findOneByCriteria({})
+    if (!bot_alert) {
+      // @ts-expect-error ignore error
+      bot_alert = await createAndSaveBotAlert();
+    }
+    return bot_alert;
+}
+
 export async function createAndSaveBotAlert() {
-    alert_type = await createAndSaveAlertType();
-    bot = await createAndSaveBot();
+    alert_type = await getOrCreateAlertType();
+    bot = await getOrCreateBot();
     // @ts-expect-error ignore error
     return BotAlert.create(getBotAlertInstance());
 }
@@ -22,10 +31,6 @@ export async function createAndSaveBotAlert() {
 export async function removeBotAlert(id: number) {
     // run delete query to clean database
     await BotAlert.hard_remove(id);
-    // @ts-expect-error ignore any type error
-    await removeAlertType(alert_type.id);
-    // @ts-expect-error ignore any type error
-    await removeBot(bot.id);
 }
 
 function getBotAlertInstance() {
@@ -55,8 +60,9 @@ describe('BotAlert Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveBotAlert();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -65,7 +71,8 @@ describe('BotAlert Tests', () => {
             { "message_displayed": getRandom('text') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

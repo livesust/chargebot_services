@@ -6,6 +6,15 @@ import { getRandom } from './utils';
 // @ts-expect-error ignore any type error
 let entity_id;
 
+export async function getOrCreateAppSettingsType() {
+    let app_settings_type = await AppSettingsType.findOneByCriteria({})
+    if (!app_settings_type) {
+      // @ts-expect-error ignore error
+      app_settings_type = await createAndSaveAppSettingsType();
+    }
+    return app_settings_type;
+}
+
 export async function createAndSaveAppSettingsType() {
     // @ts-expect-error ignore error
     return AppSettingsType.create(getAppSettingsTypeInstance());
@@ -33,8 +42,9 @@ describe('AppSettingsType Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveAppSettingsType();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -43,7 +53,8 @@ describe('AppSettingsType Tests', () => {
             { "setting_name": getRandom('varchar') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

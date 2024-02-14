@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { Vehicle } from "../src/services/vehicle";
 import { getRandom } from './utils';
-import { createAndSaveVehicleType, removeVehicleType } from "./vehicle_type.test";
+import { getOrCreateVehicleType } from "./vehicle_type.test";
 
 
 // @ts-expect-error ignore any type error
@@ -9,8 +9,17 @@ let entity_id;
 // @ts-expect-error ignore any type error
 let vehicle_type;
 
+export async function getOrCreateVehicle() {
+    let vehicle = await Vehicle.findOneByCriteria({})
+    if (!vehicle) {
+      // @ts-expect-error ignore error
+      vehicle = await createAndSaveVehicle();
+    }
+    return vehicle;
+}
+
 export async function createAndSaveVehicle() {
-    vehicle_type = await createAndSaveVehicleType();
+    vehicle_type = await getOrCreateVehicleType();
     // @ts-expect-error ignore error
     return Vehicle.create(getVehicleInstance());
 }
@@ -18,8 +27,6 @@ export async function createAndSaveVehicle() {
 export async function removeVehicle(id: number) {
     // run delete query to clean database
     await Vehicle.hard_remove(id);
-    // @ts-expect-error ignore any type error
-    await removeVehicleType(vehicle_type.id);
 }
 
 function getVehicleInstance() {
@@ -42,8 +49,9 @@ describe('Vehicle Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveVehicle();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -52,7 +60,8 @@ describe('Vehicle Tests', () => {
             { "name": getRandom('text') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

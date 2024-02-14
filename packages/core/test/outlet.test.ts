@@ -1,8 +1,8 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { Outlet } from "../src/services/outlet";
 import { getRandom } from './utils';
-import { createAndSaveOutletType, removeOutletType } from "./outlet_type.test";
-import { createAndSaveBot, removeBot } from "./bot.test";
+import { getOrCreateOutletType } from "./outlet_type.test";
+import { getOrCreateBot } from "./bot.test";
 
 
 // @ts-expect-error ignore any type error
@@ -12,9 +12,18 @@ let outlet_type;
 // @ts-expect-error ignore any type error
 let bot;
 
+export async function getOrCreateOutlet() {
+    let outlet = await Outlet.findOneByCriteria({})
+    if (!outlet) {
+      // @ts-expect-error ignore error
+      outlet = await createAndSaveOutlet();
+    }
+    return outlet;
+}
+
 export async function createAndSaveOutlet() {
-    outlet_type = await createAndSaveOutletType();
-    bot = await createAndSaveBot();
+    outlet_type = await getOrCreateOutletType();
+    bot = await getOrCreateBot();
     // @ts-expect-error ignore error
     return Outlet.create(getOutletInstance());
 }
@@ -22,10 +31,6 @@ export async function createAndSaveOutlet() {
 export async function removeOutlet(id: number) {
     // run delete query to clean database
     await Outlet.hard_remove(id);
-    // @ts-expect-error ignore any type error
-    await removeOutletType(outlet_type.id);
-    // @ts-expect-error ignore any type error
-    await removeBot(bot.id);
 }
 
 function getOutletInstance() {
@@ -49,8 +54,9 @@ describe('Outlet Tests', () => {
     it("Create", async () => {
         const response = await createAndSaveOutlet();
         expect(response).toBeDefined();
-        expect(response!.id).toBeTruthy();
-        entity_id = response!.id;
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toBeTruthy();
+        entity_id = response!.entity!.id;
     });
 
     it("Update", async () => {
@@ -59,7 +65,8 @@ describe('Outlet Tests', () => {
             { "pdu_outlet_number": getRandom('integer') }
         );
         expect(response).toBeDefined();
-        expect(response!.id).toEqual(entity_id);
+        expect(response!.entity).toBeDefined();
+        expect(response!.entity!.id).toEqual(entity_id);
     });
 
     it("List", async () => {

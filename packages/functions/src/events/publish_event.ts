@@ -1,6 +1,7 @@
 import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import { isWarmingUp } from "../shared/rest_utils";
+import inputOutputLogger from "@middy/input-output-logger";
 import { IoTData } from "@chargebot-services/core/services/aws/iot_data";
 
 // @ts-expect-error ignore any type for event
@@ -12,4 +13,8 @@ const handler = async (event) => {
   return {};
 };
 
-export const main = middy(handler).use(warmup({ isWarmingUp }));
+export const main = middy(handler)
+  .use(warmup({ isWarmingUp }))
+  .use(inputOutputLogger({
+    omitPaths: ["event.headers", "event.requestContext", "response.headers", "response.body"]
+  }));
