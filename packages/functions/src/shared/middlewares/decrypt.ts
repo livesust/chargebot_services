@@ -1,4 +1,5 @@
 import middy from '@middy/core';
+import Log from '@dazn/lambda-powertools-logger';
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { Config } from "sst/node/config";
 import CryptoES from 'crypto-es';
@@ -23,26 +24,26 @@ const decrypt = (ciphertext: string, ivBase64: string) => {
 
     return CryptoES.enc.Utf8.stringify(decrypted);
   } catch (error) {
-    console.error('Error encrypting data:', error);
+    Log.error('Error encrypting data:', { error });
     return null;
   }
 }
 
 const middleware = (): middy.MiddlewareObj<APIGatewayProxyEvent, APIGatewayProxyResult> => {
-    const before: middy.MiddlewareFn<APIGatewayProxyEvent, APIGatewayProxyResult> = async (
-        request
-    ): Promise<void> => {
-      const { body, headers } = request.event;
-      const iv = headers['x-encrypted-iv'];
+  const before: middy.MiddlewareFn<APIGatewayProxyEvent, APIGatewayProxyResult> = async (
+    request
+  ): Promise<void> => {
+    const { body, headers } = request.event;
+    const iv = headers['x-encrypted-iv'];
 
-      if (body && iv) {
-        request.event.body = decrypt(body, iv);
-      }
+    if (body && iv) {
+      request.event.body = decrypt(body, iv);
     }
+  }
 
-    return {
-      before
-    }
+  return {
+    before
+  }
 }
 
 export default middleware;

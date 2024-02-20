@@ -3,7 +3,10 @@ import { sql } from "kysely";
 import db from '../../api';
 import { ChargebotInverter, InverterVariable } from "../../api/chargebot_inverter";
 
-export async function getBatteryStatus(bot_uuid: string): Promise<string | undefined> {
+export async function getBatteryStatus(bot_uuid: string): Promise<{
+  bot_uuid: string,
+  status: string
+} | undefined> {
   // @ts-expect-error not overloads match
   const batteryCurrent: ChargebotInverter | undefined = await db
     .selectFrom("chargebot_inverter")
@@ -34,13 +37,11 @@ export async function getBatteryStatus(bot_uuid: string): Promise<string | undef
   }
 
   const current = batteryCurrent.value as number;
-  if (current < 0) {
-    return 'DISCHARGING';
-  } else if (current > 0) {
-    return 'CHARGING';
-  }
 
-  return 'IDLE';
+  return {
+    bot_uuid,
+    status: !current || current === 0 ? 'IDLE' : (current < 0 ? 'DISCHARGING' : 'CHARGING')
+  }
 }
 
 export async function getInverterStatus(bot_uuid: string): Promise<ChargebotInverter[]> {

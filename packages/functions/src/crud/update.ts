@@ -1,5 +1,6 @@
 import middy from "@middy/core";
 import warmup from "@middy/warmup";
+import Log from '@dazn/lambda-powertools-logger';
 import { createError } from '@middy/util';
 import httpErrorHandler from "@middy/http-error-handler";
 import { EntityAndIdPathParamSchema } from "../shared/schemas";
@@ -8,6 +9,8 @@ import auditUpdate from "../shared/middlewares/audit-update";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import httpSecurityHeaders from '@middy/http-security-headers';
 import httpEventNormalizer from '@middy/http-event-normalizer';
+import executionTimeLogger from '../shared/middlewares/time-log';
+import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import { dateReviver } from "../shared/middlewares/json-date-parser";
 import { createSuccessResponse, validateUpdateBody, validateResponse, isWarmingUp } from "../shared/rest_utils";
 import { loadService } from "@chargebot-services/core/services";
@@ -31,6 +34,7 @@ const handler = async (event) => {
   try {
     updated = await service.update(id, body);
   } catch (error) {
+    Log.error("Cannot update entity", { entity_name });
     if (error instanceof BusinessError) {
       throw createError(404, error.message, { expose: true });
     }
@@ -40,10 +44,12 @@ const handler = async (event) => {
   }
 
   if (!updated?.entity) {
+    Log.debug("Entity not found", { entity_name });
     throw createError(400, entity_name + " not found", { expose: true });
   }
 
   if (updated.event) {
+    Log.debug("Dispatch updated event");
     EventBus.dispatchEvent(entity_name, "updated", updated.event);
   }
 
@@ -57,7 +63,9 @@ const handler = async (event) => {
 export const main = middy(handler)
   // before
   .use(warmup({ isWarmingUp }))
+  .use(executionTimeLogger())
   .use(httpEventNormalizer())
+  .use(logTimeout())
   .use(validator({ pathParametersSchema: EntityAndIdPathParamSchema }))
   .use(jsonBodyParser({ reviver: dateReviver }))
   .use(auditUpdate())

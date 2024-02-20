@@ -70,11 +70,14 @@ export function ChargebotStack({ app, stack }: StackContext) {
     code: Code.fromAsset("layers/sharp"),
   });
 
+  // lambda functions timeout
+  const timeout = app.stage == "prod" ? "10 seconds" : "30 seconds";
+
   // Event Bus
   const publishFunction = {
     function: {
       handler: "packages/functions/src/events/publish_event.main",
-      timeout: app.stage == "prod" ? "10 seconds" : "30 seconds",
+      timeout,
       bind: [IOT_ENDPOINT],
       role: iotRole
     }
@@ -101,7 +104,7 @@ export function ChargebotStack({ app, stack }: StackContext) {
           on_bot_created: {
             function: {
               handler: "packages/functions/src/events/on_bot_created.main",
-              timeout: app.stage == "prod" ? "10 seconds" : "30 seconds",
+              timeout,
               bind: [rdsCluster],
             }
           },
@@ -146,7 +149,7 @@ export function ChargebotStack({ app, stack }: StackContext) {
         burst: 100,
       },
       function: {
-        timeout: app.stage == "prod" ? "10 seconds" : "30 seconds",
+        timeout,
         bind: [
           rdsCluster,
           eventBus,
