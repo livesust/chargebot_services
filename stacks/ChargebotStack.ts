@@ -105,7 +105,7 @@ export function ChargebotStack({ app, stack }: StackContext) {
               bind: [rdsCluster],
             }
           },
-        },        
+        },
       }
     },
   });
@@ -251,4 +251,8 @@ export function ChargebotStack({ app, stack }: StackContext) {
     ApiDomainUrl: api.customDomainUrl,
     BucketName: bucket.bucketName,
   });
+
+  return {
+    api,
+  };
 }
