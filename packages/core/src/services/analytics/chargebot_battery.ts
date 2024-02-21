@@ -4,7 +4,10 @@ import db from '../../api';
 import { ChargebotBattery, BatteryVariables } from "../../api/chargebot_battery";
 import { ChargebotInverter } from "./chargebot_inverter";
 
-export async function getBatteryLevel(bot_uuid: string): Promise<number | undefined> {
+export async function getBatteryLevel(bot_uuid: string): Promise<{
+  bot_uuid: string,
+  level: number | undefined
+} | undefined> {
   // @ts-expect-error not overloads match
   const levelSoc: ChargebotBattery | undefined = await db
     .selectFrom("chargebot_battery")
@@ -30,7 +33,10 @@ export async function getBatteryLevel(bot_uuid: string): Promise<number | undefi
     .limit(1)
     .executeTakeFirst();
 
-  return levelSoc?.value ? Math.round(levelSoc?.value as number) : ChargebotInverter.getBatteryLevel(bot_uuid);
+  return {
+    bot_uuid,
+    level: levelSoc?.value ? Math.round(levelSoc?.value as number) : await ChargebotInverter.getBatteryLevel(bot_uuid)
+  };
 }
 
 export async function getAvgBatteryLevel(bot_uuid: string, from: Date, to: Date): Promise<number | undefined> {

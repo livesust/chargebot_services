@@ -1,5 +1,5 @@
-import middy from '@middy/core'
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
+import middy from '@middy/core';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 
 const middleware = (): middy.MiddlewareObj<APIGatewayProxyEvent, APIGatewayProxyResult> => {
   const before: middy.MiddlewareFn<APIGatewayProxyEvent, APIGatewayProxyResult> = async (
@@ -11,13 +11,13 @@ const middleware = (): middy.MiddlewareObj<APIGatewayProxyEvent, APIGatewayProxy
     const now = new Date();
 
     request.event.body = Object.assign(
-        body!,
-        {
-            created_by: user_id,
-            created_date: now,
-            modified_by: user_id,
-            modified_date: now,
-        }
+      body!,
+      {
+        created_by: user_id,
+        created_date: now,
+        modified_by: user_id,
+        modified_date: now,
+      }
     );
   }
 
