@@ -1,8 +1,8 @@
 import { SSTConfig } from "sst";
 import { RDSStack } from "./stacks/RDSStack";
 import { CognitoStack } from "./stacks/CognitoStack";
-import { FrontendStack } from "./stacks/FrontendStack";
 import { ChargebotStack } from "./stacks/ChargebotStack";
+import { FrontendStack } from "./stacks/FrontendStack";
 
 export default {
   config(_input) {
@@ -12,9 +12,9 @@ export default {
     };
   },
   stacks(app) {
-    app.stack(FrontendStack);
     app.stack(RDSStack);
     app.stack(CognitoStack);
     app.stack(ChargebotStack);
+    app.stack(FrontendStack);
   }
 } satisfies SSTConfig;

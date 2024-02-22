@@ -6,7 +6,7 @@ export function FrontendStack({ app, stack }: StackContext) {
   const { cognito } = use(CognitoStack);
 
   const site = new NextjsSite(stack, "ChargebotWebApp", {
-    path: "packages/frontend/chargebot-webapp",,
+    path: "packages/frontend/chargebot-webapp",
     environment: {
       API_URL: api.url,
       REGION: app.region,
