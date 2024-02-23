@@ -9,7 +9,7 @@ import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import httpSecurityHeaders from '@middy/http-security-headers';
 import httpEventNormalizer from '@middy/http-event-normalizer';
 import executionTimeLogger from '../shared/middlewares/time-log';
-import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
+// import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import { createSuccessResponse, validateResponse, isWarmingUp } from "../shared/rest_utils";
 import { loadService } from "@chargebot-services/core/services";
 
@@ -50,7 +50,7 @@ export const main = middy(handler)
   .use(warmup({ isWarmingUp }))
   .use(executionTimeLogger())
   .use(httpEventNormalizer())
-  .use(logTimeout())
+  // .use(logTimeout())
   .use(validator({ pathParametersSchema: EntityAndIdPathParamSchema }))
   // after: inverse order execution
   .use(jsonBodySerializer())
