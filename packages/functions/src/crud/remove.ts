@@ -20,6 +20,7 @@ const handler = async (event) => {
   const id = +event.pathParameters!.id!;
   const user_id = event.requestContext?.authorizer?.jwt.claims.sub;
   const entity_name = event.pathParameters!.entity!;
+  console.log("Call to Remove", entity_name);
 
   const service = await loadService(entity_name);
 

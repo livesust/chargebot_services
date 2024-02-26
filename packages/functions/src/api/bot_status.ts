@@ -61,8 +61,8 @@ const handler = async (event) => {
 
     const response = {
       bot_uuid,
-      battery_level: getNumber(battery_level),
-      battery_status: battery_status ?? 'UNKNOWN',
+      battery_level: getNumber(battery_level?.level),
+      battery_status: battery_status?.status ?? 'UNKNOWN',
       output_current: getNumber(output_current),
       grid_current: getNumber(inverterVariables[InverterVariable.GRID_CURRENT]),
       solar_power: getNumber(inverterVariables[InverterVariable.SOLAR_POWER]),

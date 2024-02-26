@@ -16,6 +16,7 @@ import { loadService } from "@chargebot-services/core/services";
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
   const entity_name = event.pathParameters!.entity!;
+  console.log("Call to List", entity_name);
 
   const service = await loadService(entity_name);
 

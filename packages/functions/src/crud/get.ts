@@ -18,6 +18,7 @@ import { loadService } from "@chargebot-services/core/services";
 const handler = async (event) => {
   const id = +event.pathParameters!.id!;
   const entity_name = event.pathParameters!.entity!;
+  console.log("Call to Get", entity_name);
 
   const service = await loadService(entity_name);
 

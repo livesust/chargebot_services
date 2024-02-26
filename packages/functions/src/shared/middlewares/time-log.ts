@@ -27,7 +27,7 @@ const middleware = (): middy.MiddlewareObj<APIGatewayProxyEvent, APIGatewayProxy
     if (hasTimer(request.context)) {
       // @ts-expect-error ignore
       const startTime = request.context.lambdaStartTimeTimeLogMiddleware.startTime;
-      Log.info('Execution Time', {time: endTime.toSeconds() - startTime.toSeconds()})
+      console.log(`Execution Time (seconds): ${Math.round(endTime.toSeconds() - startTime.toSeconds())}`)
     }
   }
 

@@ -1,5 +1,6 @@
 import middy from "@middy/core";
 import warmup from "@middy/warmup";
+import Log from '@dazn/lambda-powertools-logger';
 import { createError, HttpError } from '@middy/util';
 import httpErrorHandler from "@middy/http-error-handler";
 import { PathParamSchema, EntitySchema, ResponseSchema } from "../schemas/update_user_profile.schema";
@@ -20,14 +21,15 @@ import { dateReviver } from "src/shared/middlewares/json-date-parser";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
-  const user_id = +event.pathParameters!.user_id!;
+  const cognito_id = event.pathParameters!.cognito_id!;
   const user_sub = event.requestContext?.authorizer?.jwt.claims.sub;
   const body = event.body;
 
   try {
-    const user = await User.get(user_id);
+    const user = await User.findOneByCriteria({user_id: cognito_id});
     if (!user) {
-      return createNotFoundResponse("user not found");
+      Log.debug("User not found", { cognito_id });
+      return createNotFoundResponse("User not found");
     }
 
     // update user info
@@ -43,9 +45,9 @@ const handler = async (event) => {
 
     // find user email, phone and role
     const [userEmail, userPhone, userRole] = await Promise.all([
-      UserEmail.findOneByCriteria({user_id, primary: true}),
-      UserPhone.findOneByCriteria({user_id, primary: true}),
-      UserRole.findOneByCriteria({user_id})
+      UserEmail.findOneByCriteria({user_id: user.id, primary: true}),
+      UserPhone.findOneByCriteria({user_id: user.id, primary: true}),
+      UserRole.findOneByCriteria({user_id: user.id})
     ]);
 
     // update/create primary email

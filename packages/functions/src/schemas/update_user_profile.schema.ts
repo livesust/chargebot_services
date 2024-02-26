@@ -2,7 +2,7 @@ import Joi from 'joi';
 import {  JsonResponseSchemaDef } from "../shared/schemas";
 
 export const PathParamSchema = Joi.object({
-  user_id: Joi.number().required()
+  cognito_id: Joi.string().required()
 });
 
 const UserProfileSchemaDef = {

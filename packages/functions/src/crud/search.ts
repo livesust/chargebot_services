@@ -20,6 +20,7 @@ import jsonBodyParser from "@middy/http-json-body-parser";
 const handler = async (event) => {
   const body = event.body ?? {};
   const entity_name = event.pathParameters!.entity!;
+  console.log("Call to Search", entity_name);
 
   await validateSearchBody(body, entity_name);
 

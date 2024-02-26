@@ -1,6 +1,7 @@
 import middy from "@middy/core";
 import sharp from "sharp";
 import warmup from "@middy/warmup";
+import Log from '@dazn/lambda-powertools-logger';
 import { createError, HttpError } from '@middy/util';
 import httpErrorHandler from "@middy/http-error-handler";
 import { PathParamSchema } from "../schemas/update_user_profile.schema";
@@ -18,16 +19,17 @@ import parser from "lambda-multipart-parser";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
-  const fileContent = await parser.parse(event);
-  const user_id = +event.pathParameters!.user_id!;
+  const cognito_id = event.pathParameters!.cognito_id!;
+  const fileContent = await parser.parse(event);  
 
   if (fileContent?.files?.length == 0) {
     return createNotFoundResponse("file missing");
   }
 
-  const user = await User.get(user_id);
+  const user = await User.findOneByCriteria({user_id: cognito_id});
   if (!user) {
-    return createNotFoundResponse("user not found");
+    Log.debug("User not found", { cognito_id });
+    return createNotFoundResponse("User not found");
   }
 
   try {

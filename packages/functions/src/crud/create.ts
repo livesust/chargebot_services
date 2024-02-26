@@ -22,6 +22,7 @@ import { BusinessError } from "@chargebot-services/core/errors/business_error";
 const handler = async (event) => {
   const body = event.body;
   const entity_name = event.pathParameters!.entity!;
+  console.log("Call to Create", entity_name);
 
   await validateCreateBody(body, entity_name);
 

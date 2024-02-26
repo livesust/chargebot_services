@@ -1,5 +1,6 @@
 import middy from "@middy/core";
 import warmup from "@middy/warmup";
+import Log from '@dazn/lambda-powertools-logger';
 import { createError, HttpError } from '@middy/util';
 import httpErrorHandler from "@middy/http-error-handler";
 import { PathParamSchema, ResponseSchema } from "../schemas/update_user_profile.schema";
@@ -9,7 +10,7 @@ import httpSecurityHeaders from '@middy/http-security-headers';
 import httpEventNormalizer from '@middy/http-event-normalizer';
 import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
-import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
+import { createNotFoundResponse, createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { Bucket } from "sst/node/bucket";
 import { S3 } from "@chargebot-services/core/services/aws/s3";
 import { User } from "@chargebot-services/core/services/user";
@@ -19,15 +20,21 @@ import { UserRole } from "@chargebot-services/core/services/user_role";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
-  const user_id = +event.pathParameters!.user_id!;
+  const cognito_id = event.pathParameters!.cognito_id!;
 
   try {
-    const filename = `profile_user_${user_id}`;
-    const [user, userEmail, userPhone, userRole, photoUrl] = await Promise.all([
-      await User.get(user_id),
-      await UserEmail.findOneByCriteria({user_id, primary: true}),
-      await UserPhone.findOneByCriteria({user_id, primary: true}),
-      await UserRole.findOneByCriteria({user_id}),
+    const user = await User.findOneByCriteria({user_id: cognito_id});
+
+    if (!user) {
+      Log.debug("User not found", { cognito_id });
+      return createNotFoundResponse("User not found");
+    }
+
+    const filename = `profile_user_${user?.id}`;
+    const [userEmail, userPhone, userRole, photoUrl] = await Promise.all([
+      await UserEmail.findOneByCriteria({user_id: user.id, primary: true}),
+      await UserPhone.findOneByCriteria({user_id: user.id, primary: true}),
+      await UserRole.findOneByCriteria({user_id: user.id}),
       await S3.getDownloadUrl(Bucket.userBucket.bucketName, filename),
     ]);
 

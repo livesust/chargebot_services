@@ -224,14 +224,14 @@ export function ChargebotStack({ app, stack }: StackContext) {
           role: iotRole
         }
       },
-      "GET /user/{user_id}/profile": {
+      "GET /user/{cognito_id}/profile": {
         function: {
           handler: "packages/functions/src/api/get_user_profile.main",
           bind: [bucket]
         }
       },
-      "PATCH /user/{user_id}/profile": "packages/functions/src/api/update_user_profile.main",
-      "PUT /user/{user_id}/photo": {
+      "PATCH /user/{cognito_id}/profile": "packages/functions/src/api/update_user_profile.main",
+      "PUT /user/{cognito_id}/photo": {
         function: {
           handler: "packages/functions/src/api/upload_user_photo.main",
 

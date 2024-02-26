@@ -24,6 +24,7 @@ const handler = async (event) => {
   const id = +event.pathParameters!.id!;
   const entity_name = event.pathParameters!.entity!;
   const body = event.body;
+  console.log("Call to Update", entity_name);
 
   await validateUpdateBody(body, entity_name);
 
