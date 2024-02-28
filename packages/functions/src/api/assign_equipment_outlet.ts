@@ -2,7 +2,7 @@ import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import { createError, HttpError } from '@middy/util';
 import httpErrorHandler from "@middy/http-error-handler";
-import { PathParamSchema } from "../schemas/assign_equipment_outlet.schema";
+import { PathParamSchema, QueryStringParamSchema } from "../schemas/assign_equipment_outlet.schema";
 import { ResponseSchema } from "../schemas/outlet_equipment.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
@@ -22,6 +22,7 @@ const handler = async (event) => {
   const equipment_id = +event.pathParameters!.equipment_id!;
   const outlet_id = +event.pathParameters!.outlet_id!;
   const user_id = event.requestContext?.authorizer?.jwt.claims.sub;
+  const overwrite = event.queryStringParameters?.overwrite ?? false;
 
   try {
     const user = await User.findOneByCriteria({user_id})
@@ -57,7 +58,11 @@ const handler = async (event) => {
     ]);
 
     if (alreadyAssignedToOutlet) {
-      throw createError(400, "equipment assigned to another outlet", { expose: true });
+      if (!overwrite) {
+        throw createError(400, "equipment assigned to another outlet", { expose: true });
+      }
+      // remove equipment from the other outlet
+      await OutletEquipment.remove(alreadyAssignedToOutlet.id!, user_id);
     }
 
     if (existentOne) {
@@ -100,7 +105,7 @@ export const main = middy(handler)
   .use(executionTimeLogger())
   .use(httpEventNormalizer())
   // .use(logTimeout())
-  .use(validator({ pathParametersSchema: PathParamSchema }))
+  .use(validator({ pathParametersSchema: PathParamSchema, queryStringParametersSchema: QueryStringParamSchema }))
   // after: inverse order execution
   .use(jsonBodySerializer())
   .use(httpSecurityHeaders())

@@ -9,6 +9,8 @@ export interface Options {
   eventValidationOptions?: ValidationOptions | undefined;
   pathParametersSchema?: Joi.AnySchema | undefined;
   pathParametersValidationOptions?: ValidationOptions | undefined;
+  queryStringParametersSchema?: Joi.AnySchema | undefined;
+  queryStringParametersValidationOptions?: ValidationOptions | undefined;
   headersSchema?: Joi.AnySchema | undefined;
   headersValidationOptions?: ValidationOptions | undefined;
   responseSchema?: Joi.AnySchema | undefined;
@@ -27,6 +29,8 @@ const middleware = (options: Options): middy.MiddlewareObj<APIGatewayProxyEvent,
     eventValidationOptions,
     pathParametersSchema,
     pathParametersValidationOptions,
+    queryStringParametersSchema,
+    queryStringParametersValidationOptions,
     headersSchema,
     headersValidationOptions,
     responseSchema,
@@ -65,6 +69,17 @@ const middleware = (options: Options): middy.MiddlewareObj<APIGatewayProxyEvent,
       if (validationError) {
         // Bad Request
         Log.error("Path param schema error");
+        const error = createError(400, validationError.message, { expose: true });
+        const errorDetails = validationError.details.map(detail => detail.message);
+        error.details = errorDetails;
+        throw error;
+      }
+    }
+    if (queryStringParametersSchema) {
+      const { error: validationError } = queryStringParametersSchema.validate(request.event.queryStringParameters, queryStringParametersValidationOptions);
+      if (validationError) {
+        // Bad Request
+        Log.error("Query string param schema error");
         const error = createError(400, validationError.message, { expose: true });
         const errorDetails = validationError.details.map(detail => detail.message);
         error.details = errorDetails;
