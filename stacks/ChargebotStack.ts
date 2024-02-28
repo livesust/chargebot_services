@@ -125,6 +125,7 @@ export function ChargebotStack({ app, stack }: StackContext) {
     // },
     accessLog: {
       retention: "one_month",
+      format: "$context.identity.sourceIp,$context.requestTime,$context.httpMethod,$context.routeKey,$context.protocol,$context.status,$context.responseLength,$context.requestId"
     },
     authorizers: {
       jwt: {

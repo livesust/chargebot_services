@@ -8,6 +8,10 @@ export const PathParamSchema = Joi.object({
   outlet_id: Joi.number().required()
 });
 
+export const QueryStringParamSchema = Joi.object({
+  overwrite: Joi.boolean().allow(null).default(false)
+});
+
 const EquipmentsSchemaDef = {
   id: Joi.number().required(),
   name: Joi.string().max(255),
