@@ -1,0 +1,25 @@
+"use strict";
+/*
+ * ATTENTION: An "eval-source-map" devtool has been used.
+ * This devtool is neither made for production nor for readable output files.
+ * It uses "eval()" calls to create a separate source file with attached SourceMaps in the browser devtools.
+ * If you are trying to read the output file, select a different devtool (https://webpack.js.org/configuration/devtool/)
+ * or disable the default devtool with "devtool: false".
+ * If you are looking for production-ready output files, see mode: "production" (https://webpack.js.org/configuration/mode/).
+ */
+exports.id = "vendor-chunks/pascal-case";
+exports.ids = ["vendor-chunks/pascal-case"];
+exports.modules = {
+
+/***/ "(ssr)/./node_modules/pascal-case/dist.es2015/index.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/pascal-case/dist.es2015/index.js ***!
+  \*******************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   pascalCase: () => (/* binding */ pascalCase),\n/* harmony export */   pascalCaseTransform: () => (/* binding */ pascalCaseTransform),\n/* harmony export */   pascalCaseTransformMerge: () => (/* binding */ pascalCaseTransformMerge)\n/* harmony export */ });\n/* harmony import */ var tslib__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! tslib */ \"(ssr)/./node_modules/tslib/tslib.es6.mjs\");\n/* harmony import */ var no_case__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! no-case */ \"(ssr)/./node_modules/no-case/dist.es2015/index.js\");\n\n\nfunction pascalCaseTransform(input, index) {\n    var firstChar = input.charAt(0);\n    var lowerChars = input.substr(1).toLowerCase();\n    if (index > 0 && firstChar >= \"0\" && firstChar <= \"9\") {\n        return \"_\" + firstChar + lowerChars;\n    }\n    return \"\" + firstChar.toUpperCase() + lowerChars;\n}\nfunction pascalCaseTransformMerge(input) {\n    return input.charAt(0).toUpperCase() + input.slice(1).toLowerCase();\n}\nfunction pascalCase(input, options) {\n    if (options === void 0) {\n        options = {};\n    }\n    return (0,no_case__WEBPACK_IMPORTED_MODULE_0__.noCase)(input, (0,tslib__WEBPACK_IMPORTED_MODULE_1__.__assign)({\n        delimiter: \"\",\n        transform: pascalCaseTransform\n    }, options));\n} //# sourceMappingURL=index.js.map\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiKHNzcikvLi9ub2RlX21vZHVsZXMvcGFzY2FsLWNhc2UvZGlzdC5lczIwMTUvaW5kZXguanMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7QUFBaUM7QUFDQTtBQUMxQixTQUFTRSxvQkFBb0JDLEtBQUssRUFBRUMsS0FBSztJQUM1QyxJQUFJQyxZQUFZRixNQUFNRyxNQUFNLENBQUM7SUFDN0IsSUFBSUMsYUFBYUosTUFBTUssTUFBTSxDQUFDLEdBQUdDLFdBQVc7SUFDNUMsSUFBSUwsUUFBUSxLQUFLQyxhQUFhLE9BQU9BLGFBQWEsS0FBSztRQUNuRCxPQUFPLE1BQU1BLFlBQVlFO0lBQzdCO0lBQ0EsT0FBTyxLQUFLRixVQUFVSyxXQUFXLEtBQUtIO0FBQzFDO0FBQ08sU0FBU0kseUJBQXlCUixLQUFLO0lBQzFDLE9BQU9BLE1BQU1HLE1BQU0sQ0FBQyxHQUFHSSxXQUFXLEtBQUtQLE1BQU1TLEtBQUssQ0FBQyxHQUFHSCxXQUFXO0FBQ3JFO0FBQ08sU0FBU0ksV0FBV1YsS0FBSyxFQUFFVyxPQUFPO0lBQ3JDLElBQUlBLFlBQVksS0FBSyxHQUFHO1FBQUVBLFVBQVUsQ0FBQztJQUFHO0lBQ3hDLE9BQU9iLCtDQUFNQSxDQUFDRSxPQUFPSCwrQ0FBUUEsQ0FBQztRQUFFZSxXQUFXO1FBQUlDLFdBQVdkO0lBQW9CLEdBQUdZO0FBQ3JGLEVBQ0EsaUNBQWlDIiwic291cmNlcyI6WyJ3ZWJwYWNrOi8vY2hhcmdlYm90LXdlYmFwcC8uL25vZGVfbW9kdWxlcy9wYXNjYWwtY2FzZS9kaXN0LmVzMjAxNS9pbmRleC5qcz9lZDE1Il0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IF9fYXNzaWduIH0gZnJvbSBcInRzbGliXCI7XG5pbXBvcnQgeyBub0Nhc2UgfSBmcm9tIFwibm8tY2FzZVwiO1xuZXhwb3J0IGZ1bmN0aW9uIHBhc2NhbENhc2VUcmFuc2Zvcm0oaW5wdXQsIGluZGV4KSB7XG4gICAgdmFyIGZpcnN0Q2hhciA9IGlucHV0LmNoYXJBdCgwKTtcbiAgICB2YXIgbG93ZXJDaGFycyA9IGlucHV0LnN1YnN0cigxKS50b0xvd2VyQ2FzZSgpO1xuICAgIGlmIChpbmRleCA+IDAgJiYgZmlyc3RDaGFyID49IFwiMFwiICYmIGZpcnN0Q2hhciA8PSBcIjlcIikge1xuICAgICAgICByZXR1cm4gXCJfXCIgKyBmaXJzdENoYXIgKyBsb3dlckNoYXJzO1xuICAgIH1cbiAgICByZXR1cm4gXCJcIiArIGZpcnN0Q2hhci50b1VwcGVyQ2FzZSgpICsgbG93ZXJDaGFycztcbn1cbmV4cG9ydCBmdW5jdGlvbiBwYXNjYWxDYXNlVHJhbnNmb3JtTWVyZ2UoaW5wdXQpIHtcbiAgICByZXR1cm4gaW5wdXQuY2hhckF0KDApLnRvVXBwZXJDYXNlKCkgKyBpbnB1dC5zbGljZSgxKS50b0xvd2VyQ2FzZSgpO1xufVxuZXhwb3J0IGZ1bmN0aW9uIHBhc2NhbENhc2UoaW5wdXQsIG9wdGlvbnMpIHtcbiAgICBpZiAob3B0aW9ucyA9PT0gdm9pZCAwKSB7IG9wdGlvbnMgPSB7fTsgfVxuICAgIHJldHVybiBub0Nhc2UoaW5wdXQsIF9fYXNzaWduKHsgZGVsaW1pdGVyOiBcIlwiLCB0cmFuc2Zvcm06IHBhc2NhbENhc2VUcmFuc2Zvcm0gfSwgb3B0aW9ucykpO1xufVxuLy8jIHNvdXJjZU1hcHBpbmdVUkw9aW5kZXguanMubWFwIl0sIm5hbWVzIjpbIl9fYXNzaWduIiwibm9DYXNlIiwicGFzY2FsQ2FzZVRyYW5zZm9ybSIsImlucHV0IiwiaW5kZXgiLCJmaXJzdENoYXIiLCJjaGFyQXQiLCJsb3dlckNoYXJzIiwic3Vic3RyIiwidG9Mb3dlckNhc2UiLCJ0b1VwcGVyQ2FzZSIsInBhc2NhbENhc2VUcmFuc2Zvcm1NZXJnZSIsInNsaWNlIiwicGFzY2FsQ2FzZSIsIm9wdGlvbnMiLCJkZWxpbWl0ZXIiLCJ0cmFuc2Zvcm0iXSwic291cmNlUm9vdCI6IiJ9\n//# sourceURL=webpack-internal:///(ssr)/./node_modules/pascal-case/dist.es2015/index.js\n");
+
+/***/ })
+
+};
+;

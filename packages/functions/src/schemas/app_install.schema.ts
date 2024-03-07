@@ -6,6 +6,7 @@ const AppInstallSchemaDef = {
     app_version: Joi.string().max(255),
     platform: Joi.string().max(100),
     os_version: Joi.string().max(100),
+    push_token: Joi.string().allow(null),
     description: Joi.string().allow(null),
 };
 

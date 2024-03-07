@@ -46,6 +46,13 @@ npm remove my-stage
 ```
 `NOTE: DO NOT REMOVE "staging" nor "production"`
 
+## Setting Secrets
+Use the following command to set a secret into a specific environment.
+
+```bash
+npx sst secrets --stage <env_name> set <secret_name> <secret_value>
+```
+
 ## Deploying to Staging and Production
 ```bash
 npx sst deploy --stage staging

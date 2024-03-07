@@ -1,7 +1,8 @@
 import { SSTConfig } from "sst";
 import { RDSStack } from "./stacks/RDSStack";
 import { CognitoStack } from "./stacks/CognitoStack";
-import { ChargebotStack } from "./stacks/ChargebotStack";
+import { ApiStack } from "./stacks/ApiStack";
+import { LambdaStack } from "./stacks/LambdaStack";
 
 export default {
   config(_input) {
@@ -13,6 +14,7 @@ export default {
   stacks(app) {
     app.stack(RDSStack);
     app.stack(CognitoStack);
-    app.stack(ChargebotStack);
+    app.stack(LambdaStack);
+    app.stack(ApiStack);
   }
 } satisfies SSTConfig;

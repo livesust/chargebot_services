@@ -15,6 +15,10 @@ attributes:
     varchar_length: '100'
     tsType: string
     not_null: true
+  - attribute: push_token
+    type: text
+    tsType: string
+    not_null: false
   - attribute: description
     type: text
     tsType: string
