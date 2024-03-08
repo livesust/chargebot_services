@@ -150,11 +150,25 @@ function buildCriteriaQuery(criteria: Partial<AppInstall>) {
       criteria.platform
     );
   }
+  if (criteria.app_platform_id !== undefined) {
+    query = query.where(
+      'app_platform_id', 
+      criteria.app_platform_id === null ? 'is' : '=', 
+      criteria.app_platform_id
+    );
+  }
   if (criteria.os_version !== undefined) {
     query = query.where(
       'os_version', 
       criteria.os_version === null ? 'is' : '=', 
       criteria.os_version
+    );
+  }
+  if (criteria.push_token !== undefined) {
+    query = query.where(
+      'push_token', 
+      criteria.push_token === null ? 'is' : '=', 
+      criteria.push_token
     );
   }
   if (criteria.description !== undefined) {

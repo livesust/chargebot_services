@@ -1,0 +1,56 @@
+{
+  "providers": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-chargebotwebapp-dev-175750-authRole",
+      "UnauthRoleArn": "arn:aws:iam::881739832873:role/amplify-chargebotwebapp-dev-175750-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::881739832873:role/amplify-chargebotwebapp-dev-175750-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-chargebotwebapp-dev-175750-deployment",
+      "UnauthRoleName": "amplify-chargebotwebapp-dev-175750-unauthRole",
+      "StackName": "amplify-chargebotwebapp-dev-175750",
+      "StackId": "arn:aws:cloudformation:us-east-1:881739832873:stack/amplify-chargebotwebapp-dev-175750/0e055210-cd0e-11ee-b656-12ea7adbed25",
+      "AmplifyAppId": "diflcokvs533s"
+    }
+  },
+  "auth": {
+    "chargebotwebapp9a0f6f73": {
+      "service": "Cognito",
+      "serviceType": "imported",
+      "providerPlugin": "awscloudformation",
+      "dependsOn": [],
+      "customAuth": false,
+      "output": {
+        "UserPoolId": "us-east-1_MCV5noPaK",
+        "UserPoolName": "dev-chargebot-services-Auth",
+        "AppClientID": "1un6c5uu0qu7p2dq2oa787tu0c",
+        "AppClientIDWeb": "1un6c5uu0qu7p2dq2oa787tu0c",
+        "HostedUIDomain": "chargebotdev",
+        "IdentityPoolId": "us-east-1:bc33977b-28dc-4c6e-bfed-e1ee43926101",
+        "IdentityPoolName": "dev-chargebot-services-Auth",
+        "OAuthMetadata": "{\"AllowedOAuthFlows\":[\"code\"],\"AllowedOAuthScopes\":[\"email\",\"openid\"],\"CallbackURLs\":[\"https://chargebotdev.sust.pro\"],\"LogoutURLs\":[\"https://chargebotdev.sust.pro/login\"]}"
+      },
+      "frontendAuthConfig": {
+        "socialProviders": [],
+        "usernameAttributes": [
+          "EMAIL"
+        ],
+        "signupAttributes": [],
+        "passwordProtectionSettings": {
+          "passwordPolicyMinLength": 8,
+          "passwordPolicyCharacters": [
+            "REQUIRES_LOWERCASE",
+            "REQUIRES_UPPERCASE",
+            "REQUIRES_NUMBERS",
+            "REQUIRES_SYMBOLS"
+          ]
+        },
+        "mfaConfiguration": "OFF",
+        "mfaTypes": [],
+        "verificationMechanisms": [
+          "EMAIL"
+        ]
+      },
+      "lastPushTimeStamp": "2024-02-16T21:04:15.828Z"
+    }
+  }
+}

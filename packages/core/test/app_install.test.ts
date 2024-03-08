@@ -26,7 +26,9 @@ function getAppInstallInstance() {
     return {
         "app_version": getRandom('varchar', 255),
         "platform": getRandom('varchar', 100),
+        "app_platform_id": getRandom('text'),
         "os_version": getRandom('varchar', 100),
+        "push_token": getRandom('text'),
         "description": getRandom('text'),
         // @ts-expect-error ignore any type error
         "user_id": user.id,
