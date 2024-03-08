@@ -5,6 +5,7 @@ import { EntitySchema as UserSchema } from "./user.schema";
 const AppInstallSchemaDef = {
     app_version: Joi.string().max(255),
     platform: Joi.string().max(100),
+    app_platform_id: Joi.string(),
     os_version: Joi.string().max(100),
     push_token: Joi.string().allow(null),
     description: Joi.string().allow(null),
@@ -24,6 +25,7 @@ export const CreateSchema = Joi.object({
     // overwrite keys for required attributes
     app_version: Joi.string().max(255).required(),
     platform: Joi.string().max(100).required(),
+    app_platform_id: Joi.string().required(),
     os_version: Joi.string().max(100).required(),
     user_id: Joi.number().required(),
 });

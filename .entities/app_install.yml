@@ -10,6 +10,10 @@ attributes:
     varchar_length: '100'
     tsType: string
     not_null: true
+  - attribute: app_platform_id
+    type: text
+    tsType: string
+    not_null: true
   - attribute: os_version
     type: varchar
     varchar_length: '100'

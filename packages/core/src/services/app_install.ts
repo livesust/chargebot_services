@@ -110,17 +110,6 @@ export async function get(id: number): Promise<AppInstall | undefined> {
         .executeTakeFirst();
 }
 
-export async function getAppsToNotify(user_ids: number[]): Promise<AppInstall[] | undefined> {
-    return await db
-        .selectFrom("app_install")
-        .selectAll()
-        .select((eb) => withUser(eb))
-        .where('user_id', 'in', user_ids)
-        .where('push_token', 'is not', null)
-        .where('deleted_by', 'is', null)
-        .execute();
-}
-
 export async function findByCriteria(criteria: Partial<AppInstall>): Promise<AppInstall[]> {
   const query = buildCriteriaQuery(criteria);
 
@@ -159,6 +148,13 @@ function buildCriteriaQuery(criteria: Partial<AppInstall>) {
       'platform', 
       criteria.platform === null ? 'is' : '=', 
       criteria.platform
+    );
+  }
+  if (criteria.app_platform_id !== undefined) {
+    query = query.where(
+      'app_platform_id', 
+      criteria.app_platform_id === null ? 'is' : '=', 
+      criteria.app_platform_id
     );
   }
   if (criteria.os_version !== undefined) {

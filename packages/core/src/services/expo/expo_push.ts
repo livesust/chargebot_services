@@ -1,12 +1,11 @@
 export * as ExpoPush from "./expo_push";
-import Expo, { ExpoPushMessage } from "expo-server-sdk";
+import { Expo, ExpoPushMessage } from "expo-server-sdk";
 import { Config } from "sst/node/config";
-
-
-const expo = new Expo({ accessToken: Config.EXPO_ACCESS_TOKEN });
 
 export const send_push_notifications = async(tokens: string[], message: string, title?: string, data?: object) => {
   const messages: ExpoPushMessage[] = [];
+
+  const expo = new Expo({ accessToken: Config.EXPO_ACCESS_TOKEN });
 
   // Create the messages that we want to send to clients
   for (const token of tokens) {

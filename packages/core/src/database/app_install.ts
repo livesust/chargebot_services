@@ -5,6 +5,7 @@ import { User } from "./user";
 export interface AppInstallTable extends AuditedEntity {
   app_version: string;
   platform: string;
+  app_platform_id: string;
   os_version: string;
   push_token?: string;
   description?: string;

@@ -1,8 +1,9 @@
 import middy from "@middy/core";
 import warmup from "@middy/warmup";
+import Log from '@dazn/lambda-powertools-logger';
 import { createError, HttpError } from '@middy/util';
 import httpErrorHandler from "@middy/http-error-handler";
-import { EntitySchema } from "../schemas/send_alert.schema";
+import { EntitySchema, ResponseSchema } from "../schemas/app_install.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import httpSecurityHeaders from '@middy/http-security-headers';
@@ -10,47 +11,52 @@ import httpEventNormalizer from '@middy/http-event-normalizer';
 import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import { createNotFoundResponse, createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
-import { Bot } from "@chargebot-services/core/services/bot";
-import { BotUser } from "@chargebot-services/core/services/bot_user";
+import { User } from "@chargebot-services/core/services/user";
+import jsonBodyParser from "@middy/http-json-body-parser";
+import { dateReviver } from "src/shared/middlewares/json-date-parser";
 import { AppInstall } from "@chargebot-services/core/services/app_install";
-import { SuccessResponseSchema } from "src/shared/schemas";
 
-import { ExpoPush } from "@chargebot-services/core/services/expo/expo_push";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
+  const cognito_id = event.pathParameters!.cognito_id!;
+  const user_id = event.requestContext?.authorizer?.jwt.claims.sub;
+  const now = new Date();
   const body = event.body;
-  const bot_uuid = body.bot_uuid ?? body.device_id;
 
   try {
-    if (!bot_uuid) {
-      return createError(400, "bot uuid not provided", { expose: true });
+    const user = await User.findOneByCriteria({user_id: cognito_id});
+    if (!user) {
+      Log.debug("User not found", { cognito_id });
+      return createNotFoundResponse("User not found");
     }
 
-    const bot = await Bot.findOneByCriteria({ bot_uuid })
+    // find existent app install
+    const appInstall = await AppInstall.findOneByCriteria({user_id: user.id, app_platform_id: body.app_platform_id})
 
-    if (!bot) {
-      return createNotFoundResponse({ "response": "bot not found" });
-    }
+    // update/create primary email
+    const response = !appInstall
+      ? await AppInstall.create({
+        ...body,
+        created_by: user_id,
+        created_date: now,
+        modified_by: user_id,
+        modified_date: now,
+      })
+      : await AppInstall.update(appInstall.id!, {
+        push_token: body.push_token,
+        modified_by: user_id,
+        modified_date: new Date(),
+      });
 
-    const usersByBot = await BotUser.findByCriteria({ bot_id: bot.id });
-    const user_ids = usersByBot.map(ub => ub.user_id);
-    const appInstalls = await AppInstall.getAppsToNotify(user_ids);
-
-    const pushTokens = appInstalls?.map(ai => ai.push_token!);
-    
-    if (pushTokens && pushTokens.length > 0) {
-      ExpoPush.send_push_notifications(pushTokens, body.message, body.name)
-    }
-
-    return createSuccessResponse({ "response": "success" });
+    return createSuccessResponse(response!.entity);
 
   } catch (error) {
     if (error instanceof HttpError) {
       // re-throw when is a http error generated above
       throw error;
     }
-    const httpError = createError(406, "cannot send alert", { expose: true });
+    const httpError = createError(406, "cannot get user profile", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;
   }
@@ -62,11 +68,12 @@ export const main = middy(handler)
   .use(executionTimeLogger())
   .use(httpEventNormalizer())
   // .use(logTimeout())
+  .use(jsonBodyParser({ reviver: dateReviver }))
   .use(validator({ eventSchema: EntitySchema }))
   // after: inverse order execution
   .use(jsonBodySerializer())
   .use(httpSecurityHeaders())
-  .use(validator({ responseSchema: SuccessResponseSchema }))
+  .use(validator({ responseSchema: ResponseSchema }))
   // httpErrorHandler must be the last error handler attached, first to execute.
   // When non-http errors (those without statusCode) occur they will be returned with a 500 status code.
   .use(httpErrorHandler());

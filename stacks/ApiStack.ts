@@ -1,9 +1,12 @@
-import { StackContext, Config, Api, EventBus, Bucket, use } from "sst/constructs";
+import { StackContext, Config, Api, EventBus, Bucket, Function, use } from "sst/constructs";
 import { RDSStack } from "./RDSStack";
 import { CognitoStack } from "./CognitoStack";
 import { LambdaStack } from "./LambdaStack";
 
 import { Effect, IRole, Policy, PolicyStatement, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
+
+import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
+import { IotToLambdaProps, IotToLambda } from '@aws-solutions-constructs/aws-iot-lambda';
 
 export function ApiStack({ app, stack }: StackContext) {
   const { rdsCluster } = use(RDSStack);
@@ -49,14 +52,14 @@ export function ApiStack({ app, stack }: StackContext) {
   });
   iotPolicy.attachToRole(iotRole);
 
-  const publishFunction = {
-    function: {
-      handler: "packages/functions/src/events/publish_event.main",
-      timeout,
-      bind: [IOT_ENDPOINT],
-      role: iotRole
-    }
-  };
+  // IoT Functions
+  const publishFunction = new Function(stack, "iot_publish", {
+    handler: "packages/functions/src/events/publish_event.main",
+    timeout,
+    bind: [IOT_ENDPOINT],
+    // @ts-expect-error ignore check
+    role: iotRole
+  });
 
   // Event Bus
   const eventBus = new EventBus(stack, "EventBus", {
@@ -67,7 +70,6 @@ export function ApiStack({ app, stack }: StackContext) {
           detailType: ["outlet_schedule"],
         },
         targets: {
-          // @ts-expect-error ignore typing
           publish_outlet_schedule: publishFunction,
         },
       },
@@ -109,6 +111,7 @@ export function ApiStack({ app, stack }: StackContext) {
     // },
     accessLog: {
       retention: "one_month",
+      format: "$context.identity.sourceIp,$context.requestTime,$context.httpMethod,$context.routeKey,$context.protocol,$context.status,$context.responseLength,$context.requestId"
     },
     authorizers: {
       jwt: {
@@ -227,20 +230,60 @@ export function ApiStack({ app, stack }: StackContext) {
           bind: [bucket],
         },
       },
-      "POST /send-alert": {
-        function: {
-          handler: "packages/functions/src/api/send_alert.main",
-
-          // @ts-expect-error ignore type errors
-          layers: [expoServerSdk],
-          nodejs: {
-            install: ["expo-server-sdk"],
-          },
-          bind: [EXPO_ACCESS_TOKEN],
-        },
-      },
+      "POST /user/{cognito_id}/register_app_install": "packages/functions/src/api/register_app_install.main"
     }
   });
+
+  // Lambda function to execute when messages arrive to 'chargebot/alert' IoT topic
+  const processIotAlertsFunction = new Function(stack, "process_iot_chargebot_alert", {
+    handler: "packages/functions/src/api/send_push_alert.main",
+    timeout,
+    // @ts-expect-error ignore type errors
+    layers: [expoServerSdk],
+    nodejs: {
+      install: ["expo-server-sdk"],
+    },
+    bind: [EXPO_ACCESS_TOKEN],
+  });
+
+  const logGroup = new LogGroup(stack, 'ChargebotIoTAlertLogGroup',{
+    logGroupName: 'ChargebotIoTAlertLogGroup',
+    retention: RetentionDays.ONE_MONTH
+  });
+
+  const errorLogGroup = new LogGroup(stack, 'ChargebotIoTAlertErrorLogGroup',{
+    logGroupName: 'ChargebotIoTAlertErrorLogGroup',
+    retention: RetentionDays.ONE_MONTH
+  });
+
+  const constructProps: IotToLambdaProps = {
+    // @ts-expect-error ignore typing
+    existingLambdaObj: processIotAlertsFunction,
+    iotTopicRuleProps: {
+      topicRulePayload: {
+        ruleDisabled: false,
+        description: "Processing of ChargeBot alerts.",
+        sql: "SELECT * FROM 'chargebot/alert'",
+        actions: [
+          {
+            cloudwatchLogs: {
+              logGroupName: logGroup.logGroupName,
+              roleArn: 'arn:aws:iam::881739832873:role/livesust-iot-cluster-kms-role'
+            }
+          }
+        ],
+        errorAction:
+        {
+          cloudwatchLogs: {
+            logGroupName: errorLogGroup.logGroupName,
+            roleArn: 'arn:aws:iam::881739832873:role/livesust-iot-cluster-kms-role'
+          }
+        }
+      }
+    }
+  };
+  
+  new IotToLambda(stack, 'iot_rule_chargebot_alert_to_lambda', constructProps);
 
   // allowing authenticated users to access API
   cognito.attachPermissionsForAuthUsers(stack, [api]);
@@ -249,9 +292,6 @@ export function ApiStack({ app, stack }: StackContext) {
     ApiEndpoint: api.url,
     ApiDomainUrl: api.customDomainUrl,
     BucketName: bucket.bucketName,
+    PushNotificationFunction: api.getFunction("POST /send_push_alert")?.functionArn
   });
-
-  return {
-    api,
-  };
 }
