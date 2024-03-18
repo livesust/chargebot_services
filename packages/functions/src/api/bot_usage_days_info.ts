@@ -1,6 +1,7 @@
 import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import { createError } from '@middy/util';
+import Log from '@dazn/lambda-powertools-logger';
 import httpErrorHandler from "@middy/http-error-handler";
 import { PathParamSchema, ArrayResponseSchema } from "../schemas/bot_usage_days_info.schema";
 import validator from "../shared/middlewares/joi-validator";
@@ -41,6 +42,7 @@ const handler = async (event) => {
 
     return createSuccessResponse(response);
   } catch (error) {
+    Log.error("ERROR", { error });
     const httpError = createError(406, "cannot query bot has usage data by day", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;

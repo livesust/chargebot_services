@@ -35,7 +35,7 @@ const handler = async (event) => {
   try {
     updated = await service.update(id, body);
   } catch (error) {
-    Log.error("Cannot update entity", { entity_name });
+    Log.error("Cannot update entity", { entity_name, error });
     if (error instanceof BusinessError) {
       throw createError(404, error.message, { expose: true });
     }

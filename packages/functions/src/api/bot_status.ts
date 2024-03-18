@@ -1,6 +1,7 @@
 import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import { createError } from '@middy/util';
+import Log from '@dazn/lambda-powertools-logger';
 import httpErrorHandler from "@middy/http-error-handler";
 import { ResponseSchema } from "../schemas/bot_status.schema";
 import validator from "../shared/middlewares/joi-validator";
@@ -72,13 +73,14 @@ const handler = async (event) => {
       today_solar_charging: solar_charging,
       today_battery_charging: battery_charging,
       today_battery_discharging: battery_discharging,
-      connection_status: (conn_status === 'OK' && iotConnected) ? 'OK' : 'ERROR',
+      connection_status: (iotConnected || conn_status === 'OK') ? 'OK' : 'ERROR',
       system_status: system_status,
       last_seen: lastSeen
     };
 
     return createSuccessResponse(response);
   } catch (error) {
+    Log.error("ERROR", { error });
     // create and throw database errors
     const httpError = createError(406, "cannot query bot status", { expose: true });
     httpError.details = (<Error>error).message;

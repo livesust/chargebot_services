@@ -1,4 +1,5 @@
 export * as ExpoPush from "./expo_push";
+import Log from '@dazn/lambda-powertools-logger';
 import { Expo, ExpoPushMessage } from "expo-server-sdk";
 import { Config } from "sst/node/config";
 
@@ -47,6 +48,7 @@ export const send_push_notifications = async(tokens: string[], message: string, 
       // documentation:
       // https://docs.expo.io/push-notifications/sending-notifications/#individual-errors
     } catch (error) {
+      Log.error("ERROR", { error });
       console.error(error);
     }
   }

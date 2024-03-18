@@ -1,6 +1,7 @@
 import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import { createError } from '@middy/util';
+import Log from '@dazn/lambda-powertools-logger';
 import httpErrorHandler from "@middy/http-error-handler";
 import { PathParamSchema, ResponseSchema } from "../schemas/bot_outlet_details.schema";
 import validator from "../shared/middlewares/joi-validator";
@@ -64,6 +65,7 @@ const handler = async (event) => {
 
     return createSuccessResponse(response);
   } catch (error) {
+    Log.error("ERROR", { error });
     const httpError = createError(406, "cannot query bot outlets ", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;

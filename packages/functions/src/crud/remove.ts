@@ -29,7 +29,7 @@ const handler = async (event) => {
   try {
     deleted = await service.remove(id, user_id);
   } catch (error) {
-    Log.error("Cannot remove entity", { entity_name });
+    Log.error("Cannot remove entity", { entity_name, error });
     const httpError = createError(406, "cannot remove " + entity_name, { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;

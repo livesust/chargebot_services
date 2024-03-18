@@ -1,6 +1,7 @@
 import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import { createError, HttpError } from '@middy/util';
+import Log from '@dazn/lambda-powertools-logger';
 import httpErrorHandler from "@middy/http-error-handler";
 import { EntitySchema } from "../schemas/send_push_alert.schema";
 import validator from "../shared/middlewares/joi-validator";
@@ -42,12 +43,13 @@ const handler = async (event) => {
     const pushTokens = appInstalls?.map(ai => ai.push_token!);
     
     if (pushTokens && pushTokens.length > 0) {
-      ExpoPush.send_push_notifications(pushTokens, body.message, body.name, {bot_uuid})
+      ExpoPush.send_push_notifications(pushTokens, body.message, body.name, {bot_uuid, bot_id: bot.id})
     }
 
     return createSuccessResponse({ "response": "success" });
 
   } catch (error) {
+    Log.error("ERROR", { error });
     if (error instanceof HttpError) {
       // re-throw when is a http error generated above
       throw error;

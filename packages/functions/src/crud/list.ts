@@ -25,7 +25,7 @@ const handler = async (event) => {
   try {
     records = await service.list();
   } catch (error) {
-    Log.error("Cannot list entity", { entity_name });
+    Log.error("Cannot list entity", { entity_name, error });
     const httpError = createError(406, "cannot list " + entity_name, { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;

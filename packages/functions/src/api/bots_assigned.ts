@@ -63,6 +63,7 @@ const handler = async ({ requestContext }) => {
       }
     }
   } catch (error) {
+    Log.error("ERROR", { error });
     if (error instanceof HttpError) {
       // re-throw when is a http error generated above
       throw error;

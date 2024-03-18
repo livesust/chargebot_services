@@ -1,6 +1,7 @@
 import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import { createError } from '@middy/util';
+import Log from '@dazn/lambda-powertools-logger';
 import httpErrorHandler from "@middy/http-error-handler";
 import { BotUUIDPathParamSchema } from "../shared/schemas";
 import { ResponseSchema } from "../schemas/bot_location.schema";
@@ -34,6 +35,7 @@ const handler = async (event) => {
       left_at: location?.left_at,
     });
   } catch (error) {
+    Log.error("ERROR", { error });
     const httpError = createError(406, "cannot query bot location ", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;

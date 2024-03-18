@@ -31,7 +31,7 @@ const handler = async (event) => {
   try {
     records = await service.findByCriteria(body);
   } catch (error) {
-    Log.error("Cannot search entity", { entity_name });
+    Log.error("Cannot search entity", { entity_name, error });
     const httpError = createError(406, "cannot search " + entity_name, { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;

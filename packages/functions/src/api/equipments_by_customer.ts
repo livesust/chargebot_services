@@ -1,6 +1,7 @@
 import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import { createError } from '@middy/util';
+import Log from '@dazn/lambda-powertools-logger';
 import httpErrorHandler from "@middy/http-error-handler";
 import { PathParamSchema, ArrayResponseSchema } from "../schemas/equipments_by_customer.schema";
 import validator from "../shared/middlewares/joi-validator";
@@ -42,6 +43,7 @@ const handler = async (event) => {
 
     return createSuccessResponse(result);
   } catch (error) {
+    Log.error("ERROR", { error });
     const httpError = createError(406, "cannot query equipments by customer", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;

@@ -246,15 +246,21 @@ export function ApiStack({ app, stack }: StackContext) {
     bind: [EXPO_ACCESS_TOKEN],
   });
 
-  const logGroup = new LogGroup(stack, 'ChargebotIoTAlertLogGroup',{
-    logGroupName: 'ChargebotIoTAlertLogGroup',
-    retention: RetentionDays.ONE_MONTH
-  });
+  let logGroup = LogGroup.fromLogGroupName(stack, `ChargebotIoTAlertLogGroup_${app.stage}`, `ChargebotIoTAlertLogGroup_${app.stage}`);
+  if (!logGroup) {
+    logGroup = new LogGroup(stack, `ChargebotIoTAlertLogGroup_${app.stage}`,{
+      logGroupName: `ChargebotIoTAlertLogGroup_${app.stage}`,
+      retention: RetentionDays.ONE_MONTH
+    });
+  }
 
-  const errorLogGroup = new LogGroup(stack, 'ChargebotIoTAlertErrorLogGroup',{
-    logGroupName: 'ChargebotIoTAlertErrorLogGroup',
-    retention: RetentionDays.ONE_MONTH
-  });
+  let errorLogGroup = LogGroup.fromLogGroupName(stack, `ChargebotIoTAlertErrorLogGroup_${app.stage}`, `ChargebotIoTAlertErrorLogGroup_${app.stage}`);
+  if (!errorLogGroup) {
+    errorLogGroup = new LogGroup(stack, `ChargebotIoTAlertErrorLogGroup_${app.stage}`,{
+      logGroupName: `ChargebotIoTAlertErrorLogGroup_${app.stage}`,
+      retention: RetentionDays.ONE_MONTH
+    });
+  }
 
   const constructProps: IotToLambdaProps = {
     // @ts-expect-error ignore typing
@@ -282,8 +288,8 @@ export function ApiStack({ app, stack }: StackContext) {
       }
     }
   };
-  
-  new IotToLambda(stack, 'iot_rule_chargebot_alert_to_lambda', constructProps);
+
+  new IotToLambda(stack, `ChargebotIoTAlertRuleToLambda_${app.stage}`, constructProps);
 
   // allowing authenticated users to access API
   cognito.attachPermissionsForAuthUsers(stack, [api]);
@@ -291,7 +297,6 @@ export function ApiStack({ app, stack }: StackContext) {
   stack.addOutputs({
     ApiEndpoint: api.url,
     ApiDomainUrl: api.customDomainUrl,
-    BucketName: bucket.bucketName,
-    PushNotificationFunction: api.getFunction("POST /send_push_alert")?.functionArn
+    BucketName: bucket.bucketName
   });
 }

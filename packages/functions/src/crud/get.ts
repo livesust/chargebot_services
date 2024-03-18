@@ -27,7 +27,7 @@ const handler = async (event) => {
   try {
     record = await service.get(id);
   } catch (error) {
-    Log.error("Cannot GET entity", { entity_name });
+    Log.error("Cannot GET entity", { entity_name, error });
     const httpError = createError(406, "cannot get " + entity_name, { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;

@@ -1,6 +1,7 @@
 import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import { createError, HttpError } from '@middy/util';
+import Log from '@dazn/lambda-powertools-logger';
 import httpErrorHandler from "@middy/http-error-handler";
 import { ControlOutletSchema } from "../schemas/control_outlet.schema";
 import validator from "../shared/middlewares/joi-validator";
@@ -51,6 +52,7 @@ const handler = async (event) => {
     }
 
   } catch (error) {
+    Log.error("ERROR", { error });
     if (error instanceof HttpError) {
       // re-throw when is a http error generated above
       throw error;

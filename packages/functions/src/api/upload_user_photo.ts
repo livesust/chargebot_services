@@ -39,11 +39,12 @@ const handler = async (event) => {
       .jpeg({ mozjpeg: true })
       .toBuffer();
     
-    const upload = await S3.putObject(Bucket.userBucket.bucketName, `profile_user_${user.id}`, resizedImage, 'image/jpeg');
+    const upload = await S3.putObject(Bucket.UserDataBucket.bucketName, `profile_user_${user.id}`, resizedImage, 'image/jpeg');
 
     return upload ? createSuccessResponse({ "response": "success" }) : createError(406, "Error uploading file to S3");
 
   } catch (error) {
+    Log.error("ERROR", { error });
     if (error instanceof HttpError) {
       // re-throw when is a http error generated above
       throw error;

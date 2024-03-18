@@ -35,7 +35,7 @@ const handler = async (event) => {
       await UserEmail.findOneByCriteria({user_id: user.id, primary: true}),
       await UserPhone.findOneByCriteria({user_id: user.id, primary: true}),
       await UserRole.findOneByCriteria({user_id: user.id}),
-      await S3.getDownloadUrl(Bucket.userBucket.bucketName, filename),
+      await S3.getDownloadUrl(Bucket.UserDataBucket.bucketName, filename),
     ]);
 
     const response = {
@@ -53,6 +53,7 @@ const handler = async (event) => {
     return createSuccessResponse(response);
 
   } catch (error) {
+    Log.error("ERROR", { error });
     if (error instanceof HttpError) {
       // re-throw when is a http error generated above
       throw error;
