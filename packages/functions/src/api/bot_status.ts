@@ -20,16 +20,18 @@ import { InverterVariable } from "@chargebot-services/core/api/chargebot_inverte
 import { BotUUIDPathParamSchema } from "src/shared/schemas";
 import { getNumber } from "../shared/rest_utils";
 import { DateTime } from "luxon";
+import { PDUVariable } from "@chargebot-services/core/api/chargebot_pdu";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
   const bot_uuid = event.pathParameters!.bot_uuid!;
 
   try {
-    const [battery_level, battery_status, inverterStatus, inverterTotals, output_current, conn_status, system_status, iot_status] = await Promise.all([
+    const [battery_level, battery_status, inverterStatus, pduStatus, inverterTotals, output_current, conn_status, system_status, iot_status] = await Promise.all([
       ChargebotBattery.getBatteryLevel(bot_uuid),
       ChargebotInverter.getBatteryStatus(bot_uuid),
       ChargebotInverter.getInverterStatus(bot_uuid),
+      ChargebotPDU.getPDUStatus(bot_uuid),
       ChargebotInverter.getTodayEnergyUsage(bot_uuid),
       ChargebotPDU.getPDUCurrent(bot_uuid),
       ChargebotError.getConnectionStatus(bot_uuid),
@@ -38,6 +40,11 @@ const handler = async (event) => {
     ]);
 
     const inverterVariables: { [key: string]: unknown } = inverterStatus.reduce((acc: { [key: string]: unknown }, obj) => {
+      acc[obj.variable] = obj.value;
+      return acc;
+    }, {});
+
+    const pduVariables: { [key: string]: unknown } | undefined = pduStatus?.reduce((acc: { [key: string]: unknown }, obj) => {
       acc[obj.variable] = obj.value;
       return acc;
     }, {});
@@ -60,6 +67,8 @@ const handler = async (event) => {
       ? inverterLastReport.toISO()
       : (iotConnectedTime ? DateTime.fromSeconds(iotConnectedTime).toISO() : null);
 
+    const pduState = pduVariables ? pduVariables[PDUVariable.STATE.valueOf()] as number : 1;
+
     const response = {
       bot_uuid,
       battery_level: getNumber(battery_level?.level),
@@ -73,6 +82,7 @@ const handler = async (event) => {
       today_solar_charging: solar_charging,
       today_battery_charging: battery_charging,
       today_battery_discharging: battery_discharging,
+      pdu_status: ChargebotPDU.translatePDUState(pduState),
       connection_status: (iotConnected || conn_status === 'OK') ? 'OK' : 'ERROR',
       system_status: system_status,
       last_seen: lastSeen

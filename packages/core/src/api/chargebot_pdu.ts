@@ -49,3 +49,10 @@ export const PDU_OUTLET_IDS = [
   PDUVariable.OUTLET_8_STATE,
 ]
 
+export enum PDUState {
+  NORMAL = "NORMAL",
+  LIMITED = "LIMITED",
+  PRIORITY_CHARGE = "PRIORITY",
+  HIGH_TEMP = "HIGH_TEMP",
+}
+

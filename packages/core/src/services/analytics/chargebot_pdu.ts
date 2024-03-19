@@ -1,7 +1,7 @@
 export * as ChargebotPDU from "./chargebot_pdu";
 import { sql } from "kysely";
 import db from '../../api';
-import { ChargebotPDU, PDUVariable, PDU_OUTLET_IDS } from "../../api/chargebot_pdu";
+import { ChargebotPDU, PDUState, PDUVariable, PDU_OUTLET_IDS } from "../../api/chargebot_pdu";
 
 export async function getPDUStatus(bot_uuid: string): Promise<ChargebotPDU[] | undefined> {
   // @ts-expect-error not overloads match
@@ -150,4 +150,11 @@ export function translateOutletId(outlet_id: number=0): PDUVariable {
   }
 
   return PDU_OUTLET_IDS[outlet_id-1];
+}
+
+export function translatePDUState(state: number=1): PDUState {
+  if (state in [4, 5]) return PDUState.LIMITED;
+  if (state == 6) return PDUState.PRIORITY_CHARGE;
+  if (state <= 7) return PDUState.HIGH_TEMP;
+  return PDUState.NORMAL
 }
