@@ -81,7 +81,7 @@ export async function getOutletStatus(bot_uuid: string, outlet_id: number): Prom
   WITH status_groups AS (
       SELECT
           "timestamp",
-          (case when value_int = 0 then 'OFF' else 'ON' end) as status,
+          (case value_int when 0 then 'OFF' when 1 then 'ON' when 2 then 'LIMITED' when 3 then 'OFF SCHEDULE' else 'UNKNOWN' end) as status,
           ROW_NUMBER() OVER (ORDER BY timestamp DESC) - 
           ROW_NUMBER() OVER (PARTITION BY value_int ORDER BY "timestamp" DESC) AS block
       FROM
@@ -108,7 +108,7 @@ export async function getOutletStatus(bot_uuid: string, outlet_id: number): Prom
         // @ts-expect-error ignore overload not mapping
         .select([
           'timestamp',
-          sql`(case when value_int = 0 then 'OFF' else 'ON' end) as status`,
+          sql`(case value_int when 0 then 'OFF' when 1 then 'ON' when 2 then 'LIMITED' when 3 then 'OFF_SCHEDULE' else 'UNKNOWN' end) as status`,
           sql`
             ROW_NUMBER() OVER (ORDER BY timestamp DESC) -
             ROW_NUMBER() OVER (PARTITION BY value_int ORDER BY "timestamp" DESC) AS block
