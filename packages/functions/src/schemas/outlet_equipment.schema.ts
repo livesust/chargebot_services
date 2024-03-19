@@ -1,7 +1,10 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
+
 import { EntitySchema as EquipmentSchema } from "./equipment.schema";
+
 import { EntitySchema as OutletSchema } from "./outlet.schema";
+
 import { EntitySchema as UserSchema } from "./user.schema";
 
 const OutletEquipmentSchemaDef = {

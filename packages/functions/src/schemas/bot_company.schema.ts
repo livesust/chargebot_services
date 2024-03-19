@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
+
 import { EntitySchema as BotSchema } from "./bot.schema";
 import { EntitySchema as CompanySchema } from "./company.schema";
 
@@ -12,6 +13,7 @@ export const EntitySchema = Joi.object({
     ...BotCompanySchemaDef,
     bot_id: Joi.number(),
     company_id: Joi.number(),
+    
     bot: BotSchema,
     company: CompanySchema,
 });

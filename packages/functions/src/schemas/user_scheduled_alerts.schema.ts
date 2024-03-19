@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
+
 import { EntitySchema as ScheduledAlertSchema } from "./scheduled_alert.schema";
 import { EntitySchema as UserSchema } from "./user.schema";
 
@@ -13,6 +14,7 @@ export const EntitySchema = Joi.object({
     ...UserScheduledAlertsSchemaDef,
     scheduled_alert_id: Joi.number(),
     user_id: Joi.number(),
+    
     scheduled_alert: ScheduledAlertSchema,
     user: UserSchema,
 });

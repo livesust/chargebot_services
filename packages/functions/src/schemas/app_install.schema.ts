@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
+
 import { EntitySchema as UserSchema } from "./user.schema";
 
 const AppInstallSchemaDef = {
@@ -15,6 +16,7 @@ export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
     ...AppInstallSchemaDef,
     user_id: Joi.number(),
+    
     user: UserSchema,
 });
 

@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
+
 import { EntitySchema as VehicleTypeSchema } from "./vehicle_type.schema";
 
 const VehicleSchemaDef = {
@@ -12,6 +13,7 @@ export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
     ...VehicleSchemaDef,
     vehicle_type_id: Joi.number(),
+    
     vehicle_type: VehicleTypeSchema,
 });
 

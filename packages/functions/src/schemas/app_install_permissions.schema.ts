@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
+
 import { EntitySchema as AppInstallSchema } from "./app_install.schema";
 import { EntitySchema as PermissionSchema } from "./permission.schema";
 
@@ -12,6 +13,7 @@ export const EntitySchema = Joi.object({
     ...AppInstallPermissionsSchemaDef,
     app_install_id: Joi.number(),
     permission_id: Joi.number(),
+    
     app_install: AppInstallSchema,
     permission: PermissionSchema,
 });

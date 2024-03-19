@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
+
 import { EntitySchema as StateMasterSchema } from "./state_master.schema";
 
 const HomeMasterSchemaDef = {
@@ -15,6 +16,7 @@ export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
     ...HomeMasterSchemaDef,
     state_master_id: Joi.number(),
+    
     state_master: StateMasterSchema,
 });
 

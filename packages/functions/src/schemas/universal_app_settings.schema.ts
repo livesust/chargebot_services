@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
+
 import { EntitySchema as AppSettingsTypeSchema } from "./app_settings_type.schema";
 
 const UniversalAppSettingsSchemaDef = {
@@ -10,6 +11,7 @@ export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
     ...UniversalAppSettingsSchemaDef,
     app_settings_type_id: Joi.number(),
+    
     app_settings_type: AppSettingsTypeSchema,
 });
 

@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
+
 import { EntitySchema as AlertTypeSchema } from "./alert_type.schema";
 // uncoment to enable eager loading
 //import { EntitySchema as BotSchema } from "./bot.schema";
@@ -20,6 +21,7 @@ export const EntitySchema = Joi.object({
     ...BotAlertSchemaDef,
     alert_type_id: Joi.number(),
     bot_id: Joi.number(),
+    
     alert_type: AlertTypeSchema,
     // uncoment to enable eager loading
     //bot: BotSchema,

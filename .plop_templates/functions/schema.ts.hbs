@@ -48,7 +48,6 @@ export const EntitySchema = Joi.object({
       {{#when relation_type 'eq' 'many-to-one'}}
     {{#unless eager}}// uncoment to enable eager loading{{/unless}}
     {{#unless eager}}//{{/unless}}{{snakeCase entity}}: {{pascalCase entity}}Schema{{#unless not_null}}.allow(null){{/unless}},
-        {{/if}}
       {{/when}}
       {{#when relation_type 'eq' 'many-to-many'}}
     {{#unless eager}}// uncoment to enable eager loading{{/unless}}
