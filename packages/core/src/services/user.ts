@@ -4,10 +4,19 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { User, UserUpdate, NewUser } from "../database/user";
 
+function withHomeMaster(eb: ExpressionBuilder<Database, 'company'>) {
+  return jsonObjectFrom(
+    eb.selectFrom('home_master')
+      .selectAll()
+      .whereRef('home_master.id', '=', 'company.home_master_id')
+  ).as('home_master')
+}
+
 function withCompany(eb: ExpressionBuilder<Database, 'user'>) {
     return jsonObjectFrom(
       eb.selectFrom('company')
         .selectAll()
+        .select((eb) => withHomeMaster(eb))
         .whereRef('company.id', '=', 'user.company_id')
     ).as('company')
 }

@@ -39,7 +39,7 @@ const handler = async (event) => {
       .jpeg({ mozjpeg: true })
       .toBuffer();
     
-    const upload = await S3.putObject(Bucket.UserDataBucket.bucketName, `profile_user_${user.id}`, resizedImage, 'image/jpeg');
+    const upload = await S3.putObject(Bucket.UserData.bucketName, `profile_user_${user.id}`, resizedImage, 'image/jpeg');
 
     return upload ? createSuccessResponse({ "response": "success" }) : createError(406, "Error uploading file to S3");
 

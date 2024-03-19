@@ -5,6 +5,7 @@ import { EntitySchema as UserSchema } from "./user.schema";
 
 const UserScheduledAlertsSchemaDef = {
     alert_status: Joi.boolean().allow(null),
+    settings: Joi.object().allow(null),
 };
 
 export const EntitySchema = Joi.object({

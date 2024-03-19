@@ -2,22 +2,13 @@ import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
 {{#each relationships}}
   {{#when relation_type 'eq' 'many-to-one'}}
-    {{#if eager}}
-import { EntitySchema as {{pascalCase entity}}Schema } from "./{{snakeCase entity}}.schema";
-    {{else}}
-// uncoment to enable eager loading
-//import { EntitySchema as {{pascalCase entity}}Schema } from "./{{snakeCase entity}}.schema";
-    {{/if}}
+{{#unless eager}}// uncoment to enable eager loading{{/unless}}
+{{#unless eager}}//{{/unless}}import { EntitySchema as {{pascalCase entity}}Schema } from "./{{snakeCase entity}}.schema";
   {{/when}}
   {{#when relation_type 'eq' 'many-to-many'}}
-    {{#if eager}}
-import { EntitySchema as {{pascalCase first_entity}}Schema } from "./{{snakeCase first_entity}}.schema";
-import { EntitySchema as {{pascalCase second_entity}}Schema } from "./{{snakeCase second_entity}}.schema";
-    {{else}}
-// uncoment to enable eager loading
-//import { EntitySchema as {{pascalCase first_entity}}Schema } from "./{{snakeCase first_entity}}.schema";
-//import { EntitySchema as {{pascalCase second_entity}}Schema } from "./{{snakeCase second_entity}}.schema";
-    {{/if}}
+{{#unless eager}}// uncoment to enable eager loading{{/unless}}
+{{#unless eager}}//{{/unless}}import { EntitySchema as {{pascalCase first_entity}}Schema } from "./{{snakeCase first_entity}}.schema";
+{{#unless eager}}//{{/unless}}import { EntitySchema as {{pascalCase second_entity}}Schema } from "./{{snakeCase second_entity}}.schema";
   {{/when}}
 {{/each}}
 
@@ -35,6 +26,9 @@ const {{pascalCase name}}SchemaDef = {
     {{#when tsType 'eq' 'boolean'}}
     {{snakeCase attribute}}: Joi.boolean(){{#when not_null 'eq' false}}.allow(null){{/when}},
     {{/when}}
+    {{#when tsType 'eq' 'object'}}
+    {{snakeCase attribute}}: Joi.object(){{#when not_null 'eq' false}}.allow(null){{/when}},
+    {{/when}}
     {{/each}}
 };
 
@@ -43,40 +37,23 @@ export const EntitySchema = Joi.object({
     ...{{pascalCase name}}SchemaDef,
     {{#each relationships}}
       {{#when relation_type 'eq' 'many-to-one'}}
-        {{#if not_null}}
-    {{snakeCase entity}}_id: Joi.number(),
-        {{else}}
-    {{snakeCase entity}}_id: Joi.number().allow(null),
-        {{/if}}
+    {{snakeCase entity}}_id: Joi.number(){{#unless not_null}}.allow(null){{/unless}},
       {{/when}}
       {{#when relation_type 'eq' 'many-to-many'}}
-        {{#if not_null}}
-    {{snakeCase first_entity}}_id: Joi.number(),
-    {{snakeCase second_entity}}_id: Joi.number(),
-        {{else}}
-    {{snakeCase first_entity}}_id: Joi.number().allow(null),
-    {{snakeCase second_entity}}_id: Joi.number().allow(null),
-        {{/if}}
+    {{snakeCase first_entity}}_id: Joi.number(){{#unless not_null}}.allow(null){{/unless}},
+    {{snakeCase second_entity}}_id: Joi.number(){{#unless not_null}}.allow(null){{/unless}},
       {{/when}}
     {{/each}}
     {{#each relationships}}
       {{#when relation_type 'eq' 'many-to-one'}}
-        {{#if eager}}
-    {{snakeCase entity}}: {{pascalCase entity}}Schema,
-        {{else}}
-    // uncoment to enable eager loading
-    //{{snakeCase entity}}: {{pascalCase entity}}Schema,
+    {{#unless eager}}// uncoment to enable eager loading{{/unless}}
+    {{#unless eager}}//{{/unless}}{{snakeCase entity}}: {{pascalCase entity}}Schema{{#unless not_null}}.allow(null){{/unless}},
         {{/if}}
       {{/when}}
       {{#when relation_type 'eq' 'many-to-many'}}
-        {{#if eager}}
-    {{snakeCase first_entity}}: {{pascalCase first_entity}}Schema,
-    {{snakeCase second_entity}}: {{pascalCase second_entity}}Schema,
-        {{else}}
-    // uncoment to enable eager loading
-    //{{snakeCase first_entity}}: {{pascalCase first_entity}}Schema,
-    //{{snakeCase second_entity}}: {{pascalCase second_entity}}Schema,
-        {{/if}}
+    {{#unless eager}}// uncoment to enable eager loading{{/unless}}
+    {{#unless eager}}//{{/unless}}{{snakeCase first_entity}}: {{pascalCase first_entity}}Schema{{#unless not_null}}.allow(null){{/unless}},
+    {{#unless eager}}//{{/unless}}{{snakeCase second_entity}}: {{pascalCase second_entity}}Schema{{#unless not_null}}.allow(null){{/unless}},
       {{/when}}
     {{/each}}
 });
@@ -104,20 +81,11 @@ export const CreateSchema = Joi.object({
     {{/each}}
     {{#each relationships}}
       {{#when relation_type 'eq' 'many-to-one'}}
-        {{#if not_null}}
-    {{snakeCase entity}}_id: Joi.number().required(),
-        {{else}}
-    {{snakeCase entity}}_id: Joi.number(),
-        {{/if}}
+    {{snakeCase entity}}_id: Joi.number(){{#if not_null}}.required(){{/if}},
       {{/when}}
       {{#when relation_type 'eq' 'many-to-many'}}
-        {{#if not_null}}
-    {{snakeCase first_entity}}_id: Joi.number().required(),
-    {{snakeCase second_entity}}_id: Joi.number().required(),
-        {{else}}
-    {{snakeCase first_entity}}_id: Joi.number(),
-    {{snakeCase second_entity}}_id: Joi.number(),
-        {{/if}}
+    {{snakeCase first_entity}}_id: Joi.number(){{#if not_null}}.required(){{/if}},
+    {{snakeCase second_entity}}_id: Joi.number(){{#if not_null}}.required(){{/if}},
       {{/when}}
     {{/each}}
 });

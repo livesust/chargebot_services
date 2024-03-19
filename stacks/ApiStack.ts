@@ -62,7 +62,7 @@ export function ApiStack({ app, stack }: StackContext) {
   });
 
   // Event Bus
-  const eventBus = new EventBus(stack, "EventBus", {
+  const eventBus = new EventBus(stack, "ChargebotEventBus", {
     rules: {
       outlet_schedule: {
         pattern: {
@@ -92,7 +92,7 @@ export function ApiStack({ app, stack }: StackContext) {
   });
 
   // S3 Bucket
-  const bucket = new Bucket(stack, "UserDataBucket");
+  const bucket = new Bucket(stack, "UserData");
   // Allow the notification functions to access the bucket
   bucket.attachPermissions([bucket]);
 

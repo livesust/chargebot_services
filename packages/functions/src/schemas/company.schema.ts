@@ -15,7 +15,7 @@ export const EntitySchema = Joi.object({
     customer_id: Joi.number(),
     home_master_id: Joi.number().allow(null),
     customer: CustomerSchema,
-    home_master: HomeMasterSchema,
+    home_master: HomeMasterSchema.allow(null),
 });
 
 export const CreateSchema = Joi.object({

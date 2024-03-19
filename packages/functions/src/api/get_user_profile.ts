@@ -35,7 +35,7 @@ const handler = async (event) => {
       await UserEmail.findOneByCriteria({user_id: user.id, primary: true}),
       await UserPhone.findOneByCriteria({user_id: user.id, primary: true}),
       await UserRole.findOneByCriteria({user_id: user.id}),
-      await S3.getDownloadUrl(Bucket.UserDataBucket.bucketName, filename),
+      await S3.getDownloadUrl(Bucket.UserData.bucketName, filename),
     ]);
 
     const response = {
@@ -48,6 +48,8 @@ const handler = async (event) => {
       phone_number: userPhone?.phone_number,
       role_id: userRole?.role_id,
       role: userRole?.role?.role,
+      company: user?.company,
+      home_master: user?.company?.home_master
     };
 
     return createSuccessResponse(response);
