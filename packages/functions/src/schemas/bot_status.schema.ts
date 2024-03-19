@@ -14,6 +14,7 @@ const BotStatusSchemaDef = {
     today_solar_charging: Joi.number().allow(null),
     today_battery_charging: Joi.number().allow(null),
     today_battery_discharging: Joi.number().allow(null),
+    pdu_status: Joi.string().allow(null),
     connection_status: Joi.string().allow(null),
     system_status: Joi.string().allow(null),
     last_seen: Joi.date().allow(null),
