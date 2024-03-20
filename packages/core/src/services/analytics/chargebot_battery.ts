@@ -39,6 +39,41 @@ export async function getBatteryLevel(bot_uuid: string): Promise<{
   };
 }
 
+export async function getBatteryState(bot_uuid: string): Promise<string | undefined> {
+  // @ts-expect-error not overloads match
+  const status: {battery_state: string} = await db
+    .with(
+      'battery_status',
+      // @ts-expect-error ignore overload not mapping
+      (db) => db
+        .selectFrom('chargebot_battery')
+        .select([
+          'timestamp',
+          sql`
+            COALESCE(value_int, value_long, value_float, value_double)
+            - LAG(COALESCE(value_int, value_long, value_float, value_double)) OVER (ORDER BY timestamp) AS diff
+          `
+        ])
+        .where('device_id', '=', bot_uuid)
+        .where('variable', '=', BatteryVariables.LEVEL_SOC)
+        .orderBy('timestamp', 'desc')
+        .limit(1)
+    )
+    .selectFrom('battery_status')
+    .select([
+      sql`
+      CASE
+          WHEN battery_status.diff > 0 THEN 'CHARGING'
+          WHEN battery_status.diff < 0 THEN 'DISCHARGING'
+          ELSE 'IDLE'
+      END AS battery_state
+    `])
+    .limit(1)
+    .executeTakeFirst();
+
+  return status?.battery_state;
+}
+
 export async function getAvgBatteryLevel(bot_uuid: string, from: Date, to: Date): Promise<number | undefined> {
   // @ts-expect-error not overloads match
   const levelSoc: ChargebotBattery | undefined = await db

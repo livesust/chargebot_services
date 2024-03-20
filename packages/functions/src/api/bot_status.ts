@@ -26,9 +26,9 @@ const handler = async (event) => {
   const bot_uuid = event.pathParameters!.bot_uuid!;
 
   try {
-    const [battery_level, battery_status, inverterStatus, pduState, inverterTotals, output_current, conn_status, system_status, iot_status] = await Promise.all([
+    const [battery_level, battery_state, inverterStatus, pduState, inverterTotals, output_current, conn_status, system_status, iot_status] = await Promise.all([
       ChargebotBattery.getBatteryLevel(bot_uuid),
-      ChargebotInverter.getBatteryStatus(bot_uuid),
+      ChargebotBattery.getBatteryState(bot_uuid),
       ChargebotInverter.getInverterStatus(bot_uuid),
       ChargebotPDU.getPDUState(bot_uuid),
       ChargebotInverter.getTodayEnergyUsage(bot_uuid),
@@ -64,7 +64,7 @@ const handler = async (event) => {
     const response = {
       bot_uuid,
       battery_level: getNumber(battery_level?.level),
-      battery_status: battery_status?.status ?? 'UNKNOWN',
+      battery_status: battery_state ?? 'UNKNOWN',
       output_current: getNumber(output_current),
       grid_current: getNumber(inverterVariables[InverterVariable.GRID_CURRENT]),
       solar_power: getNumber(inverterVariables[InverterVariable.SOLAR_POWER]),
