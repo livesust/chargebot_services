@@ -45,6 +45,30 @@ export async function getPDUStatus(bot_uuid: string): Promise<ChargebotPDU[] | u
   return status;
 }
 
+export async function getPDUState(bot_uuid: string): Promise<PDUState> {
+  // @ts-expect-error not overloads match
+  const status: ChargebotPDU | undefined = await db
+    .selectFrom("chargebot_pdu")
+    .select(({ fn }) => [
+      'device_id',
+      'variable',
+      fn.coalesce(
+        sql`value_int::text`,
+        sql`value_long::text`,
+        sql`value_float::text`,
+        sql`value_double::text`,
+        sql`value_string::text`
+      ).as('value'),
+    ])
+    .where('device_id', '=', bot_uuid)
+    .where('variable', '=', PDUVariable.STATE)
+    .orderBy('timestamp', 'desc')
+    .limit(1)
+    .executeTakeFirst();
+
+  return translatePDUState(status?.value as number);
+}
+
 export async function getPDUCurrent(bot_uuid: string): Promise<number | undefined> {
   // @ts-expect-error not overloads match
   const pduCurrent: ChargebotPDU | undefined = await db
@@ -152,9 +176,15 @@ export function translateOutletId(outlet_id: number=0): PDUVariable {
   return PDU_OUTLET_IDS[outlet_id-1];
 }
 
-export function translatePDUState(state: number=1): PDUState {
-  if (state in [4, 5]) return PDUState.LIMITED;
-  if (state == 6) return PDUState.PRIORITY_CHARGE;
-  if (state <= 7) return PDUState.HIGH_TEMP;
-  return PDUState.NORMAL
+export function translatePDUState(state: number): PDUState {
+  if (state) {
+    if (state == 4 || state == 5) {
+      return PDUState.LIMITED;
+    } else if (state == 6) {
+      return PDUState.PRIORITY_CHARGE;
+    } else if (state == 7) {
+      return PDUState.HIGH_TEMP;
+    }
+  }
+  return PDUState.NORMAL;
 }
