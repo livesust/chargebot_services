@@ -28,6 +28,13 @@ export function CognitoStack({ app, stack }: StackContext) {
                 customAttributes: {
                     customerId: new NumberAttribute({ mutable: false })
                 },
+                passwordPolicy: {
+                  minLength: 8,
+                  requireDigits: false,
+                  requireLowercase: false,
+                  requireUppercase: false,
+                  requireSymbols: false
+                }
             },
             userPoolClient: {
                 authFlows: {
