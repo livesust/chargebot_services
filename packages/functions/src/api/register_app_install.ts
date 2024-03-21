@@ -45,6 +45,10 @@ const handler = async (event) => {
       })
       : await AppInstall.update(appInstall.id!, {
         push_token: body.push_token,
+        app_version: body.app_version,
+        platform: body.platform,
+        os_version: body.os_version,
+        description: body.description,
         modified_by: user_id,
         modified_date: new Date(),
       });
