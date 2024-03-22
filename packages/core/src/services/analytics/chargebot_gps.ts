@@ -1,7 +1,7 @@
 export * as ChargebotGps from "./chargebot_gps";
 import { sql } from "kysely";
-import db from '../../api';
-import { ChargebotGps, ChargebotGpsHistory, ChargebotGpsPosition, VehicleStatus } from "../../api/chargebot_gps";
+import db from '../../timescale';
+import { ChargebotGps, ChargebotGpsHistory, ChargebotGpsPosition, VehicleStatus } from "../../timescale/chargebot_gps";
 
 export function translateVehicleStatus(vehicle_status: VehicleStatus | string | undefined): string | undefined {
   if (!vehicle_status) {

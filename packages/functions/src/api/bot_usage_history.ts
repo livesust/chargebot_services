@@ -14,7 +14,7 @@ import { DateTime } from "luxon";
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { ChargebotInverter } from "@chargebot-services/core/services/analytics/chargebot_inverter";
 import { getNumber } from "../shared/rest_utils";
-import { InverterVariable } from "@chargebot-services/core/api/chargebot_inverter";
+import { InverterVariable } from "@chargebot-services/core/timescale/chargebot_inverter";
 import { ChargebotBattery } from "@chargebot-services/core/services/analytics/chargebot_battery";
 
 interface DailyUsage {

@@ -17,6 +17,7 @@ import { User } from "@chargebot-services/core/services/user";
 import { UserEmail } from "@chargebot-services/core/services/user_email";
 import { UserPhone } from "@chargebot-services/core/services/user_phone";
 import { UserRole } from "@chargebot-services/core/services/user_role";
+import { Company } from "@chargebot-services/core/services/company";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
@@ -31,7 +32,8 @@ const handler = async (event) => {
     }
 
     const filename = `profile_user_${user?.id}`;
-    const [userEmail, userPhone, userRole, photoUrl] = await Promise.all([
+    const [company, userEmail, userPhone, userRole, photoUrl] = await Promise.all([
+      await Company.get(user.company_id),
       await UserEmail.findOneByCriteria({user_id: user.id, primary: true}),
       await UserPhone.findOneByCriteria({user_id: user.id, primary: true}),
       await UserRole.findOneByCriteria({user_id: user.id}),
@@ -48,8 +50,8 @@ const handler = async (event) => {
       phone_number: userPhone?.phone_number,
       role_id: userRole?.role_id,
       role: userRole?.role?.role,
-      company: user?.company,
-      home_master: user?.company?.home_master
+      company: company,
+      home_master: company?.home_master
     };
 
     return createSuccessResponse(response);

@@ -1,17 +1,17 @@
-import { StackContext, Config, Api, EventBus, Bucket, Function, use } from "sst/constructs";
+import { StackContext, Config, Api, Bucket, use } from "sst/constructs";
 import { RDSStack } from "./RDSStack";
 import { CognitoStack } from "./CognitoStack";
 import { LambdaStack } from "./LambdaStack";
 
-import { Effect, IRole, Policy, PolicyStatement, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
+import { IRole, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 
-import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
-import { IotToLambdaProps, IotToLambda } from '@aws-solutions-constructs/aws-iot-lambda';
+import { EventBusStack } from "./EventBusStack";
 
 export function ApiStack({ app, stack }: StackContext) {
   const { rdsCluster } = use(RDSStack);
+  const { eventBus } = use(EventBusStack);
   const { cognito } = use(CognitoStack);
-  const { cryptoLayer, luxonLayer, sharpLayer, expoServerSdk } = use(LambdaStack);
+  const { lambdaLayers, lambdaFunctions, setupProvisionedConcurrency } = use(LambdaStack);
 
   // TimescaleDB Secret Keys
   const TIMESCALE_HOST = new Config.Secret(stack, "TIMESCALE_HOST");
@@ -20,81 +20,14 @@ export function ApiStack({ app, stack }: StackContext) {
   const TIMESCALE_PORT = new Config.Secret(stack, "TIMESCALE_PORT");
   const TIMESCALE_DATABASE = new Config.Secret(stack, "TIMESCALE_DATABASE");
 
-  // IoT publish lambda function
-  const IOT_ENDPOINT = new Config.Secret(stack, "IOT_ENDPOINT");
-
   // Secret Keys
   const SECRET_KEY = new Config.Secret(stack, "SECRET_KEY");
 
-  // Expo Server Access Token for Push
-  const EXPO_ACCESS_TOKEN = new Config.Secret(stack, "EXPO_ACCESS_TOKEN");
-
   // lambda functions timeout
-  const timeout = app.stage == "prod" ? "10 seconds" : "30 seconds";
-
-  // lambda function to publish events into iot
-  const iotRole: IRole = new Role(stack, "IoTRole", {
-    assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
-  });
-
-  const iotPolicy: Policy = new Policy(stack, "IoTPolicy", {
-    policyName: 'lambda_iot_policy',
-    statements: [new PolicyStatement({
-      effect: Effect.ALLOW,
-      actions: [
-        "iot:Connect",
-        "iot:Publish",
-        "iot:Subscribe",
-        "iot:Receive",
-      ],
-      resources: ["*"]
-    })]
-  });
-  iotPolicy.attachToRole(iotRole);
-
-  // IoT Functions
-  const publishFunction = new Function(stack, "iot_publish", {
-    handler: "packages/functions/src/events/publish_event.main",
-    timeout,
-    bind: [IOT_ENDPOINT],
-    // @ts-expect-error ignore check
-    role: iotRole
-  });
-
-  // Event Bus
-  const eventBus = new EventBus(stack, "ChargebotEventBus", {
-    rules: {
-      outlet_schedule: {
-        pattern: {
-          source: ["created", "updated", "deleted"],
-          detailType: ["outlet_schedule"],
-        },
-        targets: {
-          publish_outlet_schedule: publishFunction,
-        },
-      },
-      bot_created: {
-        pattern: {
-          source: ["created"],
-          detailType: ["bot"],
-        },
-        targets: {
-          on_bot_created: {
-            function: {
-              handler: "packages/functions/src/events/on_bot_created.main",
-              timeout,
-              bind: [rdsCluster],
-            }
-          },
-        },
-      }
-    },
-  });
+  const timeout = app.stage === "prod" ? "10 seconds" : "30 seconds";
 
   // S3 Bucket
   const bucket = new Bucket(stack, "UserData");
-  // Allow the notification functions to access the bucket
-  bucket.attachPermissions([bucket]);
 
   // Create an IAM role
   const iamRole: IRole = new Role(stack, "ApiRole", {
@@ -139,7 +72,6 @@ export function ApiStack({ app, stack }: StackContext) {
         timeout,
         bind: [
           rdsCluster,
-          eventBus,
           TIMESCALE_HOST,
           TIMESCALE_USER,
           TIMESCALE_PASSWORD,
@@ -150,7 +82,7 @@ export function ApiStack({ app, stack }: StackContext) {
         // @ts-expect-error ignore error
         role: iamRole
       },
-      layers: [luxonLayer, cryptoLayer],
+      layers: [lambdaLayers.luxonLayer, lambdaLayers.cryptoLayer],
       nodejs: {
         install: ["luxon", "crypto-es"],
       },
@@ -160,30 +92,48 @@ export function ApiStack({ app, stack }: StackContext) {
       allowOrigins: ["*"],
     },
     routes: {
-      "GET /{entity}": "packages/functions/src/crud/list.main",
-      "GET /{entity}/{id}": "packages/functions/src/crud/get.main",
-      "POST /{entity}": "packages/functions/src/crud/create.main",
-      "POST /{entity}/search": "packages/functions/src/crud/search.main",
-      "PATCH /{entity}/{id}": "packages/functions/src/crud/update.main",
-      "DELETE /{entity}/{id}": "packages/functions/src/crud/remove.main",
+      "GET /{entity}": {
+        function: {
+          handler: "packages/functions/src/crud/list.main",
+          bind: [eventBus]
+        }
+      },
+      "GET /{entity}/{id}": {
+        function: {
+          handler: "packages/functions/src/crud/get.main",
+          bind: [eventBus]
+        }
+      },
+      "POST /{entity}": {
+        function: {
+          handler: "packages/functions/src/crud/create.main",
+          bind: [eventBus]
+        }
+      },
+      "POST /{entity}/search": {
+        function: {
+          handler: "packages/functions/src/crud/search.main",
+          bind: [eventBus]
+        }
+      },
+      "PATCH /{entity}/{id}": {
+        function: {
+          handler: "packages/functions/src/crud/update.main",
+          bind: [eventBus]
+        }
+      },
+      "DELETE /{entity}/{id}": {
+        function: {
+          handler: "packages/functions/src/crud/remove.main",
+          bind: [eventBus]
+        }
+      },
       "GET /bot/assigned": "packages/functions/src/api/bots_assigned.main",
       "GET /bot/{bot_uuid}/location": "packages/functions/src/api/bot_location.main",
-      "GET /bot/{bot_uuid}/status": {
-        function: {
-          handler: "packages/functions/src/api/bot_status.main",
-          bind: [IOT_ENDPOINT],
-          // @ts-expect-error ignore type error
-          role: iotRole,
-        }
-      },
-      "GET /bot/{bot_uuid}/status/encrypted": {
-        function: {
-          handler: "packages/functions/src/api/bot_status_encrypted.main",
-          bind: [IOT_ENDPOINT],
-          // @ts-expect-error ignore type error
-          role: iotRole,
-        }
-      },
+      // @ts-expect-error ignore check
+      "GET /bot/{bot_uuid}/status": { function: lambdaFunctions.botStatus },
+      // @ts-expect-error ignore check
+      "GET /bot/{bot_uuid}/status/encrypted": { function: lambdaFunctions.botStatusEncrypted },
       "GET /bot/{id}/outlets": "packages/functions/src/api/bot_outlets.main",
       "GET /bot/{bot_uuid}/outlet/{outlet_id}": "packages/functions/src/api/bot_outlet_details.main",
       "GET /bot/{bot_uuid}/location/from/{from}/to/{to}": "packages/functions/src/api/bot_location_history.main",
@@ -195,22 +145,10 @@ export function ApiStack({ app, stack }: StackContext) {
       "GET /equipment/customer/{customer_id}": "packages/functions/src/api/equipments_by_customer.main",
       "POST /equipment/{equipment_id}/outlet/{outlet_id}": "packages/functions/src/api/assign_equipment_outlet.main",
       "DELETE /equipment/{equipment_id}/outlet/{outlet_id}": "packages/functions/src/api/unassign_equipment_outlet.main",
-      "POST /bot/{bot_uuid}/control": {
-        function: {
-          handler: "packages/functions/src/api/control_outlet.main",
-          bind: [IOT_ENDPOINT],
-          // @ts-expect-error ignore type error
-          role: iotRole
-        }
-      },
-      "POST /bot/{bot_uuid}/control/encrypted": {
-        function: {
-          handler: "packages/functions/src/api/control_outlet_encrypted.main",
-          bind: [IOT_ENDPOINT],
-          // @ts-expect-error ignore type error
-          role: iotRole
-        }
-      },
+      // @ts-expect-error ignore check
+      "POST /bot/{bot_uuid}/control": { function: lambdaFunctions.botControl },
+      // @ts-expect-error ignore check
+      "POST /bot/{bot_uuid}/control/encrypted": { function: lambdaFunctions.botControlEncrypted },
       "GET /user/{cognito_id}/profile": {
         function: {
           handler: "packages/functions/src/api/get_user_profile.main",
@@ -221,9 +159,8 @@ export function ApiStack({ app, stack }: StackContext) {
       "PUT /user/{cognito_id}/photo": {
         function: {
           handler: "packages/functions/src/api/upload_user_photo.main",
-
           // @ts-expect-error ignore type errors
-          layers: [sharpLayer],
+          layers: [lambdaLayers.sharpLayer],
           nodejs: {
             install: ["sharp"],
           },
@@ -234,62 +171,8 @@ export function ApiStack({ app, stack }: StackContext) {
     }
   });
 
-  // Lambda function to execute when messages arrive to 'chargebot/alert' IoT topic
-  const processIotAlertsFunction = new Function(stack, "process_iot_chargebot_alert", {
-    handler: "packages/functions/src/api/send_push_alert.main",
-    timeout,
-    // @ts-expect-error ignore type errors
-    layers: [expoServerSdk],
-    nodejs: {
-      install: ["expo-server-sdk"],
-    },
-    bind: [EXPO_ACCESS_TOKEN],
-  });
-
-  let logGroup = LogGroup.fromLogGroupName(stack, `ChargebotIoTAlertLogGroup_${app.stage}`, `ChargebotIoTAlertLogGroup_${app.stage}`);
-  if (!logGroup) {
-    logGroup = new LogGroup(stack, `ChargebotIoTAlertLogGroup_${app.stage}`,{
-      logGroupName: `ChargebotIoTAlertLogGroup_${app.stage}`,
-      retention: RetentionDays.ONE_MONTH
-    });
-  }
-
-  let errorLogGroup = LogGroup.fromLogGroupName(stack, `ChargebotIoTAlertErrorLogGroup_${app.stage}`, `ChargebotIoTAlertErrorLogGroup_${app.stage}`);
-  if (!errorLogGroup) {
-    errorLogGroup = new LogGroup(stack, `ChargebotIoTAlertErrorLogGroup_${app.stage}`,{
-      logGroupName: `ChargebotIoTAlertErrorLogGroup_${app.stage}`,
-      retention: RetentionDays.ONE_MONTH
-    });
-  }
-
-  const constructProps: IotToLambdaProps = {
-    // @ts-expect-error ignore typing
-    existingLambdaObj: processIotAlertsFunction,
-    iotTopicRuleProps: {
-      topicRulePayload: {
-        ruleDisabled: false,
-        description: "Processing of ChargeBot alerts.",
-        sql: "SELECT * FROM 'chargebot/alert'",
-        actions: [
-          {
-            cloudwatchLogs: {
-              logGroupName: logGroup.logGroupName,
-              roleArn: 'arn:aws:iam::881739832873:role/livesust-iot-cluster-kms-role'
-            }
-          }
-        ],
-        errorAction:
-        {
-          cloudwatchLogs: {
-            logGroupName: errorLogGroup.logGroupName,
-            roleArn: 'arn:aws:iam::881739832873:role/livesust-iot-cluster-kms-role'
-          }
-        }
-      }
-    }
-  };
-
-  new IotToLambda(stack, `ChargebotIoTAlertRuleToLambda_${app.stage}`, constructProps);
+  // setupProvisionedConcurrency(stack, api.getFunction("GET /bot/assigned"));
+  // setupProvisionedConcurrency(stack, api.getFunction("GET /bot/{bot_uuid}/status"));
 
   // allowing authenticated users to access API
   cognito.attachPermissionsForAuthUsers(stack, [api]);

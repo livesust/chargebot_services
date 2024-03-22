@@ -16,7 +16,7 @@ import { ChargebotInverter } from "@chargebot-services/core/services/analytics/c
 import { ChargebotPDU } from "@chargebot-services/core/services/analytics/chargebot_pdu";
 import { ChargebotError } from "@chargebot-services/core/services/analytics/chargebot_error";
 import { IoTData } from "@chargebot-services/core/services/aws/iot_data";
-import { InverterVariable } from "@chargebot-services/core/api/chargebot_inverter";
+import { InverterVariable } from "@chargebot-services/core/timescale/chargebot_inverter";
 import { BotUUIDPathParamSchema } from "src/shared/schemas";
 import { getNumber } from "../shared/rest_utils";
 import { DateTime } from "luxon";
@@ -27,7 +27,7 @@ const handler = async (event) => {
 
   try {
     const [battery_level, battery_state, inverterStatus, pduState, inverterTotals, output_current, conn_status, system_status, iot_status] = await Promise.all([
-      ChargebotBattery.getBatteryLevel(bot_uuid),
+      ChargebotBattery.getBatteryLevels(bot_uuid),
       ChargebotBattery.getBatteryState(bot_uuid),
       ChargebotInverter.getInverterStatus(bot_uuid),
       ChargebotPDU.getPDUState(bot_uuid),

@@ -4,23 +4,13 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { User, UserUpdate, NewUser } from "../database/user";
 
-function withHomeMaster(eb: ExpressionBuilder<Database, 'company'>) {
-  return jsonObjectFrom(
-    eb.selectFrom('home_master')
-      .selectAll()
-      .whereRef('home_master.id', '=', 'company.home_master_id')
-  ).as('home_master')
-}
-
 function withCompany(eb: ExpressionBuilder<Database, 'user'>) {
     return jsonObjectFrom(
       eb.selectFrom('company')
         .selectAll()
-        .select((eb) => withHomeMaster(eb))
         .whereRef('company.id', '=', 'user.company_id')
     ).as('company')
 }
-
 
 export async function create(user: NewUser): Promise<{
   entity: User | undefined,
@@ -102,7 +92,7 @@ export async function hard_remove(id: number): Promise<void> {
 }
 
 export async function list(): Promise<User[]> {
-    return await db
+    return db
         .selectFrom("user")
         .selectAll()
         .where('deleted_by', 'is', null)
@@ -110,7 +100,7 @@ export async function list(): Promise<User[]> {
 }
 
 export async function get(id: number): Promise<User | undefined> {
-    return await db
+    return db
         .selectFrom("user")
         .selectAll()
         .select((eb) => withCompany(eb))
@@ -122,7 +112,7 @@ export async function get(id: number): Promise<User | undefined> {
 export async function findByCriteria(criteria: Partial<User>): Promise<User[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withCompany(eb))
     .execute();
@@ -131,7 +121,7 @@ export async function findByCriteria(criteria: Partial<User>): Promise<User[]> {
 export async function findOneByCriteria(criteria: Partial<User>): Promise<User | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withCompany(eb))
     .limit(1)

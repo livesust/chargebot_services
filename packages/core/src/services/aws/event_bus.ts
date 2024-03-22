@@ -8,7 +8,7 @@ export const dispatchEvent = async (entity_name: string, event: string, detail: 
   const command = new PutEventsCommand({
     Entries: [
       {
-        EventBusName: EventBus.ChargebotEventBus.eventBusName,
+        EventBusName: EventBus.api.eventBusName,
         Source: event,
         DetailType: entity_name,
         Detail: JSON.stringify(detail),

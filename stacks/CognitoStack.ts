@@ -47,17 +47,17 @@ export function CognitoStack({ app, stack }: StackContext) {
                     flows: {
                         authorizationCodeGrant: true
                     },
-                    callbackUrls: app.stage == "prod"
+                    callbackUrls: app.stage === "prod"
                       ? ["https://chargebot.sust.pro"]
                       : (
-                        app.stage == "dev"
+                        app.stage === "dev"
                         ? ["https://chargebotdev.sust.pro"]
                         : ["https://chargebotstaging.sust.pro"]
                         ),
-                    logoutUrls: app.stage == "prod"
+                    logoutUrls: app.stage === "prod"
                       ? ["https://chargebot.sust.pro/login"]
                       : (
-                        app.stage == "dev"
+                        app.stage === "dev"
                         ? ["https://chargebotdev.sust.pro/login"]
                         : ["https://chargebotstaging.sust.pro/login"]
                         ),
@@ -69,11 +69,12 @@ export function CognitoStack({ app, stack }: StackContext) {
             }
         }
     });
-    if (app.stage == "prod") {
+
+    if (app.stage === "prod") {
       cognito.cdk.userPool.addDomain("chargebot", { cognitoDomain: { domainPrefix: "chargebot" } })
-    } else if (app.stage == "staging") {
+    } else if (app.stage === "staging") {
       cognito.cdk.userPool.addDomain("chargebotstaging", { cognitoDomain: { domainPrefix: "chargebotstaging" } })
-    } else if (app.stage == "dev") {
+    } else if (app.stage === "dev") {
       cognito.cdk.userPool.addDomain("chargebotdev", { cognitoDomain: { domainPrefix: "chargebotdev" } })
     }
 

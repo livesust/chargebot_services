@@ -1,7 +1,7 @@
 export * as ChargebotPDU from "./chargebot_pdu";
 import { sql } from "kysely";
-import db from '../../api';
-import { ChargebotPDU, PDUState, PDUVariable, PDU_OUTLET_IDS } from "../../api/chargebot_pdu";
+import db from '../../timescale';
+import { ChargebotPDU, PDUState, PDUVariable, PDU_OUTLET_IDS } from "../../timescale/chargebot_pdu";
 
 export async function getPDUStatus(bot_uuid: string): Promise<ChargebotPDU[] | undefined> {
   // @ts-expect-error not overloads match

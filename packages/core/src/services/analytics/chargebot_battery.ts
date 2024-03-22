@@ -1,7 +1,7 @@
 export * as ChargebotBattery from "./chargebot_battery";
 import { sql } from "kysely";
-import db from '../../api';
-import { ChargebotBattery, BatteryVariables } from "../../api/chargebot_battery";
+import db from '../../timescale';
+import { ChargebotBattery, BatteryVariables } from "../../timescale/chargebot_battery";
 import { ChargebotInverter } from "./chargebot_inverter";
 
 export async function getBatteryLevel(bot_uuid: string): Promise<{
@@ -37,6 +37,34 @@ export async function getBatteryLevel(bot_uuid: string): Promise<{
     bot_uuid,
     level: levelSoc?.value ? Math.round(levelSoc?.value as number) : await ChargebotInverter.getBatteryLevel(bot_uuid)
   };
+}
+
+export async function getBatteryLevels(bot_uuids: string[]): Promise<{
+  bot_uuid: string,
+  level: number | undefined
+}[] | undefined> {
+  // @ts-expect-error not overloads match
+  const batteryLevels: ChargebotBattery[] | undefined = await db
+    .selectFrom("chargebot_battery")
+    .select(({ fn }) => [
+      'device_id',
+      fn.coalesce(
+        sql`value_int`,
+        sql`value_long`,
+        sql`value_float`,
+        sql`value_double`
+      ).as('value'),
+    ])
+    .where('device_id', 'in', bot_uuids)
+    .where('variable', '=', BatteryVariables.LEVEL_SOC)
+    .orderBy('timestamp', 'desc')
+    .groupBy('device_id')
+    .limit(1)
+    .executeTakeFirst();
+  return batteryLevels?.map(bl => ({
+    bot_uuid: bl.device_id,
+    level: bl?.value ? Math.round(bl?.value as number) : undefined
+  }));
 }
 
 export async function getBatteryState(bot_uuid: string): Promise<string | undefined> {

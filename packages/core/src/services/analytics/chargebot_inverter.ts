@@ -1,7 +1,7 @@
 export * as ChargebotInverter from "./chargebot_inverter";
 import { sql } from "kysely";
-import db from '../../api';
-import { ChargebotInverter, InverterVariable } from "../../api/chargebot_inverter";
+import db from '../../timescale';
+import { ChargebotInverter, InverterVariable } from "../../timescale/chargebot_inverter";
 
 export async function getBatteryStatus(bot_uuid: string): Promise<{
   bot_uuid: string,
@@ -42,6 +42,35 @@ export async function getBatteryStatus(bot_uuid: string): Promise<{
     bot_uuid,
     status: !current || current === 0 ? 'IDLE' : (current < 0 ? 'DISCHARGING' : 'CHARGING')
   }
+}
+
+export async function getBatteryStatuses(bot_uuids: string[]): Promise<{
+  bot_uuid: string,
+  status: string
+}[] | undefined> {
+  // @ts-expect-error not overloads match
+  const batteryCurrents: ChargebotInverter[] | undefined = await db
+    .selectFrom("chargebot_inverter")
+    .select(({ fn }) => [
+      'device_id',
+      fn.coalesce(
+        sql`value_int::text`,
+        sql`value_long::text`,
+        sql`value_float::text`,
+        sql`value_double::text`
+      ).as('value'),
+    ])
+    .where('device_id', 'in', bot_uuids)
+    .where('variable', '=', InverterVariable.BATTERY_CURRENT)
+    .orderBy('timestamp', 'desc')
+    .groupBy('device_id')
+    .limit(1)
+    .executeTakeFirst();
+
+  return batteryCurrents?.map(bs => ({
+    bot_uuid: bs.device_id,
+    status: (!bs.value || bs.value as number === 0) ? 'IDLE' : (bs.value as number < 0 ? 'DISCHARGING' : 'CHARGING')
+  }));
 }
 
 export async function getInverterStatus(bot_uuid: string): Promise<ChargebotInverter[]> {

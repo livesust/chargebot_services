@@ -25,11 +25,17 @@ const psqlDialect = new PostgresDialect({
         user: Config.TIMESCALE_USER,
         password: Config.TIMESCALE_PASSWORD,
         port: +Config.TIMESCALE_PORT,
-        max: 10,
+        max: 100,
+        min: 10
     })
 })
 
 export default new Kysely<AnalyticsDatabase>({
     dialect: psqlDialect,
     plugins: [new ParseJSONResultsPlugin()],
+    log(event): void {
+      if (event.level === 'query') {
+        console.log(`Timescale > Time: ${event.queryDurationMillis} < SQL: ${event.query.sql}`);
+      }
+    },
 });
