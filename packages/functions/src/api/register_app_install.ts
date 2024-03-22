@@ -38,6 +38,7 @@ const handler = async (event) => {
     const response = !appInstall
       ? await AppInstall.create({
         ...body,
+        user_id: user.id,
         created_by: user_id,
         created_date: now,
         modified_by: user_id,
