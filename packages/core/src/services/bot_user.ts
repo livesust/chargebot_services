@@ -136,21 +136,6 @@ export async function get(id: number): Promise<BotUser | undefined> {
         .executeTakeFirst();
 }
 
-export async function findBotsByUser(user_id: string): Promise<BotUser[]> {
-  const query = db.selectFrom('bot_user')
-    .innerJoin('user', 'user.id', 'bot_user.user_id')
-    .innerJoin('bot', 'bot.id', 'bot_user.bot_id')
-    .where('user.user_id', '=', user_id);
-
-  return await query
-    .selectAll('bot_user')
-    // @ts-expect-error ignore check
-    .select((eb) => withBot(eb))
-    // @ts-expect-error ignore check
-    .select((eb) => withUser(eb))
-    .execute();
-}
-
 export async function findByCriteria(criteria: Partial<BotUser>): Promise<BotUser[]> {
   const query = buildCriteriaQuery(criteria);
   const result = await query

@@ -4,102 +4,86 @@ import db from '../../timescale';
 import { ChargebotBattery, BatteryVariables } from "../../timescale/chargebot_battery";
 import { ChargebotInverter } from "./chargebot_inverter";
 
-export async function getBatteryLevel(bot_uuid: string): Promise<{
+export async function getBatteryState(bot_uuid: string): Promise<{
   bot_uuid: string,
-  level: number | undefined
+  battery_level: number,
+  battery_status: string
 } | undefined> {
   // @ts-expect-error not overloads match
-  const levelSoc: ChargebotBattery | undefined = await db
-    .selectFrom("chargebot_battery")
-    .select(({ fn }) => [
-      'device_id',
-      'device_version',
-      'timestamp',
-      'timezone',
-      'variable',
-      'address',
-      'unit',
-      'data_type',
-      fn.coalesce(
-        sql`value_int`,
-        sql`value_long`,
-        sql`value_float`,
-        sql`value_double`
-      ).as('value'),
-    ])
-    .where('device_id', '=', bot_uuid)
-    .where('variable', '=', BatteryVariables.LEVEL_SOC)
-    .orderBy('timestamp', 'desc')
-    .limit(1)
-    .executeTakeFirst();
-
-  return {
-    bot_uuid,
-    level: levelSoc?.value ? Math.round(levelSoc?.value as number) : await ChargebotInverter.getBatteryLevel(bot_uuid)
-  };
-}
-
-export async function getBatteryLevels(bot_uuids: string[]): Promise<{
-  bot_uuid: string,
-  level: number | undefined
-}[] | undefined> {
-  // @ts-expect-error not overloads match
-  const batteryLevels: ChargebotBattery[] | undefined = await db
-    .selectFrom("chargebot_battery")
-    .select(({ fn }) => [
-      'device_id',
-      fn.coalesce(
-        sql`value_int`,
-        sql`value_long`,
-        sql`value_float`,
-        sql`value_double`
-      ).as('value'),
-    ])
-    .where('device_id', 'in', bot_uuids)
-    .where('variable', '=', BatteryVariables.LEVEL_SOC)
-    .orderBy('timestamp', 'desc')
-    .groupBy('device_id')
-    .limit(1)
-    .executeTakeFirst();
-  return batteryLevels?.map(bl => ({
-    bot_uuid: bl.device_id,
-    level: bl?.value ? Math.round(bl?.value as number) : undefined
-  }));
-}
-
-export async function getBatteryState(bot_uuid: string): Promise<string | undefined> {
-  // @ts-expect-error not overloads match
-  const status: {battery_state: string} = await db
+  const status: {
+    bot_uuid: string,
+    battery_level: number,
+    battery_status: string
+  } = await db
     .with(
       'battery_status',
-      // @ts-expect-error ignore overload not mapping
       (db) => db
-        .selectFrom('chargebot_battery')
+        .selectFrom('chargebot_battery_level')
+        // @ts-expect-error ignore overload not mapping
         .select([
-          'timestamp',
-          sql`
-            COALESCE(value_int, value_long, value_float, value_double)
-            - LAG(COALESCE(value_int, value_long, value_float, value_double)) OVER (ORDER BY timestamp) AS diff
-          `
+          'device_id',
+          'battery_level',
+          sql`battery_level - LAG(battery_level) OVER (ORDER BY "time") AS battery_level_diff`,
+          sql`ROW_NUMBER() OVER (PARTITION BY device_id ORDER BY "time" DESC) AS row_number`
         ])
         .where('device_id', '=', bot_uuid)
-        .where('variable', '=', BatteryVariables.LEVEL_SOC)
-        .orderBy('timestamp', 'desc')
-        .limit(1)
     )
     .selectFrom('battery_status')
     .select([
+      'device_id as bot_uuid',
+      'battery_level',
       sql`
       CASE
-          WHEN battery_status.diff > 0 THEN 'CHARGING'
-          WHEN battery_status.diff < 0 THEN 'DISCHARGING'
+          WHEN battery_level_diff > 0 THEN 'CHARGING'
+          WHEN battery_level_diff < 0 THEN 'DISCHARGING'
           ELSE 'IDLE'
-      END AS battery_state
+      END AS battery_status
     `])
-    .limit(1)
-    .executeTakeFirst();
+    .where('row_number', '=', 1)
+    .execute();
 
-  return status?.battery_state;
+  return status;
+}
+
+export async function getBatteryStates(bot_uuids: string[]): Promise<{
+  bot_uuid: string,
+  battery_level: number,
+  battery_status: string
+}[] | undefined> {
+  // @ts-expect-error not overloads match
+  const status: {
+    bot_uuid: string,
+    battery_level: number,
+    battery_status: string
+  }[] = await db
+    .with(
+      'battery_status',
+      (db) => db
+        .selectFrom('chargebot_battery_level')
+        // @ts-expect-error ignore overload not mapping
+        .select([
+          'device_id',
+          'battery_level',
+          sql`battery_level - LAG(battery_level) OVER (ORDER BY "time") AS battery_level_diff`,
+          sql`ROW_NUMBER() OVER (PARTITION BY device_id ORDER BY "time" DESC) AS row_number`
+        ])
+        .where('device_id', 'in', bot_uuids)
+    )
+    .selectFrom('battery_status')
+    .select([
+      'device_id as bot_uuid',
+      'battery_level',
+      sql`
+      CASE
+          WHEN battery_level_diff > 0 THEN 'CHARGING'
+          WHEN battery_level_diff < 0 THEN 'DISCHARGING'
+          ELSE 'IDLE'
+      END AS battery_status
+    `])
+    .where('row_number', '=', 1)
+    .execute();
+
+  return status;
 }
 
 export async function getAvgBatteryLevel(bot_uuid: string, from: Date, to: Date): Promise<number | undefined> {

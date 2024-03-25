@@ -2,7 +2,7 @@ import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 
 export interface PermissionTable extends AuditedEntity {
-  permission_name?: string;
+  name: string;
   description?: string;
 }
 

@@ -18,7 +18,7 @@ export async function removePermission(id: number) {
 
 function getPermissionInstance() {
     return {
-        "permission_name": getRandom('varchar', 255),
+        "name": getRandom('varchar', 255),
         "description": getRandom('text'),
     };
 }
@@ -40,7 +40,7 @@ describe('Permission Tests', () => {
     it("Update", async () => {
         const response = await Permission.update(
             entity_id!,
-            { "permission_name": getRandom('varchar') }
+            { "name": getRandom('varchar') }
         );
         expect(response).toBeDefined();
         expect(response!.id).toEqual(entity_id);

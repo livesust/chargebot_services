@@ -6,6 +6,7 @@ import { ChargebotInverterTable } from "./chargebot_inverter";
 import { ChargebotPDUTable } from "./chargebot_pdu";
 import { ChargebotErrorTable } from "./chargebot_error";
 import { Config } from "sst/node/config";
+import { ChargebotBatteryLevelTable } from "./chargebot_battery_level";
 
 export interface AnalyticsDatabase {
     chargebot_gps: ChargebotGpsTable,
@@ -13,6 +14,7 @@ export interface AnalyticsDatabase {
     chargebot_inverter: ChargebotInverterTable,
     chargebot_pdu: ChargebotPDUTable,
     chargebot_error: ChargebotErrorTable,
+    chargebot_battery_level: ChargebotBatteryLevelTable,
 }
 
 // Configs secrets are set with the following command
@@ -25,8 +27,13 @@ const psqlDialect = new PostgresDialect({
         user: Config.TIMESCALE_USER,
         password: Config.TIMESCALE_PASSWORD,
         port: +Config.TIMESCALE_PORT,
-        max: 100,
-        min: 10
+        // maximum number of clients the pool should contain
+        // by default this is set to 10.
+        max: 50,
+        // number of milliseconds a client must sit idle in the pool and not be checked out
+        // before it is disconnected from the backend and discarded
+        // default is 10000 (10 seconds) - set to 0 to disable auto-disconnection of idle clients
+        idleTimeoutMillis: 30000
     })
 })
 
@@ -35,7 +42,7 @@ export default new Kysely<AnalyticsDatabase>({
     plugins: [new ParseJSONResultsPlugin()],
     log(event): void {
       if (event.level === 'query') {
-        console.log(`Timescale > Time: ${event.queryDurationMillis} < SQL: ${event.query.sql}`);
+        console.log(`TimescaleDB > Time: ${event.queryDurationMillis} < SQL: ${event.query.sql} < Params: ${event.query.parameters}`);
       }
     },
 });

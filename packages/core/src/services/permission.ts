@@ -11,7 +11,7 @@ export async function create(permission: NewPermission): Promise<{
         .selectFrom('permission')
         .select(['id'])
         .where((eb) => eb.or([
-            eb('permission_name', '=', permission.permission_name),
+            eb('name', '=', permission.name),
         ]))
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
@@ -134,11 +134,11 @@ function buildCriteriaQuery(criteria: Partial<Permission>) {
     query = query.where('id', '=', criteria.id);
   }
 
-  if (criteria.permission_name !== undefined) {
+  if (criteria.name !== undefined) {
     query = query.where(
-      'permission_name', 
-      criteria.permission_name === null ? 'is' : '=', 
-      criteria.permission_name
+      'name', 
+      criteria.name === null ? 'is' : '=', 
+      criteria.name
     );
   }
   if (criteria.description !== undefined) {

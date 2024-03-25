@@ -154,6 +154,16 @@ export async function get(id: number): Promise<Bot | undefined> {
     .executeTakeFirst();
 }
 
+export async function findBotsByUser(user_id: string): Promise<Bot[]> {
+  return await db
+    .selectFrom('bot')
+    .innerJoin('bot_user', 'bot_user.bot_id', 'bot.id')
+    .innerJoin('user', 'user.id', 'bot_user.user_id')
+    .where('user.user_id', '=', user_id)
+    .selectAll('bot')
+    .execute();
+}
+
 export async function findByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
   const query = buildCriteriaQuery(criteria);
 

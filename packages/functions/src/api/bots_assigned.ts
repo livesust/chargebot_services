@@ -10,10 +10,9 @@ import httpEventNormalizer from '@middy/http-event-normalizer';
 import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import Log from '@dazn/lambda-powertools-logger';
-import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
-import { BotUser } from "@chargebot-services/core/services/bot_user";
+import { createSuccessResponse, getNumber, isWarmingUp } from "../shared/rest_utils";
 import { ChargebotBattery } from "@chargebot-services/core/services/analytics/chargebot_battery";
-import { ChargebotInverter } from "@chargebot-services/core/services/analytics/chargebot_inverter";
+import { Bot } from "@chargebot-services/core/services/bot";
 
 // @ts-expect-error ignore any type for event
 const handler = async ({ requestContext }) => {
@@ -24,7 +23,7 @@ const handler = async ({ requestContext }) => {
   console.log('GET Bots Assigned', user_id);
 
   try {
-    const botsByUser = await BotUser.findBotsByUser(user_id);
+    const botsByUser = await Bot.findBotsByUser(user_id);
 
     if (botsByUser?.length === 0) {
       Log.warn('User bots not found');
@@ -32,22 +31,17 @@ const handler = async ({ requestContext }) => {
     }
 
     if (botsByUser) {
-      const uuids = botsByUser.map(b => b.bot!.bot_uuid);
-      const [levels, status] = await Promise.all([
-        ChargebotBattery.getBatteryLevels(uuids),
-        ChargebotInverter.getBatteryStatuses(uuids)
-      ]);
-      for (const botUser of botsByUser) {
-        const bot = botUser.bot!;
-
+      const bot_uuids = botsByUser.map(b => b.bot_uuid);
+      const battery_states = await ChargebotBattery.getBatteryStates(bot_uuids);
+      for (const bot of botsByUser) {
         response.push({
           "id": bot.id,
           "bot_uuid": bot.bot_uuid,
           "name": bot.name,
           "initials": bot.initials,
           "pin_color": bot.pin_color,
-          "battery_level": levels?.find(l => l?.bot_uuid === bot.bot_uuid)?.level,
-          "battery_status": status?.find(l => l?.bot_uuid === bot.bot_uuid)?.status
+          "battery_level": getNumber(battery_states?.find(l => l?.bot_uuid === bot.bot_uuid)?.battery_level),
+          "battery_status": battery_states?.find(l => l?.bot_uuid === bot.bot_uuid)?.battery_status ?? 'UNKNOWN',
         });
       }
     }

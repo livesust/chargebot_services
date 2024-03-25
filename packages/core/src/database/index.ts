@@ -79,8 +79,6 @@ export interface Database {
 // DO NOT REMOVE THIS LINE: PLOP ENTITY LIST
 }
 
-// TODO: CHECK IF THIS IS CREATED MULTIPLE TIMES BY EACH SERVICE CLASS
-// AND HOW TO AVOID IT!
 export default new Kysely<Database>({
     dialect: new DataApiDialect({
         mode: "postgres",
@@ -89,13 +87,12 @@ export default new Kysely<Database>({
             secretArn: RDS.RDSCluster.secretArn,
             resourceArn: RDS.RDSCluster.clusterArn,
             client: new RDSData({}),
-        },
-        
+        },        
     }),
     plugins: [new ParseJSONResultsPlugin()],
     log(event): void {
       if (event.level === 'query') {
-        console.log(`RDS > Time: ${event.queryDurationMillis} < SQL: ${event.query.sql}`);
+        console.log(`RDS > Time: ${event.queryDurationMillis} < SQL: ${event.query.sql} < Params: ${event.query.parameters}`);
       }
     },
 });
