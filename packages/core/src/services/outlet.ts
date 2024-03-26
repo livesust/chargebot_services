@@ -4,7 +4,7 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { Outlet, OutletUpdate, NewOutlet } from "../database/outlet";
 
-function withOutletType(eb: ExpressionBuilder<Database, 'outlet'>) {
+export function withOutletType(eb: ExpressionBuilder<Database, 'outlet'>) {
     return jsonObjectFrom(
       eb.selectFrom('outlet_type')
         .selectAll()
@@ -12,7 +12,7 @@ function withOutletType(eb: ExpressionBuilder<Database, 'outlet'>) {
     ).as('outlet_type')
 }
 
-function withBot(eb: ExpressionBuilder<Database, 'outlet'>) {
+export function withBot(eb: ExpressionBuilder<Database, 'outlet'>) {
     return jsonObjectFrom(
       eb.selectFrom('bot')
         .selectAll()
@@ -94,14 +94,14 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('outlet')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<Outlet[]> {
-    return await db
+    return db
         .selectFrom("outlet")
         .selectAll()
         .where('deleted_by', 'is', null)
@@ -109,7 +109,7 @@ export async function list(): Promise<Outlet[]> {
 }
 
 export async function get(id: number): Promise<Outlet | undefined> {
-    return await db
+    return db
         .selectFrom("outlet")
         .selectAll()
         .select((eb) => withOutletType(eb))
@@ -119,10 +119,19 @@ export async function get(id: number): Promise<Outlet | undefined> {
         .executeTakeFirst();
 }
 
+export async function findByBot(bot_uuid: string): Promise<Outlet[]> {
+  return await db
+    .selectFrom('outlet')
+    .innerJoin('bot', 'bot.id', 'outlet.bot_id')
+    .where('bot.bot_uuid', '=', bot_uuid)
+    .selectAll('outlet')
+    .execute();
+}
+
 export async function findByCriteria(criteria: Partial<Outlet>): Promise<Outlet[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withOutletType(eb))
     .select((eb) => withBot(eb))
@@ -132,7 +141,7 @@ export async function findByCriteria(criteria: Partial<Outlet>): Promise<Outlet[
 export async function findOneByCriteria(criteria: Partial<Outlet>): Promise<Outlet | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withOutletType(eb))
     .select((eb) => withBot(eb))

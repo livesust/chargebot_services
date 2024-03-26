@@ -49,6 +49,16 @@ export const PDU_OUTLET_IDS = [
   PDUVariable.OUTLET_8_STATE,
 ]
 
+export enum PDUFirmwareState {
+  STARTUP = 1,
+  IDLE = 2,
+  NORMAL_CHARGE_MODE = 3,
+  LIMITED_CHARGE_MODE = 4,
+  PROBING_OUTLETS = 5,
+  PRIORITY_CHARGE = 6,
+  HIGH_TEMP = 7,
+}
+
 export enum PDUState {
   NORMAL = "NORMAL",
   LIMITED = "LIMITED",

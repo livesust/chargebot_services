@@ -5,20 +5,20 @@ import { BusinessError } from "../errors/business_error";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { Bot, BotUpdate, NewBot } from "../database/bot";
 
-function withBotVersion(eb: ExpressionBuilder<Database, 'bot'>) {
-  return jsonObjectFrom(
-    eb.selectFrom('bot_version')
-      .selectAll()
-      .whereRef('bot_version.id', '=', 'bot.bot_version_id')
-  ).as('bot_version')
+export function withBotVersion(eb: ExpressionBuilder<Database, 'bot'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('bot_version')
+        .selectAll()
+        .whereRef('bot_version.id', '=', 'bot.bot_version_id')
+    ).as('bot_version')
 }
 
-function withVehicle(eb: ExpressionBuilder<Database, 'bot'>) {
-  return jsonObjectFrom(
-    eb.selectFrom('vehicle')
-      .selectAll()
-      .whereRef('vehicle.id', '=', 'bot.vehicle_id')
-  ).as('vehicle')
+export function withVehicle(eb: ExpressionBuilder<Database, 'bot'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('vehicle')
+        .selectAll()
+        .whereRef('vehicle.id', '=', 'bot.vehicle_id')
+    ).as('vehicle')
 }
 
 async function canAssignEquipment(bot_id: number | null, vehicle_id: number): Promise<boolean> {
@@ -39,40 +39,40 @@ export async function create(bot: NewBot): Promise<{
   entity: Bot | undefined,
   event: unknown
 } | undefined> {
-  const exists = await db
-    .selectFrom('bot')
-    .select(['id'])
-    .where((eb) => eb.or([
-      eb('bot_uuid', '=', bot.bot_uuid),
-    ]))
-    .where('deleted_by', 'is', null)
-    .executeTakeFirst();
+    const exists = await db
+        .selectFrom('bot')
+        .select(['id'])
+        .where((eb) => eb.or([
+            eb('bot_uuid', '=', bot.bot_uuid),
+        ]))
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
 
-  if (exists) {
-    throw Error('Entity already exists with unique values');
-  }
+    if (exists) {
+        throw Error('Entity already exists with unique values');
+    }
 
   if (bot.vehicle_id && !(await canAssignEquipment(null, bot.vehicle_id))) {
     throw new BusinessError('Vehicle assigned to another bot');
   }
 
-  const created = await db
-    .insertInto('bot')
-    .values({
-      ...bot,
-    })
-    .returningAll()
-    .executeTakeFirst();
+    const created = await db
+        .insertInto('bot')
+        .values({
+            ...bot,
+        })
+        .returningAll()
+        .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
 
-  if (!created) {
-    return undefined;
-  }
-
-  return {
-    entity: created,
-    // event to dispatch on EventBus on creation
-    event: created
-  };
+    return {
+      entity: created,
+      // event to dispatch on EventBus on creation
+      event: created
+    };
 }
 
 export async function update(id: number, bot: BotUpdate): Promise<{
@@ -80,41 +80,41 @@ export async function update(id: number, bot: BotUpdate): Promise<{
   event: unknown
 } | undefined> {
 
-  if (bot.vehicle_id && !(await canAssignEquipment(id, bot.vehicle_id))) {
-    throw new BusinessError('Vehicle assigned to another bot');
-  }
+    if (bot.vehicle_id && !(await canAssignEquipment(id, bot.vehicle_id))) {
+      throw new BusinessError('Vehicle assigned to another bot');
+    }
 
-  const updated = await db
-    .updateTable('bot')
-    .set(bot)
-    .where('id', '=', id)
-    .where('deleted_by', 'is', null)
-    .returningAll()
-    .executeTakeFirst();
+    const updated = await db
+        .updateTable('bot')
+        .set(bot)
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .returningAll()
+        .executeTakeFirst();
 
-  if (!updated) {
-    return undefined;
-  }
+    if (!updated) {
+      return undefined;
+    }
 
-  return {
-    entity: updated,
-    // event to dispatch on EventBus on creation
-    // undefined as default to not dispatch any event
-    event: undefined
-  };
+    return {
+      entity: updated,
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function remove(id: number, user_id: string): Promise<{
   entity: Bot | undefined,
   event: unknown
 } | undefined> {
-  const deleted = await db
-    .updateTable('bot')
-    .set({ deleted_date: new Date(), deleted_by: user_id })
-    .where('id', '=', id)
-    .where('deleted_by', 'is', null)
-    .returningAll()
-    .executeTakeFirst();
+    const deleted = await db
+        .updateTable('bot')
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .returningAll()
+        .executeTakeFirst();
 
   if (!deleted) {
     return undefined;
@@ -129,29 +129,29 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-  await db
-    .deleteFrom('bot')
-    .where('id', '=', id)
-    .executeTakeFirst();
+    db
+        .deleteFrom('bot')
+        .where('id', '=', id)
+        .executeTakeFirst();
 }
 
 export async function list(): Promise<Bot[]> {
-  return await db
-    .selectFrom("bot")
-    .selectAll()
-    .where('deleted_by', 'is', null)
-    .execute();
+    return db
+        .selectFrom("bot")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .execute();
 }
 
 export async function get(id: number): Promise<Bot | undefined> {
-  return await db
-    .selectFrom("bot")
-    .selectAll()
-    .select((eb) => withBotVersion(eb))
-    .select((eb) => withVehicle(eb))
-    .where('id', '=', id)
-    .where('deleted_by', 'is', null)
-    .executeTakeFirst();
+    return db
+        .selectFrom("bot")
+        .selectAll()
+        .select((eb) => withBotVersion(eb))
+        .select((eb) => withVehicle(eb))
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
 }
 
 export async function findBotsByUser(user_id: string): Promise<Bot[]> {
@@ -167,7 +167,7 @@ export async function findBotsByUser(user_id: string): Promise<Bot[]> {
 export async function findByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withBotVersion(eb))
     .select((eb) => withVehicle(eb))
@@ -177,7 +177,7 @@ export async function findByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
 export async function findOneByCriteria(criteria: Partial<Bot>): Promise<Bot | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withBotVersion(eb))
     .select((eb) => withVehicle(eb))
@@ -194,29 +194,29 @@ function buildCriteriaQuery(criteria: Partial<Bot>) {
 
   if (criteria.bot_uuid !== undefined) {
     query = query.where(
-      'bot_uuid',
-      criteria.bot_uuid === null ? 'is' : '=',
+      'bot_uuid', 
+      criteria.bot_uuid === null ? 'is' : '=', 
       criteria.bot_uuid
     );
   }
   if (criteria.initials !== undefined) {
     query = query.where(
-      'initials',
-      criteria.initials === null ? 'is' : '=',
+      'initials', 
+      criteria.initials === null ? 'is' : '=', 
       criteria.initials
     );
   }
   if (criteria.name !== undefined) {
     query = query.where(
-      'name',
-      criteria.name === null ? 'is' : '=',
+      'name', 
+      criteria.name === null ? 'is' : '=', 
       criteria.name
     );
   }
   if (criteria.pin_color !== undefined) {
     query = query.where(
-      'pin_color',
-      criteria.pin_color === null ? 'is' : '=',
+      'pin_color', 
+      criteria.pin_color === null ? 'is' : '=', 
       criteria.pin_color
     );
   }
@@ -235,8 +235,8 @@ function buildCriteriaQuery(criteria: Partial<Bot>) {
 
   if (criteria.modified_by !== undefined) {
     query = query.where(
-      'modified_by',
-      criteria.modified_by === null ? 'is' : '=',
+      'modified_by', 
+      criteria.modified_by === null ? 'is' : '=', 
       criteria.modified_by
     );
   }

@@ -19,7 +19,7 @@ import jsonBodyParser from "@middy/http-json-body-parser";
 import { dateReviver } from "src/shared/middlewares/json-date-parser";
 
 // @ts-expect-error ignore any type for event
-const handler = async (event) => {
+export const handler = async (event) => {
   const bot_uuid = event.pathParameters!.bot_uuid!;
   const body = event.body;
 

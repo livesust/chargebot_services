@@ -4,7 +4,7 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { BotCompany, BotCompanyUpdate, NewBotCompany } from "../database/bot_company";
 
-function withBot(eb: ExpressionBuilder<Database, 'bot_company'>) {
+export function withBot(eb: ExpressionBuilder<Database, 'bot_company'>) {
     return jsonObjectFrom(
       eb.selectFrom('bot')
         .selectAll()
@@ -12,7 +12,7 @@ function withBot(eb: ExpressionBuilder<Database, 'bot_company'>) {
     ).as('bot')
 }
 
-function withCompany(eb: ExpressionBuilder<Database, 'bot_company'>) {
+export function withCompany(eb: ExpressionBuilder<Database, 'bot_company'>) {
     return jsonObjectFrom(
       eb.selectFrom('company')
         .selectAll()
@@ -111,14 +111,14 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('bot_company')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<BotCompany[]> {
-    return await db
+    return db
         .selectFrom("bot_company")
         .selectAll()
         .where('deleted_by', 'is', null)
@@ -126,7 +126,7 @@ export async function list(): Promise<BotCompany[]> {
 }
 
 export async function get(id: number): Promise<BotCompany | undefined> {
-    return await db
+    return db
         .selectFrom("bot_company")
         .selectAll()
         .select((eb) => withBot(eb))
@@ -139,7 +139,7 @@ export async function get(id: number): Promise<BotCompany | undefined> {
 export async function findByCriteria(criteria: Partial<BotCompany>): Promise<BotCompany[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withBot(eb))
     .select((eb) => withCompany(eb))
@@ -149,7 +149,7 @@ export async function findByCriteria(criteria: Partial<BotCompany>): Promise<Bot
 export async function findOneByCriteria(criteria: Partial<BotCompany>): Promise<BotCompany | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withBot(eb))
     .select((eb) => withCompany(eb))

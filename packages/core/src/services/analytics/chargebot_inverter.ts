@@ -5,17 +5,12 @@ import { ChargebotInverter, InverterVariable } from "../../timescale/chargebot_i
 
 export async function getInverterStatus(bot_uuid: string): Promise<ChargebotInverter[]> {
   // @ts-expect-error not overloads match
-  const status: ChargebotInverter[] = await db
+  return db
     .selectFrom("chargebot_inverter")
     .select(({ fn }) => [
-      'device_id',
-      'device_version',
       'timestamp',
       'timezone',
       'variable',
-      'address',
-      'unit',
-      'data_type',
       fn.coalesce(
         'value_int',
         'value_long',
@@ -25,30 +20,27 @@ export async function getInverterStatus(bot_uuid: string): Promise<ChargebotInve
     ])
     .where('device_id', '=', bot_uuid)
     .where('variable', 'in', [
-      InverterVariable.BATTERY_LEVEL_SOC,
-      InverterVariable.BATTERY_CURRENT,
-      InverterVariable.BATTERY_VOLTAGE,
-      InverterVariable.BATTERY_POWER,
-      InverterVariable.BATTERY_CHARGE_DIFF,
-      InverterVariable.BATTERY_DISCHARGE_DIFF,
       InverterVariable.SOLAR_POWER,
-      InverterVariable.SOLAR_CHARGE_DIFF,
-      InverterVariable.GRID_CURRENT,
-      InverterVariable.GRID_CHARGE_DIFF,
-      InverterVariable.ENERGY_USAGE
+      InverterVariable.GRID_CURRENT
     ])
     .orderBy('timestamp', 'desc')
     .limit(1)
     .execute();
-
-  return status;
 }
 
-export async function getTodayEnergyUsage(bot_uuid: string): Promise<ChargebotInverter[]> {
+export async function getTodayTotals(bot_uuid: string, variable: InverterVariable[]): Promise<{
+  day: Date,
+  variable: string,
+  value: number
+}[]> {
   // @ts-expect-error not overloads match
-  const status: ChargebotInverter[] = await db
+  return db
     .selectFrom("chargebot_inverter")
+    // @ts-expect-error not overloads match
     .select(({ fn }) => [
+      // data is stored in UTC and
+      // time_bucket function uses UTC as default timezone for buckets definition
+      sql`time_bucket('1 day', "timestamp") as "day"`,
       'variable',
       fn.sum(
         fn.coalesce(
@@ -60,23 +52,17 @@ export async function getTodayEnergyUsage(bot_uuid: string): Promise<ChargebotIn
       ).as('value'),
     ])
     .where('device_id', '=', bot_uuid)
-    .where('timestamp', '>', sql`date_trunc('day', current_date at time zone 'UTC')`)
-    .where('variable', 'in', [
-      InverterVariable.BATTERY_CHARGE_DIFF,
-      InverterVariable.BATTERY_DISCHARGE_DIFF,
-      InverterVariable.SOLAR_CHARGE_DIFF,
-      InverterVariable.GRID_CHARGE_DIFF,
-      InverterVariable.ENERGY_USAGE
-    ])
-    .groupBy('variable')
+    .where('variable', 'in', variable)
+    .where('timestamp', '>', sql`date_trunc('month', current_date at time zone 'UTC')`)
+    .groupBy(['day', 'variable'])
+    .orderBy('day', 'desc')
+    .limit(variable.length)
     .execute();
-
-  return status;
 }
 
 export async function getTotalEnergyUsage(bot_uuid: string, from: Date, to: Date): Promise<ChargebotInverter[]> {
   // @ts-expect-error not overloads match
-  const status: ChargebotInverter[] = await db
+  return db
     .selectFrom("chargebot_inverter")
     .select(({ fn }) => [
       'variable',
@@ -100,8 +86,6 @@ export async function getTotalEnergyUsage(bot_uuid: string, from: Date, to: Date
     ])
     .groupBy('variable')
     .execute();
-
-  return status;
 }
 
 export async function getEnergyUsageByHourBucket(bot_uuid: string, from: Date, to: Date): Promise<{
@@ -159,12 +143,12 @@ export async function getEnergyUsageByHourBucket(bot_uuid: string, from: Date, t
   // console.log('Query', await query.explain(), query.compile())
 
   // @ts-expect-error not overloads match
-  return await query.execute();
+  return query.execute();
 }
 
 export async function getMonthlyEnergyUsage(bot_uuid: string): Promise<ChargebotInverter> {
   // @ts-expect-error not overloads match
-  const status: ChargebotInverter = await db
+  return db
     .selectFrom("chargebot_inverter")
     .select(({ fn }) => [
       fn.min('timestamp').as('timestamp'),
@@ -183,13 +167,11 @@ export async function getMonthlyEnergyUsage(bot_uuid: string): Promise<Chargebot
     .where('variable', '=', InverterVariable.ENERGY_USAGE)
     .groupBy('variable')
     .executeTakeFirst();
-
-  return status;
 }
 
 export async function getMonthlyEnergyUsageByDay(bot_uuid: string): Promise<ChargebotInverter[]> {
   // @ts-expect-error not overloads match
-  return await db
+  return db
     .selectFrom("chargebot_inverter")
     .select(({ fn }) => [
       sql`date_trunc('day', "timestamp")`.as('timestamp'),
@@ -213,7 +195,7 @@ export async function getMonthlyEnergyUsageByDay(bot_uuid: string): Promise<Char
 
 export async function getYearlyEnergyUsage(bot_uuid: string): Promise<ChargebotInverter> {
   // @ts-expect-error not overloads match
-  const status: ChargebotInverter = await db
+  return db
     .selectFrom("chargebot_inverter")
     .select(({ fn }) => [
       fn.min('timestamp').as('timestamp'),
@@ -232,13 +214,11 @@ export async function getYearlyEnergyUsage(bot_uuid: string): Promise<ChargebotI
     .where('variable', '=', InverterVariable.ENERGY_USAGE)
     .groupBy('variable')
     .executeTakeFirst();
-
-  return status;
 }
 
 export async function getYearlyEnergyUsageByMonth(bot_uuid: string): Promise<ChargebotInverter[]> {
   // @ts-expect-error not overloads match
-  return await db
+  return db
     .selectFrom("chargebot_inverter")
     .select(({ fn }) => [
       sql`date_trunc('month', "timestamp")`.as('timestamp'),

@@ -4,7 +4,7 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { Vehicle, VehicleUpdate, NewVehicle } from "../database/vehicle";
 
-function withVehicleType(eb: ExpressionBuilder<Database, 'vehicle'>) {
+export function withVehicleType(eb: ExpressionBuilder<Database, 'vehicle'>) {
     return jsonObjectFrom(
       eb.selectFrom('vehicle_type')
         .selectAll()
@@ -97,14 +97,14 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('vehicle')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<Vehicle[]> {
-    return await db
+    return db
         .selectFrom("vehicle")
         .selectAll()
         .where('deleted_by', 'is', null)
@@ -112,7 +112,7 @@ export async function list(): Promise<Vehicle[]> {
 }
 
 export async function get(id: number): Promise<Vehicle | undefined> {
-    return await db
+    return db
         .selectFrom("vehicle")
         .selectAll()
         .select((eb) => withVehicleType(eb))
@@ -124,7 +124,7 @@ export async function get(id: number): Promise<Vehicle | undefined> {
 export async function findByCriteria(criteria: Partial<Vehicle>): Promise<Vehicle[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withVehicleType(eb))
     .execute();
@@ -133,7 +133,7 @@ export async function findByCriteria(criteria: Partial<Vehicle>): Promise<Vehicl
 export async function findOneByCriteria(criteria: Partial<Vehicle>): Promise<Vehicle | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withVehicleType(eb))
     .limit(1)

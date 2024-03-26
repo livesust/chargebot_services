@@ -3,8 +3,10 @@ import { sql } from "kysely";
 import db from '../../timescale';
 import { ErrorCode } from "../../timescale/chargebot_error";
 
-export async function getSystemStatus(bot_uuid: string): Promise<string | undefined> {
-  const count: { value: number; } | undefined = await db
+export async function getSystemStatus(bot_uuid: string): Promise<{
+  value: number
+} | undefined> {
+  return db
     .selectFrom("chargebot_error")
     .select(({ fn }) => [
       fn.count<number>('id').as('value'),
@@ -17,12 +19,12 @@ export async function getSystemStatus(bot_uuid: string): Promise<string | undefi
       ErrorCode.DEVICE_CONNECTION
     ])
     .executeTakeFirst();
-
-    return count && count.value > 0 ? 'ERROR' : 'OK';
 }
 
-export async function getConnectionStatus(bot_uuid: string): Promise<string | undefined> {
-  const count: { value: number; } | undefined = await db
+export async function getConnectionStatus(bot_uuid: string): Promise<{
+  value: number
+} | undefined> {
+  return db
     .selectFrom("chargebot_error")
     .select(({ fn }) => [
       fn.count<number>('id').as('value'),
@@ -34,6 +36,4 @@ export async function getConnectionStatus(bot_uuid: string): Promise<string | un
       ErrorCode.MQTT_CONNECTION
     ])
     .executeTakeFirst();
-
-  return count && count.value > 0 ? 'ERROR' : 'OK';
 }

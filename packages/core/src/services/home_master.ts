@@ -4,7 +4,7 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { HomeMaster, HomeMasterUpdate, NewHomeMaster } from "../database/home_master";
 
-function withStateMaster(eb: ExpressionBuilder<Database, 'home_master'>) {
+export function withStateMaster(eb: ExpressionBuilder<Database, 'home_master'>) {
     return jsonObjectFrom(
       eb.selectFrom('state_master')
         .selectAll()
@@ -86,14 +86,14 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('home_master')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<HomeMaster[]> {
-    return await db
+    return db
         .selectFrom("home_master")
         .selectAll()
         .where('deleted_by', 'is', null)
@@ -101,7 +101,7 @@ export async function list(): Promise<HomeMaster[]> {
 }
 
 export async function get(id: number): Promise<HomeMaster | undefined> {
-    return await db
+    return db
         .selectFrom("home_master")
         .selectAll()
         .select((eb) => withStateMaster(eb))
@@ -113,7 +113,7 @@ export async function get(id: number): Promise<HomeMaster | undefined> {
 export async function findByCriteria(criteria: Partial<HomeMaster>): Promise<HomeMaster[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withStateMaster(eb))
     .execute();
@@ -122,7 +122,7 @@ export async function findByCriteria(criteria: Partial<HomeMaster>): Promise<Hom
 export async function findOneByCriteria(criteria: Partial<HomeMaster>): Promise<HomeMaster | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withStateMaster(eb))
     .limit(1)

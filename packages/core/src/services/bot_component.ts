@@ -4,7 +4,7 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { BotComponent, BotComponentUpdate, NewBotComponent } from "../database/bot_component";
 
-function withBot(eb: ExpressionBuilder<Database, 'bot_component'>) {
+export function withBot(eb: ExpressionBuilder<Database, 'bot_component'>) {
     return jsonObjectFrom(
       eb.selectFrom('bot')
         .selectAll()
@@ -12,7 +12,7 @@ function withBot(eb: ExpressionBuilder<Database, 'bot_component'>) {
     ).as('bot')
 }
 
-function withComponent(eb: ExpressionBuilder<Database, 'bot_component'>) {
+export function withComponent(eb: ExpressionBuilder<Database, 'bot_component'>) {
     return jsonObjectFrom(
       eb.selectFrom('component')
         .selectAll()
@@ -111,14 +111,14 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('bot_component')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<BotComponent[]> {
-    return await db
+    return db
         .selectFrom("bot_component")
         .selectAll()
         .where('deleted_by', 'is', null)
@@ -126,7 +126,7 @@ export async function list(): Promise<BotComponent[]> {
 }
 
 export async function get(id: number): Promise<BotComponent | undefined> {
-    return await db
+    return db
         .selectFrom("bot_component")
         .selectAll()
         .select((eb) => withBot(eb))
@@ -139,7 +139,7 @@ export async function get(id: number): Promise<BotComponent | undefined> {
 export async function findByCriteria(criteria: Partial<BotComponent>): Promise<BotComponent[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withBot(eb))
     .select((eb) => withComponent(eb))
@@ -149,7 +149,7 @@ export async function findByCriteria(criteria: Partial<BotComponent>): Promise<B
 export async function findOneByCriteria(criteria: Partial<BotComponent>): Promise<BotComponent | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withBot(eb))
     .select((eb) => withComponent(eb))

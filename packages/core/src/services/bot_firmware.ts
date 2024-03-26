@@ -4,7 +4,7 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { BotFirmware, BotFirmwareUpdate, NewBotFirmware } from "../database/bot_firmware";
 
-function withBot(eb: ExpressionBuilder<Database, 'bot_firmware'>) {
+export function withBot(eb: ExpressionBuilder<Database, 'bot_firmware'>) {
     return jsonObjectFrom(
       eb.selectFrom('bot')
         .selectAll()
@@ -86,14 +86,14 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('bot_firmware')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<BotFirmware[]> {
-    return await db
+    return db
         .selectFrom("bot_firmware")
         .selectAll()
         .where('deleted_by', 'is', null)
@@ -101,7 +101,7 @@ export async function list(): Promise<BotFirmware[]> {
 }
 
 export async function get(id: number): Promise<BotFirmware | undefined> {
-    return await db
+    return db
         .selectFrom("bot_firmware")
         .selectAll()
         // uncoment to enable eager loading
@@ -114,7 +114,7 @@ export async function get(id: number): Promise<BotFirmware | undefined> {
 export async function findByCriteria(criteria: Partial<BotFirmware>): Promise<BotFirmware[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     // uncoment to enable eager loading
     //.select((eb) => withBot(eb))
@@ -124,7 +124,7 @@ export async function findByCriteria(criteria: Partial<BotFirmware>): Promise<Bo
 export async function findOneByCriteria(criteria: Partial<BotFirmware>): Promise<BotFirmware | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     // uncoment to enable eager loading
     //.select((eb) => withBot(eb))

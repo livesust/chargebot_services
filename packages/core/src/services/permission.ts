@@ -87,14 +87,14 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('permission')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<Permission[]> {
-    return await db
+    return db
         .selectFrom("permission")
         .selectAll()
         .where('deleted_by', 'is', null)
@@ -102,7 +102,7 @@ export async function list(): Promise<Permission[]> {
 }
 
 export async function get(id: number): Promise<Permission | undefined> {
-    return await db
+    return db
         .selectFrom("permission")
         .selectAll()
         .where('id', '=', id)
@@ -113,7 +113,7 @@ export async function get(id: number): Promise<Permission | undefined> {
 export async function findByCriteria(criteria: Partial<Permission>): Promise<Permission[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .execute();
 }
@@ -121,7 +121,7 @@ export async function findByCriteria(criteria: Partial<Permission>): Promise<Per
 export async function findOneByCriteria(criteria: Partial<Permission>): Promise<Permission | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .limit(1)
     .executeTakeFirst();

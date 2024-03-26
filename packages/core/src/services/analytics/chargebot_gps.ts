@@ -187,7 +187,7 @@ async function getArrivedAtWhenAtHome(location: ChargebotGps) {
       timestamp ASC
   LIMIT 1;
   */
-  return await db
+  return db
     .with(
       'vehicle_status_groups',
       // @ts-expect-error ignore overload not mapping
@@ -216,7 +216,7 @@ async function getArrivedAtWhenParked(location: ChargebotGps) {
   // Vehicle is currently PARKED
   // We need to find the first report where vehicle is not PARKED
   // in the current bucket of reports
-  return await db
+  return db
     .with(
       'vehicle_status_groups',
       // @ts-expect-error ignore overload not mapping
@@ -254,7 +254,7 @@ async function getLeftAtWhenInTransit(location: ChargebotGps) {
 
   if (prev) {
     // Now get the first MOVING report after being PARKED/AT_HOME
-    return await db
+    return db
       .selectFrom('chargebot_gps')
       .select(({ fn }) => [
         fn.min('chargebot_gps.timestamp').as('timestamp'),

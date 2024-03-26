@@ -1,105 +1,34 @@
 export * as ChargebotPDU from "./chargebot_pdu";
 import { sql } from "kysely";
 import db from '../../timescale';
-import { ChargebotPDU, PDUState, PDUVariable, PDU_OUTLET_IDS } from "../../timescale/chargebot_pdu";
+import { ChargebotPDU, PDUFirmwareState, PDUState, PDUVariable, PDU_OUTLET_IDS } from "../../timescale/chargebot_pdu";
 
-export async function getPDUStatus(bot_uuid: string): Promise<ChargebotPDU[] | undefined> {
+export async function getPDUStatus(bot_uuid: string): Promise<ChargebotPDU[]> {
+
+  const variables = [PDUVariable.STATE, PDUVariable.CURRENT];
+
   // @ts-expect-error not overloads match
-  const status: ChargebotPDU[] | undefined = await db
+  return db
     .selectFrom("chargebot_pdu")
     .select(({ fn }) => [
       'device_id',
-      'device_version',
-      'timestamp',
-      'timezone',
       'variable',
-      'address',
-      'unit',
-      'data_type',
       fn.coalesce(
-        sql`value_int::text`,
-        sql`value_long::text`,
-        sql`value_float::text`,
-        sql`value_double::text`,
-        sql`value_string::text`
+        sql`value_int`,
+        sql`value_long`,
+        sql`value_float`,
+        sql`value_double`
       ).as('value'),
     ])
     .where('device_id', '=', bot_uuid)
-    .where('variable', 'in', [
-      PDUVariable.STATE,
-      PDUVariable.CURRENT,
-      PDUVariable.OUTLET_PRIORITY,
-      PDUVariable.OUTLET_1_STATE,
-      PDUVariable.OUTLET_2_STATE,
-      PDUVariable.OUTLET_3_STATE,
-      PDUVariable.OUTLET_4_STATE,
-      PDUVariable.OUTLET_5_STATE,
-      PDUVariable.OUTLET_6_STATE,
-      PDUVariable.OUTLET_7_STATE,
-      PDUVariable.OUTLET_8_STATE,
-    ])
+    .where('variable', 'in', variables)
     .orderBy('timestamp', 'desc')
-    .limit(1)
+    // limit to get one record by variable
+    .limit(variables.length)
     .execute();
-
-  return status;
 }
 
-export async function getPDUState(bot_uuid: string): Promise<PDUState> {
-  // @ts-expect-error not overloads match
-  const status: ChargebotPDU | undefined = await db
-    .selectFrom("chargebot_pdu")
-    .select(({ fn }) => [
-      'device_id',
-      'variable',
-      fn.coalesce(
-        sql`value_int::text`,
-        sql`value_long::text`,
-        sql`value_float::text`,
-        sql`value_double::text`,
-        sql`value_string::text`
-      ).as('value'),
-    ])
-    .where('device_id', '=', bot_uuid)
-    .where('variable', '=', PDUVariable.STATE)
-    .orderBy('timestamp', 'desc')
-    .limit(1)
-    .executeTakeFirst();
-
-  return translatePDUState(status?.value as number);
-}
-
-export async function getPDUCurrent(bot_uuid: string): Promise<number | undefined> {
-  // @ts-expect-error not overloads match
-  const pduCurrent: ChargebotPDU | undefined = await db
-    .selectFrom("chargebot_pdu")
-    .select(({ fn }) => [
-      'device_id',
-      'device_version',
-      'timestamp',
-      'timezone',
-      'variable',
-      'address',
-      'unit',
-      'data_type',
-      fn.coalesce(
-        sql`value_int::text`,
-        sql`value_long::text`,
-        sql`value_float::text`,
-        sql`value_double::text`,
-        sql`value_string::text`
-      ).as('value'),
-    ])
-    .where('device_id', '=', bot_uuid)
-    .where('variable', '=', PDUVariable.CURRENT)
-    .orderBy('timestamp', 'desc')
-    .limit(1)
-    .executeTakeFirst();
-
-  return pduCurrent?.value ? pduCurrent.value as number : undefined;
-}
-
-export async function getOutletStatus(bot_uuid: string, outlet_id: number): Promise<{timestamp: Date, status: string} | undefined> {
+export async function getOutletStatus(bot_uuid: string, pdu_outlet_number: number): Promise<{timestamp: Date, status: string} | undefined> {
   // Returns the current status of an outlet and since when is in that status
   /*
   WITH status_groups AS (
@@ -139,7 +68,7 @@ export async function getOutletStatus(bot_uuid: string, outlet_id: number): Prom
           `
         ])
         .where('device_id', '=', bot_uuid)
-        .where('variable', '=', translateOutletId(outlet_id))
+        .where('variable', '=', translatePduOutletNumber(pdu_outlet_number))
     )
     .selectFrom('status_groups')
     .select(['timestamp', 'status'])
@@ -168,21 +97,21 @@ export async function getOutletPriorityCharging(bot_uuid: string): Promise<{time
   return status;
 }
 
-export function translateOutletId(outlet_id: number=0): PDUVariable {
-  if (!outlet_id) {
+export function translatePduOutletNumber(pdu_outlet_number: number=0): PDUVariable {
+  if (!pdu_outlet_number) {
     return PDUVariable.OUTLET_1_STATE;
   }
 
-  return PDU_OUTLET_IDS[outlet_id-1];
+  return PDU_OUTLET_IDS[pdu_outlet_number-1];
 }
 
 export function translatePDUState(state: number): PDUState {
   if (state) {
-    if (state == 4 || state == 5) {
+    if (state == PDUFirmwareState.LIMITED_CHARGE_MODE || state == PDUFirmwareState.PROBING_OUTLETS) {
       return PDUState.LIMITED;
-    } else if (state == 6) {
+    } else if (state == PDUFirmwareState.PRIORITY_CHARGE) {
       return PDUState.PRIORITY_CHARGE;
-    } else if (state == 7) {
+    } else if (state == PDUFirmwareState.HIGH_TEMP) {
       return PDUState.HIGH_TEMP;
     }
   }

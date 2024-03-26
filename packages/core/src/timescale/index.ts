@@ -6,7 +6,7 @@ import { ChargebotInverterTable } from "./chargebot_inverter";
 import { ChargebotPDUTable } from "./chargebot_pdu";
 import { ChargebotErrorTable } from "./chargebot_error";
 import { Config } from "sst/node/config";
-import { ChargebotBatteryLevelTable } from "./chargebot_battery_level";
+import { ChargebotBatteryLevelAggregate } from "./chargebot_battery_level_aggregate";
 
 export interface AnalyticsDatabase {
     chargebot_gps: ChargebotGpsTable,
@@ -14,7 +14,7 @@ export interface AnalyticsDatabase {
     chargebot_inverter: ChargebotInverterTable,
     chargebot_pdu: ChargebotPDUTable,
     chargebot_error: ChargebotErrorTable,
-    chargebot_battery_level: ChargebotBatteryLevelTable,
+    chargebot_battery_level_aggregate: ChargebotBatteryLevelAggregate,
 }
 
 // Configs secrets are set with the following command

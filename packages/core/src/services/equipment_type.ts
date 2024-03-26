@@ -76,14 +76,14 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('equipment_type')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<EquipmentType[]> {
-    return await db
+    return db
         .selectFrom("equipment_type")
         .selectAll()
         .where('deleted_by', 'is', null)
@@ -91,7 +91,7 @@ export async function list(): Promise<EquipmentType[]> {
 }
 
 export async function get(id: number): Promise<EquipmentType | undefined> {
-    return await db
+    return db
         .selectFrom("equipment_type")
         .selectAll()
         .where('id', '=', id)
@@ -102,7 +102,7 @@ export async function get(id: number): Promise<EquipmentType | undefined> {
 export async function findByCriteria(criteria: Partial<EquipmentType>): Promise<EquipmentType[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .execute();
 }
@@ -110,7 +110,7 @@ export async function findByCriteria(criteria: Partial<EquipmentType>): Promise<
 export async function findOneByCriteria(criteria: Partial<EquipmentType>): Promise<EquipmentType | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .limit(1)
     .executeTakeFirst();

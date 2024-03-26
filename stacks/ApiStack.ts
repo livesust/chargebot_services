@@ -134,7 +134,7 @@ export function ApiStack({ app, stack }: StackContext) {
       "GET /bot/{bot_uuid}/status": { function: lambdaFunctions.botStatus },
       // @ts-expect-error ignore check
       "GET /bot/{bot_uuid}/status/encrypted": { function: lambdaFunctions.botStatusEncrypted },
-      "GET /bot/{id}/outlets": "packages/functions/src/api/bot_outlets.main",
+      "GET /bot/{bot_uuid}/outlets": "packages/functions/src/api/bot_outlets.main",
       "GET /bot/{bot_uuid}/outlet/{outlet_id}": "packages/functions/src/api/bot_outlet_details.main",
       "GET /bot/{bot_uuid}/location/from/{from}/to/{to}": "packages/functions/src/api/bot_location_history.main",
       "GET /bot/{bot_uuid}/location/days_info/from/{from}/to/{to}": "packages/functions/src/api/bot_location_days_info.main",

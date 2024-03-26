@@ -94,14 +94,14 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('company')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<Company[]> {
-    return await db
+    return db
         .selectFrom("company")
         .selectAll()
         .where('deleted_by', 'is', null)
@@ -109,7 +109,7 @@ export async function list(): Promise<Company[]> {
 }
 
 export async function get(id: number): Promise<Company | undefined> {
-    const result = await db
+    return db
         .selectFrom("company")
         .selectAll()
         .select((eb) => withCustomer(eb))
@@ -117,13 +117,12 @@ export async function get(id: number): Promise<Company | undefined> {
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
-    return result;
 }
 
 export async function findByCriteria(criteria: Partial<Company>): Promise<Company[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withCustomer(eb))
     .select((eb) => withHomeMaster(eb))
@@ -133,7 +132,7 @@ export async function findByCriteria(criteria: Partial<Company>): Promise<Compan
 export async function findOneByCriteria(criteria: Partial<Company>): Promise<Company | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withCustomer(eb))
     .select((eb) => withHomeMaster(eb))

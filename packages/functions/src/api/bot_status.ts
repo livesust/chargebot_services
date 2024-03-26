@@ -13,28 +13,36 @@ import executionTimeLogger from '../shared/middlewares/time-log';
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { ChargebotBattery } from "@chargebot-services/core/services/analytics/chargebot_battery";
 import { ChargebotInverter } from "@chargebot-services/core/services/analytics/chargebot_inverter";
-import { ChargebotPDU } from "@chargebot-services/core/services/analytics/chargebot_pdu";
+import { ChargebotPDU, translatePDUState } from "@chargebot-services/core/services/analytics/chargebot_pdu";
 import { ChargebotError } from "@chargebot-services/core/services/analytics/chargebot_error";
 import { IoTData } from "@chargebot-services/core/services/aws/iot_data";
 import { InverterVariable } from "@chargebot-services/core/timescale/chargebot_inverter";
 import { BotUUIDPathParamSchema } from "src/shared/schemas";
 import { getNumber } from "../shared/rest_utils";
 import { DateTime } from "luxon";
+import { PDUVariable } from "@chargebot-services/core/timescale/chargebot_pdu";
 
 // @ts-expect-error ignore any type for event
-const handler = async (event) => {
+export const handler = async (event) => {
   const bot_uuid = event.pathParameters!.bot_uuid!;
 
   try {
-    const [battery_state, inverterStatus, pduState, inverterTotals, output_current, conn_status, system_status, iot_status] = await Promise.all([
-      ChargebotBattery.getBatteryState(bot_uuid),
+    const [
+        batteryState, inverterStatus, pduStatus, connStatus, systemStatus, iotStatus, todayUsage
+    ] = await Promise.all([
+      ChargebotBattery.getBatteryStatus(bot_uuid),
       ChargebotInverter.getInverterStatus(bot_uuid),
-      ChargebotPDU.getPDUState(bot_uuid),
-      ChargebotInverter.getTodayEnergyUsage(bot_uuid),
-      ChargebotPDU.getPDUCurrent(bot_uuid),
+      ChargebotPDU.getPDUStatus(bot_uuid),
       ChargebotError.getConnectionStatus(bot_uuid),
       ChargebotError.getSystemStatus(bot_uuid),
       IoTData.getSystemStatus(bot_uuid, 'system'),
+      ChargebotInverter.getTodayTotals(bot_uuid, [
+        InverterVariable.BATTERY_CHARGE_DIFF,
+        InverterVariable.BATTERY_DISCHARGE_DIFF,
+        InverterVariable.SOLAR_CHARGE_DIFF,
+        InverterVariable.GRID_CHARGE_DIFF,
+        InverterVariable.ENERGY_USAGE
+      ]),
     ]);
 
     const inverterVariables: { [key: string]: unknown } = inverterStatus.reduce((acc: { [key: string]: unknown }, obj) => {
@@ -42,19 +50,25 @@ const handler = async (event) => {
       return acc;
     }, {});
 
-    const inverterTotalVariables: { [key: string]: unknown } = inverterTotals.reduce((acc: { [key: string]: unknown }, obj) => {
+    const pduVariables: { [key: string]: unknown } = pduStatus.reduce((acc: { [key: string]: unknown }, obj) => {
       acc[obj.variable] = obj.value;
       return acc;
     }, {});
 
-    const iotConnected = iot_status?.state?.reported?.connected === 'true' ?? false;
+    const todayUsageVariables: { [key: string]: unknown } = todayUsage.reduce((acc: { [key: string]: unknown }, obj) => {
+      acc[obj.variable] = obj.value;
+      return acc;
+    }, {});
 
-    const grid_charging = getNumber(inverterTotalVariables[InverterVariable.GRID_CHARGE_DIFF]);
-    const solar_charging = getNumber(inverterTotalVariables[InverterVariable.SOLAR_CHARGE_DIFF]);
-    const battery_charging = getNumber(inverterTotalVariables[InverterVariable.BATTERY_CHARGE_DIFF]);
-    const battery_discharging = getNumber(inverterTotalVariables[InverterVariable.BATTERY_DISCHARGE_DIFF]);
+    const batteryCharging = getNumber(todayUsageVariables[InverterVariable.BATTERY_CHARGE_DIFF]);
+    const batteryDischarging = getNumber(todayUsageVariables[InverterVariable.BATTERY_DISCHARGE_DIFF]);
+    const solarCharging = getNumber(todayUsageVariables[InverterVariable.SOLAR_CHARGE_DIFF]);
+    const gridCharging = getNumber(todayUsageVariables[InverterVariable.GRID_CHARGE_DIFF]);
+    const energyUsage = getNumber(todayUsageVariables[InverterVariable.ENERGY_USAGE]);
 
-    const iotConnectedTime = iot_status?.metadata?.reported?.connected?.timestamp;
+    const iotConnected = iotStatus?.state?.reported?.connected === 'true' ?? false;
+
+    const iotConnectedTime = iotStatus?.metadata?.reported?.connected?.timestamp;
     const inverterLastReport = inverterStatus?.length > 0 ? DateTime.fromJSDate(inverterStatus[0].timestamp) : null;
     const lastSeen = inverterLastReport
       ? inverterLastReport.toISO()
@@ -62,20 +76,20 @@ const handler = async (event) => {
 
     const response = {
       bot_uuid,
-      battery_level: getNumber(battery_state?.battery_level),
-      battery_status: battery_state?.battery_status ?? 'UNKNOWN',
-      output_current: getNumber(output_current),
+      battery_level: getNumber(batteryState?.battery_level),
+      battery_status: batteryState?.battery_status ?? 'UNKNOWN',
+      output_current: getNumber(pduVariables[PDUVariable.CURRENT]),
       grid_current: getNumber(inverterVariables[InverterVariable.GRID_CURRENT]),
       solar_power: getNumber(inverterVariables[InverterVariable.SOLAR_POWER]),
-      today_energy_usage: getNumber(inverterTotalVariables[InverterVariable.ENERGY_USAGE]),
-      today_total_charging: grid_charging + solar_charging,
-      today_grid_charging: grid_charging ,
-      today_solar_charging: solar_charging,
-      today_battery_charging: battery_charging,
-      today_battery_discharging: battery_discharging,
-      pdu_status: pduState,
-      connection_status: (iotConnected || conn_status === 'OK') ? 'OK' : 'ERROR',
-      system_status: system_status,
+      today_energy_usage: getNumber(energyUsage),
+      today_total_charging: getNumber(gridCharging) + getNumber(solarCharging),
+      today_grid_charging: getNumber(gridCharging) ,
+      today_solar_charging: getNumber(solarCharging),
+      today_battery_charging: getNumber(batteryCharging),
+      today_battery_discharging: getNumber(batteryDischarging),
+      pdu_status: translatePDUState(pduVariables[PDUVariable.STATE] as number),
+      connection_status: (iotConnected || (connStatus && connStatus.value === 0)) ? 'OK' : 'ERROR',
+      system_status: systemStatus && systemStatus.value === 0 ? 'OK' : 'ERROR',
       last_seen: lastSeen
     };
 

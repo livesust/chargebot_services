@@ -4,7 +4,7 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { UserEmail, UserEmailUpdate, NewUserEmail } from "../database/user_email";
 
-function withUser(eb: ExpressionBuilder<Database, 'user_email'>) {
+export function withUser(eb: ExpressionBuilder<Database, 'user_email'>) {
     return jsonObjectFrom(
       eb.selectFrom('user')
         .selectAll()
@@ -97,14 +97,14 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('user_email')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<UserEmail[]> {
-    return await db
+    return db
         .selectFrom("user_email")
         .selectAll()
         .where('deleted_by', 'is', null)
@@ -112,7 +112,7 @@ export async function list(): Promise<UserEmail[]> {
 }
 
 export async function get(id: number): Promise<UserEmail | undefined> {
-    return await db
+    return db
         .selectFrom("user_email")
         .selectAll()
         // uncoment to enable eager loading
@@ -125,7 +125,7 @@ export async function get(id: number): Promise<UserEmail | undefined> {
 export async function findByCriteria(criteria: Partial<UserEmail>): Promise<UserEmail[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     // uncoment to enable eager loading
     //.select((eb) => withUser(eb))
@@ -135,7 +135,7 @@ export async function findByCriteria(criteria: Partial<UserEmail>): Promise<User
 export async function findOneByCriteria(criteria: Partial<UserEmail>): Promise<UserEmail | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     // uncoment to enable eager loading
     //.select((eb) => withUser(eb))

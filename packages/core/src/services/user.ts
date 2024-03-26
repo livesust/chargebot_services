@@ -4,13 +4,14 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { User, UserUpdate, NewUser } from "../database/user";
 
-function withCompany(eb: ExpressionBuilder<Database, 'user'>) {
+export function withCompany(eb: ExpressionBuilder<Database, 'user'>) {
     return jsonObjectFrom(
       eb.selectFrom('company')
         .selectAll()
         .whereRef('company.id', '=', 'user.company_id')
     ).as('company')
 }
+
 
 export async function create(user: NewUser): Promise<{
   entity: User | undefined,
@@ -85,7 +86,7 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('user')
         .where('id', '=', id)
         .executeTakeFirst();

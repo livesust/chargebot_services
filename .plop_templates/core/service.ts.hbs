@@ -8,7 +8,7 @@ import { {{pascalCase name}}, {{pascalCase name}}Update, New{{pascalCase name}} 
 
 {{#each relationships}}
   {{#when relation_type 'eq' 'many-to-one'}}
-function with{{pascalCase entity}}(eb: ExpressionBuilder<Database, '{{snakeCase ../name}}'>) {
+export function with{{pascalCase entity}}(eb: ExpressionBuilder<Database, '{{snakeCase ../name}}'>) {
     return jsonObjectFrom(
       eb.selectFrom('{{snakeCase entity}}')
         .selectAll()
@@ -18,7 +18,7 @@ function with{{pascalCase entity}}(eb: ExpressionBuilder<Database, '{{snakeCase 
 
   {{/when}}
   {{#when relation_type 'eq' 'many-to-many'}}
-function with{{pascalCase first_entity}}(eb: ExpressionBuilder<Database, '{{snakeCase ../name}}'>) {
+export function with{{pascalCase first_entity}}(eb: ExpressionBuilder<Database, '{{snakeCase ../name}}'>) {
     return jsonObjectFrom(
       eb.selectFrom('{{snakeCase first_entity}}')
         .selectAll()
@@ -26,7 +26,7 @@ function with{{pascalCase first_entity}}(eb: ExpressionBuilder<Database, '{{snak
     ).as('{{snakeCase first_entity}}')
 }
 
-function with{{pascalCase second_entity}}(eb: ExpressionBuilder<Database, '{{snakeCase ../name}}'>) {
+export function with{{pascalCase second_entity}}(eb: ExpressionBuilder<Database, '{{snakeCase ../name}}'>) {
     return jsonObjectFrom(
       eb.selectFrom('{{snakeCase second_entity}}')
         .selectAll()
@@ -153,22 +153,31 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('{{snakeCase name}}')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<{{pascalCase name}}[]> {
-    return await db
+    return db
         .selectFrom("{{snakeCase name}}")
         .selectAll()
         .where('deleted_by', 'is', null)
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<{{pascalCase name}} | undefined> {
+    return db
+        .selectFrom("{{snakeCase name}}")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<{{pascalCase name}} | undefined> {
-    return await db
+    return db
         .selectFrom("{{snakeCase name}}")
         .selectAll()
         {{#each relationships}}
@@ -199,7 +208,7 @@ export async function get(id: number): Promise<{{pascalCase name}} | undefined> 
 export async function findByCriteria(criteria: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}}[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     {{#each relationships}}
       {{#when relation_type 'eq' 'many-to-one'}}
@@ -227,7 +236,7 @@ export async function findByCriteria(criteria: Partial<{{pascalCase name}}>): Pr
 export async function findOneByCriteria(criteria: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}} | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     {{#each relationships}}
       {{#when relation_type 'eq' 'many-to-one'}}

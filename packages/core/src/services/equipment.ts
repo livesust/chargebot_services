@@ -4,7 +4,7 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { Equipment, EquipmentUpdate, NewEquipment } from "../database/equipment";
 
-function withEquipmentType(eb: ExpressionBuilder<Database, 'equipment'>) {
+export function withEquipmentType(eb: ExpressionBuilder<Database, 'equipment'>) {
     return jsonObjectFrom(
       eb.selectFrom('equipment_type')
         .selectAll()
@@ -12,7 +12,7 @@ function withEquipmentType(eb: ExpressionBuilder<Database, 'equipment'>) {
     ).as('equipment_type')
 }
 
-function withCustomer(eb: ExpressionBuilder<Database, 'equipment'>) {
+export function withCustomer(eb: ExpressionBuilder<Database, 'equipment'>) {
     return jsonObjectFrom(
       eb.selectFrom('customer')
         .selectAll()
@@ -94,14 +94,14 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('equipment')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<Equipment[]> {
-    return await db
+    return db
         .selectFrom("equipment")
         .selectAll()
         .where('deleted_by', 'is', null)
@@ -109,7 +109,7 @@ export async function list(): Promise<Equipment[]> {
 }
 
 export async function get(id: number): Promise<Equipment | undefined> {
-    return await db
+    return db
         .selectFrom("equipment")
         .selectAll()
         .select((eb) => withEquipmentType(eb))
@@ -120,10 +120,19 @@ export async function get(id: number): Promise<Equipment | undefined> {
         .executeTakeFirst();
 }
 
+export async function findByOutlet(outlet_id: number): Promise<Equipment | undefined> {
+  return db
+    .selectFrom('equipment')
+    .innerJoin('outlet_equipment', 'outlet_equipment.equipment_id', 'equipment.id')
+    .where('outlet_equipment.outlet_id', '=', outlet_id)
+    .selectAll('equipment')
+    .executeTakeFirst();
+}
+
 export async function findByCriteria(criteria: Partial<Equipment>): Promise<Equipment[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withEquipmentType(eb))
     // uncoment to enable eager loading
@@ -134,7 +143,7 @@ export async function findByCriteria(criteria: Partial<Equipment>): Promise<Equi
 export async function findOneByCriteria(criteria: Partial<Equipment>): Promise<Equipment | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withEquipmentType(eb))
     // uncoment to enable eager loading

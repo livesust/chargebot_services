@@ -4,7 +4,7 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { BotChargingSettings, BotChargingSettingsUpdate, NewBotChargingSettings } from "../database/bot_charging_settings";
 
-function withBot(eb: ExpressionBuilder<Database, 'bot_charging_settings'>) {
+export function withBot(eb: ExpressionBuilder<Database, 'bot_charging_settings'>) {
     return jsonObjectFrom(
       eb.selectFrom('bot')
         .selectAll()
@@ -86,14 +86,14 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('bot_charging_settings')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<BotChargingSettings[]> {
-    return await db
+    return db
         .selectFrom("bot_charging_settings")
         .selectAll()
         .where('deleted_by', 'is', null)
@@ -101,7 +101,7 @@ export async function list(): Promise<BotChargingSettings[]> {
 }
 
 export async function get(id: number): Promise<BotChargingSettings | undefined> {
-    return await db
+    return db
         .selectFrom("bot_charging_settings")
         .selectAll()
         // uncoment to enable eager loading
@@ -114,7 +114,7 @@ export async function get(id: number): Promise<BotChargingSettings | undefined> 
 export async function findByCriteria(criteria: Partial<BotChargingSettings>): Promise<BotChargingSettings[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     // uncoment to enable eager loading
     //.select((eb) => withBot(eb))
@@ -124,7 +124,7 @@ export async function findByCriteria(criteria: Partial<BotChargingSettings>): Pr
 export async function findOneByCriteria(criteria: Partial<BotChargingSettings>): Promise<BotChargingSettings | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     // uncoment to enable eager loading
     //.select((eb) => withBot(eb))
