@@ -149,10 +149,8 @@ export async function getDaysWithData(bot_uuid: string, from: Date, to: Date): P
     .groupBy('bucket')
     .orderBy('bucket', 'asc');
   
-  // console.log('Query', await query.explain(), query.compile())
-
   // @ts-expect-error not overloads match
-  return await query.execute();
+  return query.execute();
 }
 
 async function getArrivedAtWhenAtHome(location: ChargebotGps) {

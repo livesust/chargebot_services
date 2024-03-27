@@ -13,6 +13,7 @@ import executionTimeLogger from '../shared/middlewares/time-log';
 import { createSuccessResponse, getNumber, isWarmingUp } from "../shared/rest_utils";
 import { BotUUIDPathParamSchema } from "src/shared/schemas";
 import { ChargebotInverter } from "@chargebot-services/core/services/analytics/chargebot_inverter";
+import { DateTime } from "luxon";
 
 
 // @ts-expect-error ignore any type for event
@@ -20,11 +21,17 @@ const handler = async (event) => {
   const bot_uuid = event.pathParameters!.bot_uuid!;
 
   try {
+    const monthStart = DateTime.now().setZone('UTC').startOf('month').toJSDate();
+    const monthEnd = DateTime.now().setZone('UTC').endOf('month').toJSDate();
+
+    const yearStart = DateTime.now().setZone('UTC').startOf('year').toJSDate();
+    const yearEnd = DateTime.now().setZone('UTC').endOf('year').toJSDate();
+
     const [monthlyEnergyUsage, yearlyEnergyUsage, monthlyDays, yearlyMonths] = await Promise.all([
-      ChargebotInverter.getMonthlyEnergyUsage(bot_uuid),
-      ChargebotInverter.getYearlyEnergyUsage(bot_uuid),
-      ChargebotInverter.getMonthlyEnergyUsageByDay(bot_uuid),
-      ChargebotInverter.getYearlyEnergyUsageByMonth(bot_uuid),
+      ChargebotInverter.getMonthlyEnergyUsage(bot_uuid, monthStart, monthEnd),
+      ChargebotInverter.getYearlyEnergyUsage(bot_uuid, yearStart, yearEnd),
+      ChargebotInverter.getMonthlyEnergyUsageByDay(bot_uuid, monthStart, monthEnd),
+      ChargebotInverter.getYearlyEnergyUsageByMonth(bot_uuid, yearStart, yearEnd),
     ]);
 
     const response = {
@@ -32,12 +39,12 @@ const handler = async (event) => {
       monthly_energy_usage: getNumber(monthlyEnergyUsage?.value),
       yearly_energy_usage: getNumber(yearlyEnergyUsage?.value),
       monthly: monthlyDays && monthlyDays.length > 0 ? monthlyDays.map((dayOfMonth) => ({
-        day_of_month: dayOfMonth.timestamp.getUTCDate(),
+        day_of_month: dayOfMonth.time.getUTCDate(),
         energy_usage: getNumber(dayOfMonth?.value)
       })) : [],
       yearly: yearlyMonths && yearlyMonths.length > 0 ? yearlyMonths.map((monthOfYear) => ({
         // getUTCMonth() returns an integer between 0 and 11
-        month_of_year: monthOfYear.timestamp.getUTCMonth() + 1,
+        month_of_year: monthOfYear.time.getUTCMonth() + 1,
         energy_usage: getNumber(monthOfYear?.value)
       })) : [],
     };

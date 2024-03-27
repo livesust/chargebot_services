@@ -103,6 +103,31 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
+export async function unassign(equipment_id: number, outlet_id: number, user_id: string): Promise<{
+  entity: OutletEquipment | undefined,
+  event: unknown
+} | undefined> {
+    const deleted = await db
+        .updateTable('outlet_equipment')
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .where('equipment_id', '=', equipment_id)
+        .where('outlet_id', '=', outlet_id)
+        .where('deleted_by', 'is', null)
+        .returningAll()
+        .executeTakeFirst();
+
+  if (!deleted) {
+    return undefined;
+  }
+
+  return {
+    entity: deleted,
+    // event to dispatch on EventBus on creation
+    // undefined as default to not dispatch any event
+    event: undefined
+  };
+}
+
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('outlet_equipment')
@@ -116,6 +141,15 @@ export async function list(): Promise<OutletEquipment[]> {
         .selectAll()
         .where('deleted_by', 'is', null)
         .execute();
+}
+
+export async function lazyGet(id: number): Promise<OutletEquipment | undefined> {
+    return db
+        .selectFrom("outlet_equipment")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
 }
 
 export async function get(id: number): Promise<OutletEquipment | undefined> {
@@ -151,6 +185,14 @@ export async function findByCriteria(criteria: Partial<OutletEquipment>): Promis
     .execute();
 }
 
+export async function lazyFindByCriteria(criteria: Partial<OutletEquipment>): Promise<OutletEquipment[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .execute();
+}
+
 export async function findOneByCriteria(criteria: Partial<OutletEquipment>): Promise<OutletEquipment | undefined> {
   const query = buildCriteriaQuery(criteria);
 
@@ -159,6 +201,15 @@ export async function findOneByCriteria(criteria: Partial<OutletEquipment>): Pro
     .select((eb) => withEquipment(eb))
     .select((eb) => withOutlet(eb))
     .select((eb) => withUser(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<OutletEquipment>): Promise<OutletEquipment | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
     .limit(1)
     .executeTakeFirst();
 }

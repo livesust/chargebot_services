@@ -100,6 +100,15 @@ export async function list(): Promise<User[]> {
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<User | undefined> {
+    return db
+        .selectFrom("user")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<User | undefined> {
     return db
         .selectFrom("user")
@@ -108,6 +117,15 @@ export async function get(id: number): Promise<User | undefined> {
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
+}
+
+export async function findByCognitoId(cognito_id: string): Promise<User | undefined> {
+  return db
+      .selectFrom("user")
+      .selectAll()
+      .where('user_id', '=', cognito_id)
+      .where('deleted_by', 'is', null)
+      .executeTakeFirst();
 }
 
 export async function findByCriteria(criteria: Partial<User>): Promise<User[]> {
@@ -119,12 +137,29 @@ export async function findByCriteria(criteria: Partial<User>): Promise<User[]> {
     .execute();
 }
 
+export async function lazyFindByCriteria(criteria: Partial<User>): Promise<User[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .execute();
+}
+
 export async function findOneByCriteria(criteria: Partial<User>): Promise<User | undefined> {
   const query = buildCriteriaQuery(criteria);
 
   return query
     .selectAll()
     .select((eb) => withCompany(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<User>): Promise<User | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
     .limit(1)
     .executeTakeFirst();
 }

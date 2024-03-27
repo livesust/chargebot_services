@@ -101,6 +101,15 @@ export async function list(): Promise<AppSettingsType[]> {
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<AppSettingsType | undefined> {
+    return db
+        .selectFrom("app_settings_type")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<AppSettingsType | undefined> {
     return db
         .selectFrom("app_settings_type")
@@ -118,7 +127,24 @@ export async function findByCriteria(criteria: Partial<AppSettingsType>): Promis
     .execute();
 }
 
+export async function lazyFindByCriteria(criteria: Partial<AppSettingsType>): Promise<AppSettingsType[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .execute();
+}
+
 export async function findOneByCriteria(criteria: Partial<AppSettingsType>): Promise<AppSettingsType | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<AppSettingsType>): Promise<AppSettingsType | undefined> {
   const query = buildCriteriaQuery(criteria);
 
   return query

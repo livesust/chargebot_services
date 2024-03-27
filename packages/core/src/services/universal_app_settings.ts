@@ -111,6 +111,15 @@ export async function list(): Promise<UniversalAppSettings[]> {
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<UniversalAppSettings | undefined> {
+    return db
+        .selectFrom("universal_app_settings")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<UniversalAppSettings | undefined> {
     return db
         .selectFrom("universal_app_settings")
@@ -130,12 +139,29 @@ export async function findByCriteria(criteria: Partial<UniversalAppSettings>): P
     .execute();
 }
 
+export async function lazyFindByCriteria(criteria: Partial<UniversalAppSettings>): Promise<UniversalAppSettings[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .execute();
+}
+
 export async function findOneByCriteria(criteria: Partial<UniversalAppSettings>): Promise<UniversalAppSettings | undefined> {
   const query = buildCriteriaQuery(criteria);
 
   return query
     .selectAll()
     .select((eb) => withAppSettingsType(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<UniversalAppSettings>): Promise<UniversalAppSettings | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
     .limit(1)
     .executeTakeFirst();
 }

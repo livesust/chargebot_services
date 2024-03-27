@@ -111,6 +111,15 @@ export async function list(): Promise<Vehicle[]> {
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<Vehicle | undefined> {
+    return db
+        .selectFrom("vehicle")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<Vehicle | undefined> {
     return db
         .selectFrom("vehicle")
@@ -130,12 +139,29 @@ export async function findByCriteria(criteria: Partial<Vehicle>): Promise<Vehicl
     .execute();
 }
 
+export async function lazyFindByCriteria(criteria: Partial<Vehicle>): Promise<Vehicle[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .execute();
+}
+
 export async function findOneByCriteria(criteria: Partial<Vehicle>): Promise<Vehicle | undefined> {
   const query = buildCriteriaQuery(criteria);
 
   return query
     .selectAll()
     .select((eb) => withVehicleType(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<Vehicle>): Promise<Vehicle | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
     .limit(1)
     .executeTakeFirst();
 }

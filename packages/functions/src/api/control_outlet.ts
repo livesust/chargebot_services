@@ -12,7 +12,6 @@ import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import { createNotFoundResponse, createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { BotUUIDPathParamSchema, SuccessResponseSchema } from "src/shared/schemas";
-import { Bot } from "@chargebot-services/core/services/bot";
 import { Outlet } from "@chargebot-services/core/services/outlet";
 import { IoTData } from "@chargebot-services/core/services/aws/iot_data";
 import jsonBodyParser from "@middy/http-json-body-parser";
@@ -24,20 +23,14 @@ export const handler = async (event) => {
   const body = event.body;
 
   try {
-    const bot = await Bot.findOneByCriteria({ bot_uuid })
-
-    if (!bot) {
-      return createNotFoundResponse({ "response": "bot not found" });
-    }
-
-    const outlet = await Outlet.findOneByCriteria({ pdu_outlet_number: body.pdu_outlet_number, bot_id: bot.id });
+    const outlet = await Outlet.findByBotAndPduNumber(bot_uuid, body.pdu_outlet_number);
     if (!outlet) {
       return createNotFoundResponse({ "response": "outlet not found" });
     }
 
     const payload = {
       // firmware expects outlet ids from 0 to 7
-      "outlet_id": outlet.pdu_outlet_number - 1,
+      "outlet_id": body.pdu_outlet_number - 1,
       "command": body.command
     };
 

@@ -42,7 +42,9 @@ export default new Kysely<AnalyticsDatabase>({
     plugins: [new ParseJSONResultsPlugin()],
     log(event): void {
       if (event.level === 'query') {
-        console.log(`TimescaleDB > Time: ${event.queryDurationMillis} < SQL: ${event.query.sql} < Params: ${event.query.parameters}`);
+        console.log(`TimescaleDB Time: ${Math.round(event.queryDurationMillis)}ms
+          SQL: ${event.query.sql}
+          Params: ${JSON.stringify(event.query.parameters, null, 2)}`);
       }
     },
 });

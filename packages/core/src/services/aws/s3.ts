@@ -11,7 +11,7 @@ export const getUploadUrl = async (bucket: string, key: string): Promise<unknown
     Key: key,
     ACL: "public-read"
   });
-  return await getSignedUrl(s3Client, command);
+  return getSignedUrl(s3Client, command);
 }
 
 // Get URL to directly GET an image from S3
@@ -21,9 +21,7 @@ export const getDownloadUrl = async (bucket: string, key: string): Promise<unkno
     Key: key
   });
 
-  if (await exists(bucket, key)){
-    return await getSignedUrl(s3Client, command);
-  }
+  return getSignedUrl(s3Client, command);
 }
 
 // Get Object from S3
@@ -37,7 +35,7 @@ export const getObject = async (bucket: string, key: string): Promise<string | u
   try {
     const response = await s3Client.send(command);
     // The Body object also has 'transformToByteArray' and 'transformToWebStream' methods.
-    return await response?.Body?.transformToString();
+    return response?.Body?.transformToString();
   } catch (err) {
     console.error(err);
   }
@@ -67,7 +65,7 @@ export const putObject = async (bucket: string, key: string, body: Uint8Array, c
 }
 
 // Put Object from S3
-export const exists = async (bucket: string, key: string): Promise<boolean | undefined> => {
+export const existsOnBucket = async (bucket: string, key: string): Promise<boolean | undefined> => {
   const command = new HeadObjectCommand({
     Bucket: bucket,
     Key: key,

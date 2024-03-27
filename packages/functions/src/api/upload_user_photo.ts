@@ -26,7 +26,7 @@ const handler = async (event) => {
     return createNotFoundResponse("file missing");
   }
 
-  const user = await User.findOneByCriteria({user_id: cognito_id});
+  const user = await User.findByCognitoId(cognito_id);
   if (!user) {
     Log.debug("User not found", { cognito_id });
     return createNotFoundResponse("User not found");
@@ -39,7 +39,7 @@ const handler = async (event) => {
       .jpeg({ mozjpeg: true })
       .toBuffer();
     
-    const upload = await S3.putObject(Bucket.UserData.bucketName, `profile_user_${user.id}`, resizedImage, 'image/jpeg');
+    const upload = await S3.putObject(Bucket.userProfile.bucketName, `profile_user_${user.id}`, resizedImage, 'image/jpeg');
 
     return upload ? createSuccessResponse({ "response": "success" }) : createError(406, "Error uploading file to S3");
 

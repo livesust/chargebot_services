@@ -26,50 +26,37 @@ const handler = async (event) => {
   const overwrite = event.queryStringParameters?.overwrite ?? false;
 
   try {
-    const user = await User.findOneByCriteria({user_id})
+    const existsOutletEquipment = OutletEquipment.lazyFindOneByCriteria({ equipment_id, outlet_id });
 
-    const [
-      equipment,
-      outlet,
-      outletEquipment,
-    ] = await Promise.all([
-      Equipment.get(equipment_id),
-      Outlet.get(outlet_id),
-      OutletEquipment.findOneByCriteria({ equipment_id, outlet_id }),
-    ]);
-
-    if (!equipment) {
-      throw createError(400, "equipment does not exists", { expose: true });
-    }
-
-    if (!outlet) {
-      throw createError(400, "outlet does not exists", { expose: true });
-    }
-
-    if (outletEquipment) {
-      return createSuccessResponse(outletEquipment);
+    if (existsOutletEquipment) {
+      return createSuccessResponse(existsOutletEquipment);
     }
 
     const [
-      alreadyAssignedToOutlet,
-      existentOne
+      user,
+      assignedToAnotherOutlet,
+      outletHasAnotherEquipment
     ] = await Promise.all([
-      OutletEquipment.findOneByCriteria({ equipment_id }),
-      OutletEquipment.findOneByCriteria({ outlet_id })
+      User.findByCognitoId(user_id),
+      OutletEquipment.lazyFindOneByCriteria({ equipment_id }),
+      OutletEquipment.lazyFindOneByCriteria({ outlet_id })
     ]);
 
-    if (alreadyAssignedToOutlet) {
+    const removePromises = [];
+    if (assignedToAnotherOutlet) {
       if (!overwrite) {
         throw createError(400, "equipment assigned to another outlet", { expose: true });
       }
       // remove equipment from the other outlet
-      await OutletEquipment.remove(alreadyAssignedToOutlet.id!, user_id);
+      removePromises.push(OutletEquipment.remove(assignedToAnotherOutlet.id!, user_id));
     }
 
-    if (existentOne) {
+    if (outletHasAnotherEquipment) {
       // if outlet has another equipment assigned, unassign it
-      await OutletEquipment.remove(existentOne.id!, user_id);
+      removePromises.push(OutletEquipment.remove(outletHasAnotherEquipment.id!, user_id));
     }
+
+    await Promise.all(removePromises);
 
     const now = new Date();
     const created = await OutletEquipment.create({

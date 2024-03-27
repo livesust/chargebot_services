@@ -92,7 +92,9 @@ export default new Kysely<Database>({
     plugins: [new ParseJSONResultsPlugin()],
     log(event): void {
       if (event.level === 'query') {
-        console.log(`RDS > Time: ${event.queryDurationMillis} < SQL: ${event.query.sql} < Params: ${event.query.parameters}`);
+        console.log(`RDS Time: ${Math.round(event.queryDurationMillis)}ms
+        SQL: ${event.query.sql}
+        Params: ${JSON.stringify(event.query.parameters, null, 2)}`);
       }
     },
 });

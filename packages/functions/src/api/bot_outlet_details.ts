@@ -12,7 +12,6 @@ import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import { createNotFoundResponse, createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { Outlet } from "@chargebot-services/core/services/outlet";
-import { OutletEquipment } from "@chargebot-services/core/services/outlet_equipment";
 import { OutletSchedule } from "@chargebot-services/core/services/outlet_schedule";
 import { ChargebotPDU } from "@chargebot-services/core/services/analytics/chargebot_pdu";
 import { Equipment } from "@chargebot-services/core/services/equipment";
@@ -24,7 +23,7 @@ const handler = async (event) => {
   const outlet_id = +event.pathParameters!.outlet_id!;
 
   try {
-    const outlet = await Outlet.get(outlet_id);
+    const outlet = await Outlet.lazyGet(outlet_id);
 
     if (!outlet) {
       return createNotFoundResponse({ "response": "outlet not found" });

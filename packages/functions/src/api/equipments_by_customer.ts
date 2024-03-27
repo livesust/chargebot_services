@@ -12,7 +12,7 @@ import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { Equipment } from "@chargebot-services/core/services/equipment";
-import { OutletEquipment } from "@chargebot-services/core/services/outlet_equipment";
+import { Outlet } from "@chargebot-services/core/services/outlet";
 
 
 // @ts-expect-error ignore any type for event
@@ -22,24 +22,31 @@ const handler = async (event) => {
   try {
     const equipments = await Equipment.findByCriteria({ customer_id });
 
-    const result = [];
-    for (const e of equipments) {
+    const promises = equipments.map(async (equipment) => {
+      const outlet = await Outlet.findByEquipment(equipment.id!);
+      return {
+        id: equipment.id,
+        name: equipment.name,
+        brand: equipment.brand,
+        description: equipment.description,
+        voltage: equipment.voltage,
+        max_charging_amps: equipment.max_charging_amps,
+        equipment_type_id: equipment.equipment_type_id,
+        customer_id: equipment.customer_id,
+        equipment_type: equipment.equipment_type && {
+          id: equipment.equipment_type.id,
+          type: equipment.equipment_type.type,
+          description: equipment.equipment_type.description
+        },
+        outlet: outlet && {
+          id: outlet.id,
+          pdu_outlet_number: outlet.pdu_outlet_number,
+          notes: outlet.notes
+        }
+      };
+    });
 
-      const outlet = (await OutletEquipment.findOneByCriteria({equipment_id: e.id}))?.outlet;
-
-      result.push({
-        id: e.id,
-        name: e.name,
-        brand: e.brand,
-        description: e.description,
-        voltage: e.voltage,
-        max_charging_amps: e.max_charging_amps,
-        equipment_type_id: e.equipment_type_id,
-        customer_id: e.customer_id,
-        equipment_type: e.equipment_type,
-        outlet: outlet
-      });
-    }
+    const result = await Promise.all(promises);
 
     return createSuccessResponse(result);
   } catch (error) {

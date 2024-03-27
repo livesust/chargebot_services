@@ -21,15 +21,8 @@ const handler = async (event) => {
   const user_id = event.requestContext?.authorizer?.jwt.claims.sub;
 
   try {
-    const existent = await OutletEquipment.findOneByCriteria({ equipment_id, outlet_id });
-    if (!existent) {
-      throw createError(404, "equipment is not assigned to the outlet", { expose: true });
-    }
-
-    await OutletEquipment.remove(existent.id!, user_id);
-
+    await OutletEquipment.unassign(equipment_id, outlet_id, user_id);
     return createSuccessResponse({ "response": "success" });
-
   } catch (error) {
     Log.error("ERROR", { error });
     if (error instanceof HttpError) {

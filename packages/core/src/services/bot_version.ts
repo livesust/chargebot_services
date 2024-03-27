@@ -102,6 +102,15 @@ export async function list(): Promise<BotVersion[]> {
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<BotVersion | undefined> {
+    return db
+        .selectFrom("bot_version")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<BotVersion | undefined> {
     return db
         .selectFrom("bot_version")
@@ -119,7 +128,24 @@ export async function findByCriteria(criteria: Partial<BotVersion>): Promise<Bot
     .execute();
 }
 
+export async function lazyFindByCriteria(criteria: Partial<BotVersion>): Promise<BotVersion[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .execute();
+}
+
 export async function findOneByCriteria(criteria: Partial<BotVersion>): Promise<BotVersion | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<BotVersion>): Promise<BotVersion | undefined> {
   const query = buildCriteriaQuery(criteria);
 
   return query

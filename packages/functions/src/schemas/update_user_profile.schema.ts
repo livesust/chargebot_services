@@ -1,6 +1,7 @@
 import Joi from 'joi';
 import {  JsonResponseSchemaDef } from "../shared/schemas";
 import { EntitySchema as CompanySchema } from "./company.schema";
+import { EntitySchema as CustomerSchema } from "./customer.schema";
 import { EntitySchema as HomeMasterSchema } from "./home_master.schema";
 
 export const PathParamSchema = Joi.object({
@@ -17,7 +18,11 @@ const UserProfileSchemaDef = {
   phone_number: Joi.string(),
   role_id: Joi.number(),
   role: Joi.string(),
-  company: CompanySchema.allow(null),
+  company: CompanySchema.allow(null).keys({
+    // overwrite keys for required attributes
+    customer: CustomerSchema.allow(null),
+    home_master: HomeMasterSchema.allow(null),
+  }),
   home_master: HomeMasterSchema.allow(null),
   modified_by: Joi.string(),
   modified_date: Joi.date()

@@ -100,6 +100,15 @@ export async function list(): Promise<HomeMaster[]> {
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<HomeMaster | undefined> {
+    return db
+        .selectFrom("home_master")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<HomeMaster | undefined> {
     return db
         .selectFrom("home_master")
@@ -107,6 +116,17 @@ export async function get(id: number): Promise<HomeMaster | undefined> {
         .select((eb) => withStateMaster(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
+export async function findByCompany(company_id: number): Promise<HomeMaster | undefined> {
+    return db
+        .selectFrom("home_master")
+        .innerJoin("company", "company.home_master_id", "home_master.id")
+        .where('company.id', '=', company_id)
+        .where('home_master.deleted_by', 'is', null)
+        .where('company.deleted_by', 'is', null)
+        .selectAll('home_master')
         .executeTakeFirst();
 }
 
@@ -119,12 +139,29 @@ export async function findByCriteria(criteria: Partial<HomeMaster>): Promise<Hom
     .execute();
 }
 
+export async function lazyFindByCriteria(criteria: Partial<HomeMaster>): Promise<HomeMaster[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .execute();
+}
+
 export async function findOneByCriteria(criteria: Partial<HomeMaster>): Promise<HomeMaster | undefined> {
   const query = buildCriteriaQuery(criteria);
 
   return query
     .selectAll()
     .select((eb) => withStateMaster(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<HomeMaster>): Promise<HomeMaster | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
     .limit(1)
     .executeTakeFirst();
 }

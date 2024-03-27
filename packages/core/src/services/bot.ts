@@ -52,9 +52,9 @@ export async function create(bot: NewBot): Promise<{
         throw Error('Entity already exists with unique values');
     }
 
-  if (bot.vehicle_id && !(await canAssignEquipment(null, bot.vehicle_id))) {
-    throw new BusinessError('Vehicle assigned to another bot');
-  }
+    if (bot.vehicle_id && !(await canAssignEquipment(null, bot.vehicle_id))) {
+      throw new BusinessError('Vehicle assigned to another bot');
+    }
 
     const created = await db
         .insertInto('bot')
@@ -143,6 +143,15 @@ export async function list(): Promise<Bot[]> {
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<Bot | undefined> {
+    return db
+        .selectFrom("bot")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<Bot | undefined> {
     return db
         .selectFrom("bot")
@@ -174,6 +183,14 @@ export async function findByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
     .execute();
 }
 
+export async function lazyFindByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .execute();
+}
+
 export async function findOneByCriteria(criteria: Partial<Bot>): Promise<Bot | undefined> {
   const query = buildCriteriaQuery(criteria);
 
@@ -181,6 +198,15 @@ export async function findOneByCriteria(criteria: Partial<Bot>): Promise<Bot | u
     .selectAll()
     .select((eb) => withBotVersion(eb))
     .select((eb) => withVehicle(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<Bot>): Promise<Bot | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
     .limit(1)
     .executeTakeFirst();
 }

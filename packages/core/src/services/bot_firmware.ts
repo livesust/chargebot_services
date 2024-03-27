@@ -100,6 +100,15 @@ export async function list(): Promise<BotFirmware[]> {
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<BotFirmware | undefined> {
+    return db
+        .selectFrom("bot_firmware")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<BotFirmware | undefined> {
     return db
         .selectFrom("bot_firmware")
@@ -121,6 +130,14 @@ export async function findByCriteria(criteria: Partial<BotFirmware>): Promise<Bo
     .execute();
 }
 
+export async function lazyFindByCriteria(criteria: Partial<BotFirmware>): Promise<BotFirmware[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .execute();
+}
+
 export async function findOneByCriteria(criteria: Partial<BotFirmware>): Promise<BotFirmware | undefined> {
   const query = buildCriteriaQuery(criteria);
 
@@ -128,6 +145,15 @@ export async function findOneByCriteria(criteria: Partial<BotFirmware>): Promise
     .selectAll()
     // uncoment to enable eager loading
     //.select((eb) => withBot(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<BotFirmware>): Promise<BotFirmware | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
     .limit(1)
     .executeTakeFirst();
 }

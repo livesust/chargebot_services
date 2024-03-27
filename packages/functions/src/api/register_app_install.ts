@@ -25,7 +25,7 @@ const handler = async (event) => {
   const body = event.body;
 
   try {
-    const user = await User.findOneByCriteria({user_id: cognito_id});
+    const user = await User.findByCognitoId(cognito_id);
     if (!user) {
       Log.debug("User not found", { cognito_id });
       return createNotFoundResponse("User not found");

@@ -101,6 +101,15 @@ export async function list(): Promise<Role[]> {
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<Role | undefined> {
+    return db
+        .selectFrom("role")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<Role | undefined> {
     return db
         .selectFrom("role")
@@ -118,7 +127,24 @@ export async function findByCriteria(criteria: Partial<Role>): Promise<Role[]> {
     .execute();
 }
 
+export async function lazyFindByCriteria(criteria: Partial<Role>): Promise<Role[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .execute();
+}
+
 export async function findOneByCriteria(criteria: Partial<Role>): Promise<Role | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<Role>): Promise<Role | undefined> {
   const query = buildCriteriaQuery(criteria);
 
   return query

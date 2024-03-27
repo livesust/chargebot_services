@@ -108,6 +108,15 @@ export async function list(): Promise<BotAlert[]> {
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<BotAlert | undefined> {
+    return db
+        .selectFrom("bot_alert")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<BotAlert | undefined> {
     return db
         .selectFrom("bot_alert")
@@ -131,6 +140,14 @@ export async function findByCriteria(criteria: Partial<BotAlert>): Promise<BotAl
     .execute();
 }
 
+export async function lazyFindByCriteria(criteria: Partial<BotAlert>): Promise<BotAlert[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .execute();
+}
+
 export async function findOneByCriteria(criteria: Partial<BotAlert>): Promise<BotAlert | undefined> {
   const query = buildCriteriaQuery(criteria);
 
@@ -139,6 +156,15 @@ export async function findOneByCriteria(criteria: Partial<BotAlert>): Promise<Bo
     .select((eb) => withAlertType(eb))
     // uncoment to enable eager loading
     //.select((eb) => withBot(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<BotAlert>): Promise<BotAlert | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
     .limit(1)
     .executeTakeFirst();
 }

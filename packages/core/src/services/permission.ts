@@ -101,6 +101,15 @@ export async function list(): Promise<Permission[]> {
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<Permission | undefined> {
+    return db
+        .selectFrom("permission")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<Permission | undefined> {
     return db
         .selectFrom("permission")
@@ -118,7 +127,24 @@ export async function findByCriteria(criteria: Partial<Permission>): Promise<Per
     .execute();
 }
 
+export async function lazyFindByCriteria(criteria: Partial<Permission>): Promise<Permission[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .execute();
+}
+
 export async function findOneByCriteria(criteria: Partial<Permission>): Promise<Permission | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<Permission>): Promise<Permission | undefined> {
   const query = buildCriteriaQuery(criteria);
 
   return query

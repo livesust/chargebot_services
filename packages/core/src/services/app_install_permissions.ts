@@ -125,6 +125,15 @@ export async function list(): Promise<AppInstallPermissions[]> {
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<AppInstallPermissions | undefined> {
+    return db
+        .selectFrom("app_install_permissions")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<AppInstallPermissions | undefined> {
     return db
         .selectFrom("app_install_permissions")
@@ -146,6 +155,14 @@ export async function findByCriteria(criteria: Partial<AppInstallPermissions>): 
     .execute();
 }
 
+export async function lazyFindByCriteria(criteria: Partial<AppInstallPermissions>): Promise<AppInstallPermissions[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .execute();
+}
+
 export async function findOneByCriteria(criteria: Partial<AppInstallPermissions>): Promise<AppInstallPermissions | undefined> {
   const query = buildCriteriaQuery(criteria);
 
@@ -153,6 +170,15 @@ export async function findOneByCriteria(criteria: Partial<AppInstallPermissions>
     .selectAll()
     .select((eb) => withAppInstall(eb))
     .select((eb) => withPermission(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<AppInstallPermissions>): Promise<AppInstallPermissions | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
     .limit(1)
     .executeTakeFirst();
 }

@@ -233,6 +233,14 @@ export async function findByCriteria(criteria: Partial<{{pascalCase name}}>): Pr
     .execute();
 }
 
+export async function lazyFindByCriteria(criteria: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}}[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .execute();
+}
+
 export async function findOneByCriteria(criteria: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}} | undefined> {
   const query = buildCriteriaQuery(criteria);
 
@@ -258,6 +266,15 @@ export async function findOneByCriteria(criteria: Partial<{{pascalCase name}}>):
         {{/if}}
       {{/when}}
     {{/each}}
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}} | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
     .limit(1)
     .executeTakeFirst();
 }

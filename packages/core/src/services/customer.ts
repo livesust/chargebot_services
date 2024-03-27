@@ -90,6 +90,15 @@ export async function list(): Promise<Customer[]> {
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<Customer | undefined> {
+    return db
+        .selectFrom("customer")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<Customer | undefined> {
     return db
         .selectFrom("customer")
@@ -107,7 +116,24 @@ export async function findByCriteria(criteria: Partial<Customer>): Promise<Custo
     .execute();
 }
 
+export async function lazyFindByCriteria(criteria: Partial<Customer>): Promise<Customer[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .execute();
+}
+
 export async function findOneByCriteria(criteria: Partial<Customer>): Promise<Customer | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<Customer>): Promise<Customer | undefined> {
   const query = buildCriteriaQuery(criteria);
 
   return query

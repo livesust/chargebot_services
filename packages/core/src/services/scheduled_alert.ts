@@ -101,6 +101,15 @@ export async function list(): Promise<ScheduledAlert[]> {
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<ScheduledAlert | undefined> {
+    return db
+        .selectFrom("scheduled_alert")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<ScheduledAlert | undefined> {
     return db
         .selectFrom("scheduled_alert")
@@ -118,7 +127,24 @@ export async function findByCriteria(criteria: Partial<ScheduledAlert>): Promise
     .execute();
 }
 
+export async function lazyFindByCriteria(criteria: Partial<ScheduledAlert>): Promise<ScheduledAlert[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .execute();
+}
+
 export async function findOneByCriteria(criteria: Partial<ScheduledAlert>): Promise<ScheduledAlert | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<ScheduledAlert>): Promise<ScheduledAlert | undefined> {
   const query = buildCriteriaQuery(criteria);
 
   return query

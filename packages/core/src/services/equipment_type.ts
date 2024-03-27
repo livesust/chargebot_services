@@ -90,6 +90,15 @@ export async function list(): Promise<EquipmentType[]> {
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<EquipmentType | undefined> {
+    return db
+        .selectFrom("equipment_type")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<EquipmentType | undefined> {
     return db
         .selectFrom("equipment_type")
@@ -107,7 +116,24 @@ export async function findByCriteria(criteria: Partial<EquipmentType>): Promise<
     .execute();
 }
 
+export async function lazyFindByCriteria(criteria: Partial<EquipmentType>): Promise<EquipmentType[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .execute();
+}
+
 export async function findOneByCriteria(criteria: Partial<EquipmentType>): Promise<EquipmentType | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<EquipmentType>): Promise<EquipmentType | undefined> {
   const query = buildCriteriaQuery(criteria);
 
   return query

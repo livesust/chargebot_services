@@ -105,6 +105,15 @@ export async function list(): Promise<OutletSchedule[]> {
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<OutletSchedule | undefined> {
+    return db
+        .selectFrom("outlet_schedule")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<OutletSchedule | undefined> {
     return db
         .selectFrom("outlet_schedule")
@@ -126,6 +135,14 @@ export async function findByCriteria(criteria: Partial<OutletSchedule>): Promise
     .execute();
 }
 
+export async function lazyFindByCriteria(criteria: Partial<OutletSchedule>): Promise<OutletSchedule[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .execute();
+}
+
 export async function findOneByCriteria(criteria: Partial<OutletSchedule>): Promise<OutletSchedule | undefined> {
   const query = buildCriteriaQuery(criteria);
 
@@ -133,6 +150,15 @@ export async function findOneByCriteria(criteria: Partial<OutletSchedule>): Prom
     .selectAll()
     // uncoment to enable eager loading
     //.select((eb) => withOutlet(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<OutletSchedule>): Promise<OutletSchedule | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
     .limit(1)
     .executeTakeFirst();
 }

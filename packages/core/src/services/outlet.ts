@@ -108,6 +108,15 @@ export async function list(): Promise<Outlet[]> {
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<Outlet | undefined> {
+    return db
+        .selectFrom("outlet")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<Outlet | undefined> {
     return db
         .selectFrom("outlet")
@@ -128,6 +137,25 @@ export async function findByBot(bot_uuid: string): Promise<Outlet[]> {
     .execute();
 }
 
+export async function findByBotAndPduNumber(bot_uuid: string, pdu_outlet_number: number): Promise<Outlet[]> {
+  return await db
+    .selectFrom('outlet')
+    .innerJoin('bot', 'bot.id', 'outlet.bot_id')
+    .where('bot.bot_uuid', '=', bot_uuid)
+    .where('outlet.pdu_outlet_number', '=', pdu_outlet_number)
+    .selectAll('outlet')
+    .execute();
+}
+
+export async function findByEquipment(equipment_id: number): Promise<Outlet | undefined> {
+  return db
+    .selectFrom('outlet')
+    .innerJoin('outlet_equipment', 'outlet_equipment.outlet_id', 'outlet.id')
+    .where('outlet_equipment.equipment_id', '=', equipment_id)
+    .selectAll('outlet')
+    .executeTakeFirst();
+}
+
 export async function findByCriteria(criteria: Partial<Outlet>): Promise<Outlet[]> {
   const query = buildCriteriaQuery(criteria);
 
@@ -138,6 +166,14 @@ export async function findByCriteria(criteria: Partial<Outlet>): Promise<Outlet[
     .execute();
 }
 
+export async function lazyFindByCriteria(criteria: Partial<Outlet>): Promise<Outlet[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .execute();
+}
+
 export async function findOneByCriteria(criteria: Partial<Outlet>): Promise<Outlet | undefined> {
   const query = buildCriteriaQuery(criteria);
 
@@ -145,6 +181,15 @@ export async function findOneByCriteria(criteria: Partial<Outlet>): Promise<Outl
     .selectAll()
     .select((eb) => withOutletType(eb))
     .select((eb) => withBot(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<Outlet>): Promise<Outlet | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
     .limit(1)
     .executeTakeFirst();
 }
