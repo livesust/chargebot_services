@@ -76,22 +76,31 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('outlet_type')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<OutletType[]> {
-    return await db
+    return db
         .selectFrom("outlet_type")
         .selectAll()
         .where('deleted_by', 'is', null)
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<OutletType | undefined> {
+    return db
+        .selectFrom("outlet_type")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<OutletType | undefined> {
-    return await db
+    return db
         .selectFrom("outlet_type")
         .selectAll()
         .where('id', '=', id)
@@ -102,7 +111,15 @@ export async function get(id: number): Promise<OutletType | undefined> {
 export async function findByCriteria(criteria: Partial<OutletType>): Promise<OutletType[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
+    .selectAll()
+    .execute();
+}
+
+export async function lazyFindByCriteria(criteria: Partial<OutletType>): Promise<OutletType[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
     .selectAll()
     .execute();
 }
@@ -110,7 +127,16 @@ export async function findByCriteria(criteria: Partial<OutletType>): Promise<Out
 export async function findOneByCriteria(criteria: Partial<OutletType>): Promise<OutletType | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
+    .selectAll()
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<OutletType>): Promise<OutletType | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
     .selectAll()
     .limit(1)
     .executeTakeFirst();

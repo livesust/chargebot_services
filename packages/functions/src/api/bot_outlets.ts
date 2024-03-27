@@ -3,7 +3,7 @@ import warmup from "@middy/warmup";
 import { createError } from '@middy/util';
 import Log from '@dazn/lambda-powertools-logger';
 import httpErrorHandler from "@middy/http-error-handler";
-import { IdPathParamSchema } from "../shared/schemas";
+import { BotUUIDPathParamSchema } from "../shared/schemas";
 import { ArrayResponseSchema } from "../schemas/bot_outlets.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
@@ -11,46 +11,45 @@ import httpSecurityHeaders from '@middy/http-security-headers';
 import httpEventNormalizer from '@middy/http-event-normalizer';
 import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
-import { createNotFoundResponse, createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
+import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { Outlet } from "@chargebot-services/core/services/outlet";
 import { ChargebotPDU } from "@chargebot-services/core/services/analytics/chargebot_pdu";
-import { Bot } from "@chargebot-services/core/services/bot";
 import { OutletEquipment } from "@chargebot-services/core/services/outlet_equipment";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
-  const bot_id = +event.pathParameters!.id!;
+  const bot_uuid = event.pathParameters!.bot_uuid!;
 
   try {
-    const bot = await Bot.get(bot_id);
-
-    if (!bot){
-      return createNotFoundResponse({ "response": "bot not found" });
-    }
-
     const [outlets, outletPriority] = await Promise.all([
-      Outlet.findByCriteria({bot_id: bot.id}),
-      ChargebotPDU.getOutletPriorityCharging(bot.bot_uuid),      
+      Outlet.findByBot(bot_uuid),
+      ChargebotPDU.getOutletPriorityCharging(bot_uuid),      
     ]);
 
-    const response = [];
-    for (const outlet of outlets) {
+    // Split the outlet processing into separate promises using map.
+    // Each outlet is processed concurrently, allowing for better parallelism.
+    const outletPromises = outlets.map(async (outlet) => {
       const [outletStatus, outletEquipment] = await Promise.all([
-        ChargebotPDU.getOutletStatus(bot.bot_uuid, outlet.pdu_outlet_number),
+        ChargebotPDU.getOutletStatus(bot_uuid, outlet.pdu_outlet_number),
         OutletEquipment.findOneByCriteria({outlet_id: outlet.id})
       ]);
 
       const equipment = outletEquipment ? outletEquipment.equipment : undefined;
 
-      response.push({
+      return {
         id: outlet.id,
         pdu_outlet_number: outlet.pdu_outlet_number,
         priority_charge: outletPriority?.outlet_id === outlet.pdu_outlet_number - 1,
         status: outletStatus?.status,
         status_timestamp: outletStatus?.timestamp,
         equipment_name: equipment?.name
-      });
-    }
+      };
+    });
+    
+    // Promise.allSettled is used to wait for all promises to settle, regardless of whether they resolve or reject.
+    // The responses are then filtered to retrieve only the fulfilled promises, and their values are extracted.
+    const response = await Promise.all(outletPromises);
+
     return createSuccessResponse(response);
   } catch (error) {
     Log.error("ERROR", { error });
@@ -67,7 +66,7 @@ export const main = middy(handler)
   .use(executionTimeLogger())
   .use(httpEventNormalizer())
   // .use(logTimeout())
-  .use(validator({ pathParametersSchema: IdPathParamSchema }))
+  .use(validator({ pathParametersSchema: BotUUIDPathParamSchema }))
   // after: inverse order execution
   .use(jsonBodySerializer())
   .use(httpSecurityHeaders())

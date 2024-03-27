@@ -4,7 +4,7 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { UniversalAppSettings, UniversalAppSettingsUpdate, NewUniversalAppSettings } from "../database/universal_app_settings";
 
-function withAppSettingsType(eb: ExpressionBuilder<Database, 'universal_app_settings'>) {
+export function withAppSettingsType(eb: ExpressionBuilder<Database, 'universal_app_settings'>) {
     return jsonObjectFrom(
       eb.selectFrom('app_settings_type')
         .selectAll()
@@ -97,22 +97,31 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('universal_app_settings')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<UniversalAppSettings[]> {
-    return await db
+    return db
         .selectFrom("universal_app_settings")
         .selectAll()
         .where('deleted_by', 'is', null)
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<UniversalAppSettings | undefined> {
+    return db
+        .selectFrom("universal_app_settings")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<UniversalAppSettings | undefined> {
-    return await db
+    return db
         .selectFrom("universal_app_settings")
         .selectAll()
         .select((eb) => withAppSettingsType(eb))
@@ -124,18 +133,35 @@ export async function get(id: number): Promise<UniversalAppSettings | undefined>
 export async function findByCriteria(criteria: Partial<UniversalAppSettings>): Promise<UniversalAppSettings[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withAppSettingsType(eb))
+    .execute();
+}
+
+export async function lazyFindByCriteria(criteria: Partial<UniversalAppSettings>): Promise<UniversalAppSettings[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
     .execute();
 }
 
 export async function findOneByCriteria(criteria: Partial<UniversalAppSettings>): Promise<UniversalAppSettings | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withAppSettingsType(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<UniversalAppSettings>): Promise<UniversalAppSettings | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
     .limit(1)
     .executeTakeFirst();
 }

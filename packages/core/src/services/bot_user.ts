@@ -4,7 +4,7 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { BotUser, BotUserUpdate, NewBotUser } from "../database/bot_user";
 
-function withBot(eb: ExpressionBuilder<Database, 'bot_user'>) {
+export function withBot(eb: ExpressionBuilder<Database, 'bot_user'>) {
     return jsonObjectFrom(
       eb.selectFrom('bot')
         .selectAll()
@@ -12,7 +12,7 @@ function withBot(eb: ExpressionBuilder<Database, 'bot_user'>) {
     ).as('bot')
 }
 
-function withUser(eb: ExpressionBuilder<Database, 'bot_user'>) {
+export function withUser(eb: ExpressionBuilder<Database, 'bot_user'>) {
     return jsonObjectFrom(
       eb.selectFrom('user')
         .selectAll()
@@ -111,22 +111,31 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('bot_user')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<BotUser[]> {
-    return await db
+    return db
         .selectFrom("bot_user")
         .selectAll()
         .where('deleted_by', 'is', null)
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<BotUser | undefined> {
+    return db
+        .selectFrom("bot_user")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<BotUser | undefined> {
-    return await db
+    return db
         .selectFrom("bot_user")
         .selectAll()
         .select((eb) => withBot(eb))
@@ -139,20 +148,37 @@ export async function get(id: number): Promise<BotUser | undefined> {
 export async function findByCriteria(criteria: Partial<BotUser>): Promise<BotUser[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withBot(eb))
     .select((eb) => withUser(eb))
     .execute();
 }
 
+export async function lazyFindByCriteria(criteria: Partial<BotUser>): Promise<BotUser[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .execute();
+}
+
 export async function findOneByCriteria(criteria: Partial<BotUser>): Promise<BotUser | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withBot(eb))
     .select((eb) => withUser(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<BotUser>): Promise<BotUser | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
     .limit(1)
     .executeTakeFirst();
 }

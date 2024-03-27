@@ -2,7 +2,7 @@ import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
 
 const PermissionSchemaDef = {
-    permission_name: Joi.string().max(255),
+    name: Joi.string().max(255),
     description: Joi.string().allow(null),
 };
 
@@ -16,6 +16,7 @@ export const CreateSchema = Joi.object({
     ...PermissionSchemaDef
 }).keys({
     // overwrite keys for required attributes
+    name: Joi.string().max(255).required(),
 });
 
 export const UpdateSchema = Joi.object({

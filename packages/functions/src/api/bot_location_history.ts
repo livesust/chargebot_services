@@ -23,30 +23,37 @@ const handler = async (event) => {
   const to = DateTime.fromISO(event.pathParameters!.to!).setZone('UTC').endOf('day');
 
   try {
-    const response = [];
     let currentDay = from.startOf('day');
+    const promises = [];
     while (currentDay <= to) {
       // Clone the input date to avoid modifying the original object
       const start = currentDay.toJSDate();
       const end = currentDay.endOf('day').toJSDate();
 
-      const [summary, route] = await Promise.all([
-        ChargebotGps.getSummaryByBot(bot_uuid, start, end),
-        ChargebotGps.getRouteByBot(bot_uuid, start, end),
-      ]);
+      const promise = (async () => {
+        const [summary, route] = await Promise.all([
+          ChargebotGps.getSummaryByBot(bot_uuid, start, end),
+          ChargebotGps.getRouteByBot(bot_uuid, start, end),
+        ]);
 
-      response.push({
-        bot_uuid,
-        date: currentDay.toISO(),
-        summary,
-        route
-      })
+        return {
+          bot_uuid,
+          date: currentDay.toISO(),
+          summary,
+          route
+        };
+      })();
+    
+      promises.push(promise);
 
       // Move to the next day
       currentDay = currentDay.plus({days: 1});
     }
 
-    return createSuccessResponse(response);
+    // Wait for all promises to resolve
+    const results = await Promise.all(promises);
+
+    return createSuccessResponse(results);
   } catch (error) {
     Log.error("ERROR", { error });
     const httpError = createError(406, "cannot query bot location ", { expose: true });

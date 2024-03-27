@@ -10,12 +10,9 @@ import httpEventNormalizer from '@middy/http-event-normalizer';
 import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import Log from '@dazn/lambda-powertools-logger';
-import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
-import { User } from "@chargebot-services/core/services/user";
-import { BotUser } from "@chargebot-services/core/services/bot_user";
-import { Company } from "@chargebot-services/core/services/company";
+import { createSuccessResponse, getNumber, isWarmingUp } from "../shared/rest_utils";
 import { ChargebotBattery } from "@chargebot-services/core/services/analytics/chargebot_battery";
-import { ChargebotInverter } from "@chargebot-services/core/services/analytics/chargebot_inverter";
+import { Bot } from "@chargebot-services/core/services/bot";
 
 // @ts-expect-error ignore any type for event
 const handler = async ({ requestContext }) => {
@@ -23,42 +20,28 @@ const handler = async ({ requestContext }) => {
 
   const response: unknown[] = [];
 
+  console.log('GET Bots Assigned', user_id);
+
   try {
-    const users = await User.findByCriteria({ user_id: user_id });
-    if (users?.length == 0) {
-      Log.warn('User not found');
-      throw createError(404, "user not found", { expose: true });
-    }
-    const user = users[0];
+    const botsByUser = await Bot.findBotsByUser(user_id);
 
-    const [company, botsByUser] = await Promise.all([
-      Company.get(user.company_id),
-      BotUser.findByCriteria({ user_id: user.id }),
-    ]);
-
-    if (!company) {
-      Log.warn('User company not found');
-      throw createError(404, "user's company not found", { expose: true });
+    if (botsByUser?.length === 0) {
+      Log.warn('User bots not found');
+      throw createError(404, "user bots not found", { expose: true });
     }
 
     if (botsByUser) {
-      const levels = await Promise.all(botsByUser.map(bu => ChargebotBattery.getBatteryLevel(bu.bot!.bot_uuid)));
-      const status = await Promise.all(botsByUser.map(bu => ChargebotInverter.getBatteryStatus(bu.bot!.bot_uuid)));
-      for (const botUser of botsByUser) {
-        const bot = botUser.bot!;
-
+      const bot_uuids = botsByUser.map(b => b.bot_uuid);
+      const battery_states = await ChargebotBattery.getBatteryStates(bot_uuids);
+      for (const bot of botsByUser) {
         response.push({
           "id": bot.id,
           "bot_uuid": bot.bot_uuid,
           "name": bot.name,
           "initials": bot.initials,
           "pin_color": bot.pin_color,
-          "battery_level": levels.find(l => l?.bot_uuid === bot.bot_uuid)?.level,
-          "battery_status": status.find(l => l?.bot_uuid === bot.bot_uuid)?.status,
-          "company_id": company.id,
-          "company_name": company.name,
-          "customer_id": company.customer?.id,
-          "customer_name": company.customer?.name,
+          "battery_level": getNumber(battery_states?.find(l => l?.bot_uuid === bot.bot_uuid)?.battery_level),
+          "battery_status": battery_states?.find(l => l?.bot_uuid === bot.bot_uuid)?.battery_status ?? 'UNKNOWN',
         });
       }
     }

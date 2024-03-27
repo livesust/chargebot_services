@@ -4,7 +4,7 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { UserScheduledAlerts, UserScheduledAlertsUpdate, NewUserScheduledAlerts } from "../database/user_scheduled_alerts";
 
-function withScheduledAlert(eb: ExpressionBuilder<Database, 'user_scheduled_alerts'>) {
+export function withScheduledAlert(eb: ExpressionBuilder<Database, 'user_scheduled_alerts'>) {
     return jsonObjectFrom(
       eb.selectFrom('scheduled_alert')
         .selectAll()
@@ -12,7 +12,7 @@ function withScheduledAlert(eb: ExpressionBuilder<Database, 'user_scheduled_aler
     ).as('scheduled_alert')
 }
 
-function withUser(eb: ExpressionBuilder<Database, 'user_scheduled_alerts'>) {
+export function withUser(eb: ExpressionBuilder<Database, 'user_scheduled_alerts'>) {
     return jsonObjectFrom(
       eb.selectFrom('user')
         .selectAll()
@@ -112,22 +112,31 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('user_scheduled_alerts')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<UserScheduledAlerts[]> {
-    return await db
+    return db
         .selectFrom("user_scheduled_alerts")
         .selectAll()
         .where('deleted_by', 'is', null)
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<UserScheduledAlerts | undefined> {
+    return db
+        .selectFrom("user_scheduled_alerts")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<UserScheduledAlerts | undefined> {
-    return await db
+    return db
         .selectFrom("user_scheduled_alerts")
         .selectAll()
         .select((eb) => withScheduledAlert(eb))
@@ -140,20 +149,37 @@ export async function get(id: number): Promise<UserScheduledAlerts | undefined> 
 export async function findByCriteria(criteria: Partial<UserScheduledAlerts>): Promise<UserScheduledAlerts[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withScheduledAlert(eb))
     .select((eb) => withUser(eb))
     .execute();
 }
 
+export async function lazyFindByCriteria(criteria: Partial<UserScheduledAlerts>): Promise<UserScheduledAlerts[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .execute();
+}
+
 export async function findOneByCriteria(criteria: Partial<UserScheduledAlerts>): Promise<UserScheduledAlerts | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withScheduledAlert(eb))
     .select((eb) => withUser(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<UserScheduledAlerts>): Promise<UserScheduledAlerts | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
     .limit(1)
     .executeTakeFirst();
 }

@@ -11,8 +11,14 @@ export function RDSStack({ app, stack }: StackContext) {
     maxCapacity: 'ACU_64',
   };
 
+  const stagingConfig = {
+    autoPause: false,
+    minCapacity: 'ACU_2',
+    maxCapacity: 'ACU_2',
+  };
+
   const devConfig = {
-    autoPause: 15,  // 15min inactive before the cluster is paused
+    autoPause: 5,  // 5min inactive before the cluster is paused
     minCapacity: "ACU_2",
     maxCapacity: "ACU_2",
   };
@@ -32,7 +38,9 @@ export function RDSStack({ app, stack }: StackContext) {
       }
     },
     // @ts-expect-error ignore typing
-    scaling: app.stage === "prod" ? prodConfig : devConfig,
+    scaling: app.stage === "prod"
+      ? prodConfig
+      : (app.stage === "staging" ? stagingConfig : devConfig),
   });
 
   stack.addOutputs({

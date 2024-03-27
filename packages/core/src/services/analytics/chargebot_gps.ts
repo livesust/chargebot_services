@@ -1,7 +1,7 @@
 export * as ChargebotGps from "./chargebot_gps";
 import { sql } from "kysely";
-import db from '../../api';
-import { ChargebotGps, ChargebotGpsHistory, ChargebotGpsPosition, VehicleStatus } from "../../api/chargebot_gps";
+import db from '../../timescale';
+import { ChargebotGps, ChargebotGpsHistory, ChargebotGpsPosition, VehicleStatus } from "../../timescale/chargebot_gps";
 
 export function translateVehicleStatus(vehicle_status: VehicleStatus | string | undefined): string | undefined {
   if (!vehicle_status) {
@@ -149,10 +149,8 @@ export async function getDaysWithData(bot_uuid: string, from: Date, to: Date): P
     .groupBy('bucket')
     .orderBy('bucket', 'asc');
   
-  // console.log('Query', await query.explain(), query.compile())
-
   // @ts-expect-error not overloads match
-  return await query.execute();
+  return query.execute();
 }
 
 async function getArrivedAtWhenAtHome(location: ChargebotGps) {
@@ -187,7 +185,7 @@ async function getArrivedAtWhenAtHome(location: ChargebotGps) {
       timestamp ASC
   LIMIT 1;
   */
-  return await db
+  return db
     .with(
       'vehicle_status_groups',
       // @ts-expect-error ignore overload not mapping
@@ -216,7 +214,7 @@ async function getArrivedAtWhenParked(location: ChargebotGps) {
   // Vehicle is currently PARKED
   // We need to find the first report where vehicle is not PARKED
   // in the current bucket of reports
-  return await db
+  return db
     .with(
       'vehicle_status_groups',
       // @ts-expect-error ignore overload not mapping
@@ -254,7 +252,7 @@ async function getLeftAtWhenInTransit(location: ChargebotGps) {
 
   if (prev) {
     // Now get the first MOVING report after being PARKED/AT_HOME
-    return await db
+    return db
       .selectFrom('chargebot_gps')
       .select(({ fn }) => [
         fn.min('chargebot_gps.timestamp').as('timestamp'),

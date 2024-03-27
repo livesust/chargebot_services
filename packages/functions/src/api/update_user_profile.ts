@@ -26,12 +26,13 @@ const handler = async (event) => {
   const body = event.body;
 
   try {
-    const user = await User.findOneByCriteria({user_id: cognito_id});
+    const user = await User.findByCognitoId(cognito_id);
     if (!user) {
       Log.debug("User not found", { cognito_id });
       return createNotFoundResponse("User not found");
     }
 
+    const promises = [];
     // update user info
     const update = {
       first_name: body.first_name,
@@ -41,7 +42,7 @@ const handler = async (event) => {
       modified_by: user_sub,
       modified_date: new Date(),
     };
-    await User.update(user.id!, update);
+    promises.push(User.update(user.id!, update));
 
     // find user email, phone and role
     const [userEmail, userPhone, userRole] = await Promise.all([
@@ -51,11 +52,6 @@ const handler = async (event) => {
     ]);
 
     // update/create primary email
-    const promises: Promise<{
-      entity: unknown | undefined,
-      event: unknown
-    } | undefined>[] = [];
-
     if (!userEmail) {
       promises.push(UserEmail.create({
         email_address: body.email_address,
@@ -79,7 +75,7 @@ const handler = async (event) => {
 
     // update/create role
     if (!userRole) {
-      promises.push (UserRole.create({
+      promises.push(UserRole.create({
         user_id: user.id!,
         role_id: body.role_id,
       }));
@@ -87,7 +83,7 @@ const handler = async (event) => {
       promises.push(UserRole.update(userRole.id!, { role_id: body.role_id }));
     }
 
-    const [email, phone, role] = await Promise.all(promises);
+    const [_, email, phone, role] = await Promise.all(promises);
 
     const response = {
       id: user.id!,

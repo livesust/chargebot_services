@@ -87,8 +87,14 @@ export default new Kysely<Database>({
             secretArn: RDS.RDSCluster.secretArn,
             resourceArn: RDS.RDSCluster.clusterArn,
             client: new RDSData({}),
-        },
-        
+        },        
     }),
     plugins: [new ParseJSONResultsPlugin()],
+    log(event): void {
+      if (event.level === 'query') {
+        console.log(`RDS Time: ${Math.round(event.queryDurationMillis)}ms
+        SQL: ${event.query.sql}
+        Params: ${JSON.stringify(event.query.parameters, null, 2)}`);
+      }
+    },
 });

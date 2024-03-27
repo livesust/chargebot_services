@@ -76,22 +76,31 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('component')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<Component[]> {
-    return await db
+    return db
         .selectFrom("component")
         .selectAll()
         .where('deleted_by', 'is', null)
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<Component | undefined> {
+    return db
+        .selectFrom("component")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<Component | undefined> {
-    return await db
+    return db
         .selectFrom("component")
         .selectAll()
         .where('id', '=', id)
@@ -102,7 +111,15 @@ export async function get(id: number): Promise<Component | undefined> {
 export async function findByCriteria(criteria: Partial<Component>): Promise<Component[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
+    .selectAll()
+    .execute();
+}
+
+export async function lazyFindByCriteria(criteria: Partial<Component>): Promise<Component[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
     .selectAll()
     .execute();
 }
@@ -110,7 +127,16 @@ export async function findByCriteria(criteria: Partial<Component>): Promise<Comp
 export async function findOneByCriteria(criteria: Partial<Component>): Promise<Component | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
+    .selectAll()
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<Component>): Promise<Component | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
     .selectAll()
     .limit(1)
     .executeTakeFirst();

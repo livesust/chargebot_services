@@ -3,6 +3,8 @@ import { RDSStack } from "./stacks/RDSStack";
 import { CognitoStack } from "./stacks/CognitoStack";
 import { ApiStack } from "./stacks/ApiStack";
 import { LambdaStack } from "./stacks/LambdaStack";
+import { EventBusStack } from "./stacks/EventBusStack";
+import { IotStack } from "./stacks/IotStack";
 
 export default {
   config(_input) {
@@ -18,6 +20,8 @@ export default {
     }
     app.stack(RDSStack);
     app.stack(CognitoStack);
+    app.stack(IotStack);
+    app.stack(EventBusStack);
     app.stack(LambdaStack);
     app.stack(ApiStack);
   }

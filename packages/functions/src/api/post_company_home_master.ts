@@ -1,48 +1,57 @@
 import middy from "@middy/core";
 import warmup from "@middy/warmup";
-import { createError, HttpError } from '@middy/util';
 import Log from '@dazn/lambda-powertools-logger';
+import { createError, HttpError } from '@middy/util';
 import httpErrorHandler from "@middy/http-error-handler";
-import { ControlOutletSchema } from "../schemas/control_outlet.schema";
+import { PathParamSchema } from "../schemas/company_home_master.schema";
+import { ResponseSchema, EntitySchema } from "../schemas/home_master.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import httpSecurityHeaders from '@middy/http-security-headers';
 import httpEventNormalizer from '@middy/http-event-normalizer';
 import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
-import { createNotFoundResponse, createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
-import { BotUUIDPathParamSchema, SuccessResponseSchema } from "src/shared/schemas";
-import { Outlet } from "@chargebot-services/core/services/outlet";
-import { IoTData } from "@chargebot-services/core/services/aws/iot_data";
+import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
+import { HomeMaster } from "@chargebot-services/core/services/home_master";
+import { Company } from "@chargebot-services/core/services/company";
 import jsonBodyParser from "@middy/http-json-body-parser";
 import { dateReviver } from "src/shared/middlewares/json-date-parser";
 
 // @ts-expect-error ignore any type for event
-export const handler = async (event) => {
-  const bot_uuid = event.pathParameters!.bot_uuid!;
+const handler = async (event) => {
+  const company_id = +event.pathParameters!.company_id!;
+  const user_id = event.requestContext?.authorizer?.jwt.claims.sub;
+  const now = new Date();
   const body = event.body;
 
   try {
-    const outlet = await Outlet.findByBotAndPduNumber(bot_uuid, body.pdu_outlet_number);
-    if (!outlet) {
-      return createNotFoundResponse({ "response": "outlet not found" });
+    const existent = await HomeMaster.findByCompany(company_id);
+
+    if (existent) {
+      const update = (await HomeMaster.update(existent.id!, body))?.entity;
+      return createSuccessResponse(update);
     }
 
-    const payload = {
-      // firmware expects outlet ids from 0 to 7
-      "outlet_id": body.pdu_outlet_number - 1,
-      "command": body.command
-    };
+    const [home_master, company] = await Promise.all([
+      HomeMaster.create({
+        ...body,
+        created_by: user_id,
+        created_date: now,
+        modified_by: user_id,
+        modified_date: now
+      }),
+      Company.lazyGet(company_id)
+    ]);
 
-    const topic = `chargebot/control/${bot_uuid}/outlet`;
-
-    const sent = await IoTData.publish(topic, payload);
-
-    if (sent) {
-      return createSuccessResponse({ "response": "success" });
-    } else {
-      throw createError(406, "error publishing command to device", { expose: true });
+    if (home_master?.entity) {
+      await Company.update(company!.id!, {
+        home_master_id: home_master.entity.id,
+        modified_by: user_id,
+        modified_date: now
+      });
     }
+
+    return createSuccessResponse(home_master?.entity);
 
   } catch (error) {
     Log.error("ERROR", { error });
@@ -50,7 +59,7 @@ export const handler = async (event) => {
       // re-throw when is a http error generated above
       throw error;
     }
-    const httpError = createError(406, "cannot assign equipment to outlet", { expose: true });
+    const httpError = createError(406, "cannot update company home", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;
   }
@@ -64,13 +73,13 @@ export const main = middy(handler)
   // .use(logTimeout())
   .use(jsonBodyParser({ reviver: dateReviver }))
   .use(validator({
-    pathParametersSchema: BotUUIDPathParamSchema,
-    eventSchema: ControlOutletSchema
+    pathParametersSchema: PathParamSchema,
+    eventSchema: EntitySchema
   }))
   // after: inverse order execution
   .use(jsonBodySerializer())
   .use(httpSecurityHeaders())
-  .use(validator({ responseSchema: SuccessResponseSchema }))
+  .use(validator({ responseSchema: ResponseSchema }))
   // httpErrorHandler must be the last error handler attached, first to execute.
   // When non-http errors (those without statusCode) occur they will be returned with a 500 status code.
   .use(httpErrorHandler());

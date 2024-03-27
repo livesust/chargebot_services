@@ -2,7 +2,6 @@ import Joi from 'joi';
 import {  JsonResponseSchemaDef } from "../shared/schemas";
 
 const UsageSchemaDef = {
-    bot_uuid: Joi.string().allow(null),
     timestamp: Joi.date().allow(null),
     energy_usage: Joi.number().allow(null),
     total_charging: Joi.number().allow(null),

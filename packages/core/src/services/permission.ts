@@ -11,7 +11,7 @@ export async function create(permission: NewPermission): Promise<{
         .selectFrom('permission')
         .select(['id'])
         .where((eb) => eb.or([
-            eb('permission_name', '=', permission.permission_name),
+            eb('name', '=', permission.name),
         ]))
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
@@ -87,22 +87,31 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('permission')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<Permission[]> {
-    return await db
+    return db
         .selectFrom("permission")
         .selectAll()
         .where('deleted_by', 'is', null)
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<Permission | undefined> {
+    return db
+        .selectFrom("permission")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<Permission | undefined> {
-    return await db
+    return db
         .selectFrom("permission")
         .selectAll()
         .where('id', '=', id)
@@ -113,7 +122,15 @@ export async function get(id: number): Promise<Permission | undefined> {
 export async function findByCriteria(criteria: Partial<Permission>): Promise<Permission[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
+    .selectAll()
+    .execute();
+}
+
+export async function lazyFindByCriteria(criteria: Partial<Permission>): Promise<Permission[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
     .selectAll()
     .execute();
 }
@@ -121,7 +138,16 @@ export async function findByCriteria(criteria: Partial<Permission>): Promise<Per
 export async function findOneByCriteria(criteria: Partial<Permission>): Promise<Permission | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
+    .selectAll()
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<Permission>): Promise<Permission | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
     .selectAll()
     .limit(1)
     .executeTakeFirst();
@@ -134,11 +160,11 @@ function buildCriteriaQuery(criteria: Partial<Permission>) {
     query = query.where('id', '=', criteria.id);
   }
 
-  if (criteria.permission_name !== undefined) {
+  if (criteria.name !== undefined) {
     query = query.where(
-      'permission_name', 
-      criteria.permission_name === null ? 'is' : '=', 
-      criteria.permission_name
+      'name', 
+      criteria.name === null ? 'is' : '=', 
+      criteria.name
     );
   }
   if (criteria.description !== undefined) {

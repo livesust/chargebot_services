@@ -4,7 +4,7 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { AppInstall, AppInstallUpdate, NewAppInstall } from "../database/app_install";
 
-function withUser(eb: ExpressionBuilder<Database, 'app_install'>) {
+export function withUser(eb: ExpressionBuilder<Database, 'app_install'>) {
     return jsonObjectFrom(
       eb.selectFrom('user')
         .selectAll()
@@ -86,22 +86,31 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('app_install')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<AppInstall[]> {
-    return await db
+    return db
         .selectFrom("app_install")
         .selectAll()
         .where('deleted_by', 'is', null)
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<AppInstall | undefined> {
+    return db
+        .selectFrom("app_install")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<AppInstall | undefined> {
-    return await db
+    return db
         .selectFrom("app_install")
         .selectAll()
         .select((eb) => withUser(eb))
@@ -110,32 +119,38 @@ export async function get(id: number): Promise<AppInstall | undefined> {
         .executeTakeFirst();
 }
 
-export async function getAppsToNotify(user_ids: number[]): Promise<AppInstall[] | undefined> {
-    return await db
-        .selectFrom("app_install")
-        .selectAll()
-        .select((eb) => withUser(eb))
-        .where('user_id', 'in', user_ids)
-        .where('push_token', 'is not', null)
-        .where('deleted_by', 'is', null)
-        .execute();
-}
-
 export async function findByCriteria(criteria: Partial<AppInstall>): Promise<AppInstall[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withUser(eb))
+    .execute();
+}
+
+export async function lazyFindByCriteria(criteria: Partial<AppInstall>): Promise<AppInstall[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
     .execute();
 }
 
 export async function findOneByCriteria(criteria: Partial<AppInstall>): Promise<AppInstall | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withUser(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<AppInstall>): Promise<AppInstall | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
     .limit(1)
     .executeTakeFirst();
 }

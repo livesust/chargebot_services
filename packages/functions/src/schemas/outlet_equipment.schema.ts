@@ -17,9 +17,12 @@ export const EntitySchema = Joi.object({
     equipment_id: Joi.number(),
     outlet_id: Joi.number(),
     user_id: Joi.number(),
-    equipment: EquipmentSchema.allow(null),
-    outlet: OutletSchema.allow(null),
-    user: UserSchema.allow(null),
+    
+    equipment: EquipmentSchema,
+    
+    outlet: OutletSchema,
+    
+    user: UserSchema,
 });
 
 export const CreateSchema = Joi.object({

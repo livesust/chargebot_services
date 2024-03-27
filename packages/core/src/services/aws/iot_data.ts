@@ -31,10 +31,11 @@ export async function getSystemStatus(bot_uuid: string, shadow_name: string): Pr
   })
 
   try {
-    console.log("Get Shadow from IoT: ", bot_uuid);
+    console.time("Get Shadow from IoT: " + bot_uuid);
     const response = await client.send(getThingShadowCommand);
     if (response.$metadata.httpStatusCode === 200 && response.payload) {
       const shadow: IoTShadow = JSON.parse(Buffer.from(response.payload).toString())
+      console.timeEnd("Get Shadow from IoT: " + bot_uuid);
       return shadow;
     }
   } catch (err) {

@@ -6,63 +6,63 @@ import { DateTime } from 'luxon';
 import { OutletSchedule, OutletScheduleUpdate, NewOutletSchedule } from "../database/outlet_schedule";
 import { Outlet } from "./outlet";
 
-function withOutlet(eb: ExpressionBuilder<Database, 'outlet_schedule'>) {
-  return jsonObjectFrom(
-    eb.selectFrom('outlet')
-      .selectAll()
-      .whereRef('outlet.id', '=', 'outlet_schedule.outlet_id')
-  ).as('outlet')
+export function withOutlet(eb: ExpressionBuilder<Database, 'outlet_schedule'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('outlet')
+        .selectAll()
+        .whereRef('outlet.id', '=', 'outlet_schedule.outlet_id')
+    ).as('outlet')
 }
 
 export async function create(outlet_schedule: NewOutletSchedule): Promise<{
   entity: OutletSchedule | undefined,
   event: unknown
 } | undefined> {
-  const created = await db
-    .insertInto('outlet_schedule')
-    .values({
-      ...outlet_schedule,
-    })
-    .returningAll()
-    .executeTakeFirst();
+    const created = await db
+        .insertInto('outlet_schedule')
+        .values({
+            ...outlet_schedule,
+        })
+        .returningAll()
+        .executeTakeFirst();
+    
+    if (!created) {
+      return undefined;
+    }
 
-  if (!created) {
-    return undefined;
-  }
-
-  return await buildResponse(created);
+    return await buildResponse(created);
 }
 
 export async function update(id: number, outlet_schedule: OutletScheduleUpdate): Promise<{
   entity: OutletSchedule | undefined,
   event: unknown
 } | undefined> {
-  const updated = await db
-    .updateTable('outlet_schedule')
-    .set(outlet_schedule)
-    .where('id', '=', id)
-    .where('deleted_by', 'is', null)
-    .returningAll()
-    .executeTakeFirst();
+    const updated = await db
+        .updateTable('outlet_schedule')
+        .set(outlet_schedule)
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .returningAll()
+        .executeTakeFirst();
 
-  if (!updated) {
-    return undefined;
-  }
+    if (!updated) {
+      return undefined;
+    }
 
-  return await buildResponse(updated);
+    return await buildResponse(updated);
 }
 
 export async function remove(id: number, user_id: string): Promise<{
   entity: OutletSchedule | undefined,
   event: unknown
 } | undefined> {
-  const deleted = await db
-    .updateTable('outlet_schedule')
-    .set({ deleted_date: new Date(), deleted_by: user_id })
-    .where('id', '=', id)
-    .where('deleted_by', 'is', null)
-    .returningAll()
-    .executeTakeFirst();
+    const deleted = await db
+        .updateTable('outlet_schedule')
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .returningAll()
+        .executeTakeFirst();
 
   if (!deleted) {
     return undefined;
@@ -91,48 +91,74 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-  await db
-    .deleteFrom('outlet_schedule')
-    .where('id', '=', id)
-    .executeTakeFirst();
+    db
+        .deleteFrom('outlet_schedule')
+        .where('id', '=', id)
+        .executeTakeFirst();
 }
 
 export async function list(): Promise<OutletSchedule[]> {
-  return await db
-    .selectFrom("outlet_schedule")
-    .selectAll()
-    .where('deleted_by', 'is', null)
-    .execute();
+    return db
+        .selectFrom("outlet_schedule")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function lazyGet(id: number): Promise<OutletSchedule | undefined> {
+    return db
+        .selectFrom("outlet_schedule")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
 }
 
 export async function get(id: number): Promise<OutletSchedule | undefined> {
-  return await db
-    .selectFrom("outlet_schedule")
-    .selectAll()
-    // uncoment to enable eager loading
-    //.select((eb) => withOutlet(eb))
-    .where('id', '=', id)
-    .where('deleted_by', 'is', null)
-    .executeTakeFirst();
+    return db
+        .selectFrom("outlet_schedule")
+        .selectAll()
+        // uncoment to enable eager loading
+        //.select((eb) => withOutlet(eb))
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
 }
 
 export async function findByCriteria(criteria: Partial<OutletSchedule>): Promise<OutletSchedule[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     // uncoment to enable eager loading
     //.select((eb) => withOutlet(eb))
+    .execute();
+}
+
+export async function lazyFindByCriteria(criteria: Partial<OutletSchedule>): Promise<OutletSchedule[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
     .execute();
 }
 
 export async function findOneByCriteria(criteria: Partial<OutletSchedule>): Promise<OutletSchedule | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     // uncoment to enable eager loading
     //.select((eb) => withOutlet(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<OutletSchedule>): Promise<OutletSchedule | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
     .limit(1)
     .executeTakeFirst();
 }
@@ -146,8 +172,8 @@ function buildCriteriaQuery(criteria: Partial<OutletSchedule>) {
 
   if (criteria.day_of_week !== undefined) {
     query = query.where(
-      'day_of_week',
-      criteria.day_of_week === null ? 'is' : '=',
+      'day_of_week', 
+      criteria.day_of_week === null ? 'is' : '=', 
       criteria.day_of_week
     );
   }
@@ -171,8 +197,8 @@ function buildCriteriaQuery(criteria: Partial<OutletSchedule>) {
 
   if (criteria.modified_by !== undefined) {
     query = query.where(
-      'modified_by',
-      criteria.modified_by === null ? 'is' : '=',
+      'modified_by', 
+      criteria.modified_by === null ? 'is' : '=', 
       criteria.modified_by
     );
   }

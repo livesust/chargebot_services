@@ -1,10 +1,11 @@
 name: permission
 attributes:
-  - attribute: permission_name
+  - attribute: name
     type: varchar
     varchar_length: '255'
     tsType: string
     unique: true
+    not_null: true
   - attribute: description
     type: text
     tsType: string

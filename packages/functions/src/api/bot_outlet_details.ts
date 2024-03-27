@@ -12,9 +12,9 @@ import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import { createNotFoundResponse, createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { Outlet } from "@chargebot-services/core/services/outlet";
-import { OutletEquipment } from "@chargebot-services/core/services/outlet_equipment";
 import { OutletSchedule } from "@chargebot-services/core/services/outlet_schedule";
 import { ChargebotPDU } from "@chargebot-services/core/services/analytics/chargebot_pdu";
+import { Equipment } from "@chargebot-services/core/services/equipment";
 
 
 // @ts-expect-error ignore any type for event
@@ -23,20 +23,18 @@ const handler = async (event) => {
   const outlet_id = +event.pathParameters!.outlet_id!;
 
   try {
-    const outlet = await Outlet.get(outlet_id);
+    const outlet = await Outlet.lazyGet(outlet_id);
 
     if (!outlet) {
       return createNotFoundResponse({ "response": "outlet not found" });
     }
 
-    const [outletStatus, outletPriority, outletSchedule, outletEquipment] = await Promise.all([
+    const [outletStatus, outletPriority, outletSchedule, equipment] = await Promise.all([
       ChargebotPDU.getOutletStatus(bot_uuid, outlet.pdu_outlet_number),
       ChargebotPDU.getOutletPriorityCharging(bot_uuid),
       OutletSchedule.findOneByCriteria({outlet_id: outlet.id}),
-      OutletEquipment.findOneByCriteria({outlet_id: outlet.id})
+      Equipment.findByOutlet(outlet.id!)
     ]);
-
-    const equipment = outletEquipment ? outletEquipment.equipment : undefined;
 
     const response = {
       id: outlet.id,
@@ -54,12 +52,12 @@ const handler = async (event) => {
           description: equipment.equipment_type?.description,
         }
       },
-      outlet_schedule: {
-        id: outletSchedule?.id,
-        all_day: outletSchedule?.all_day,
-        start_time: outletSchedule?.start_time,
-        end_time: outletSchedule?.end_time,
-        day_of_week: outletSchedule?.day_of_week,
+      outlet_schedule: outletSchedule && {
+        id: outletSchedule.id,
+        all_day: outletSchedule.all_day,
+        start_time: outletSchedule.start_time,
+        end_time: outletSchedule.end_time,
+        day_of_week: outletSchedule.day_of_week,
       }
     };
 

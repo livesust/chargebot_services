@@ -87,22 +87,31 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('alert_type')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<AlertType[]> {
-    return await db
+    return db
         .selectFrom("alert_type")
         .selectAll()
         .where('deleted_by', 'is', null)
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<AlertType | undefined> {
+    return db
+        .selectFrom("alert_type")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<AlertType | undefined> {
-    return await db
+    return db
         .selectFrom("alert_type")
         .selectAll()
         .where('id', '=', id)
@@ -113,7 +122,15 @@ export async function get(id: number): Promise<AlertType | undefined> {
 export async function findByCriteria(criteria: Partial<AlertType>): Promise<AlertType[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
+    .selectAll()
+    .execute();
+}
+
+export async function lazyFindByCriteria(criteria: Partial<AlertType>): Promise<AlertType[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
     .selectAll()
     .execute();
 }
@@ -121,7 +138,16 @@ export async function findByCriteria(criteria: Partial<AlertType>): Promise<Aler
 export async function findOneByCriteria(criteria: Partial<AlertType>): Promise<AlertType | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
+    .selectAll()
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<AlertType>): Promise<AlertType | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
     .selectAll()
     .limit(1)
     .executeTakeFirst();

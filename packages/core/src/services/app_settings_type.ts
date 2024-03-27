@@ -87,22 +87,31 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('app_settings_type')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<AppSettingsType[]> {
-    return await db
+    return db
         .selectFrom("app_settings_type")
         .selectAll()
         .where('deleted_by', 'is', null)
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<AppSettingsType | undefined> {
+    return db
+        .selectFrom("app_settings_type")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<AppSettingsType | undefined> {
-    return await db
+    return db
         .selectFrom("app_settings_type")
         .selectAll()
         .where('id', '=', id)
@@ -113,7 +122,15 @@ export async function get(id: number): Promise<AppSettingsType | undefined> {
 export async function findByCriteria(criteria: Partial<AppSettingsType>): Promise<AppSettingsType[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
+    .selectAll()
+    .execute();
+}
+
+export async function lazyFindByCriteria(criteria: Partial<AppSettingsType>): Promise<AppSettingsType[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
     .selectAll()
     .execute();
 }
@@ -121,7 +138,16 @@ export async function findByCriteria(criteria: Partial<AppSettingsType>): Promis
 export async function findOneByCriteria(criteria: Partial<AppSettingsType>): Promise<AppSettingsType | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
+    .selectAll()
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<AppSettingsType>): Promise<AppSettingsType | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
     .selectAll()
     .limit(1)
     .executeTakeFirst();

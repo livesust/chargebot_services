@@ -4,7 +4,7 @@ import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { AppInstallPermissions, AppInstallPermissionsUpdate, NewAppInstallPermissions } from "../database/app_install_permissions";
 
-function withAppInstall(eb: ExpressionBuilder<Database, 'app_install_permissions'>) {
+export function withAppInstall(eb: ExpressionBuilder<Database, 'app_install_permissions'>) {
     return jsonObjectFrom(
       eb.selectFrom('app_install')
         .selectAll()
@@ -12,7 +12,7 @@ function withAppInstall(eb: ExpressionBuilder<Database, 'app_install_permissions
     ).as('app_install')
 }
 
-function withPermission(eb: ExpressionBuilder<Database, 'app_install_permissions'>) {
+export function withPermission(eb: ExpressionBuilder<Database, 'app_install_permissions'>) {
     return jsonObjectFrom(
       eb.selectFrom('permission')
         .selectAll()
@@ -111,22 +111,31 @@ export async function remove(id: number, user_id: string): Promise<{
 }
 
 export async function hard_remove(id: number): Promise<void> {
-    await db
+    db
         .deleteFrom('app_install_permissions')
         .where('id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<AppInstallPermissions[]> {
-    return await db
+    return db
         .selectFrom("app_install_permissions")
         .selectAll()
         .where('deleted_by', 'is', null)
         .execute();
 }
 
+export async function lazyGet(id: number): Promise<AppInstallPermissions | undefined> {
+    return db
+        .selectFrom("app_install_permissions")
+        .selectAll()
+        .where('id', '=', id)
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+}
+
 export async function get(id: number): Promise<AppInstallPermissions | undefined> {
-    return await db
+    return db
         .selectFrom("app_install_permissions")
         .selectAll()
         .select((eb) => withAppInstall(eb))
@@ -139,20 +148,37 @@ export async function get(id: number): Promise<AppInstallPermissions | undefined
 export async function findByCriteria(criteria: Partial<AppInstallPermissions>): Promise<AppInstallPermissions[]> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withAppInstall(eb))
     .select((eb) => withPermission(eb))
     .execute();
 }
 
+export async function lazyFindByCriteria(criteria: Partial<AppInstallPermissions>): Promise<AppInstallPermissions[]> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
+    .execute();
+}
+
 export async function findOneByCriteria(criteria: Partial<AppInstallPermissions>): Promise<AppInstallPermissions | undefined> {
   const query = buildCriteriaQuery(criteria);
 
-  return await query
+  return query
     .selectAll()
     .select((eb) => withAppInstall(eb))
     .select((eb) => withPermission(eb))
+    .limit(1)
+    .executeTakeFirst();
+}
+
+export async function lazyFindOneByCriteria(criteria: Partial<AppInstallPermissions>): Promise<AppInstallPermissions | undefined> {
+  const query = buildCriteriaQuery(criteria);
+
+  return query
+    .selectAll()
     .limit(1)
     .executeTakeFirst();
 }

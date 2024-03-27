@@ -3,7 +3,9 @@ import { ObjectSchema } from "joi";
 import { loadSchemas } from '../schemas';
 
 // @ts-expect-error ignore any type for event
-export const isWarmingUp = (event) => event.isWarmingUp === true
+export const isWarmingUp = (event) => {
+  return event.isWarmingUp === true
+}
 
 // @ts-expect-error ignore any type for body
 export const createNotFoundResponse = (body) => {
@@ -26,8 +28,8 @@ export const createSuccessResponse = (body) => {
 // @ts-expect-error ignore any type for response
 export const validateCreateBody = async (body, entity_name: string) => {
     const schemas = loadSchemas(entity_name);
-    const responseSchema: ObjectSchema = schemas.CreateSchema;
-    const { error: validationError } = responseSchema.validate(body);
+    const createSchema: ObjectSchema = schemas.CreateSchema;
+    const { error: validationError } = createSchema.validate(body);
     if (validationError) {
         // Bad Request
         const error = createError(406, validationError.message, { expose: true });
@@ -40,8 +42,8 @@ export const validateCreateBody = async (body, entity_name: string) => {
 // @ts-expect-error ignore any type for response
 export const validateUpdateBody = async (body, entity_name: string) => {
     const schemas = loadSchemas(entity_name);
-    const responseSchema: ObjectSchema = schemas.UpdateSchema;
-    const { error: validationError } = responseSchema.validate(body);
+    const updateSchema: ObjectSchema = schemas.UpdateSchema;
+    const { error: validationError } = updateSchema.validate(body);
     if (validationError) {
         // Bad Request
         const error = createError(406, validationError.message, { expose: true });
@@ -54,8 +56,8 @@ export const validateUpdateBody = async (body, entity_name: string) => {
 // @ts-expect-error ignore any type for response
 export const validateSearchBody = async (body, entity_name: string) => {
     const schemas = loadSchemas(entity_name);
-    const responseSchema: ObjectSchema = schemas.SearchSchema;
-    const { error: validationError } = responseSchema.validate(body);
+    const searchSchema: ObjectSchema = schemas.SearchSchema;
+    const { error: validationError } = searchSchema.validate(body);
     if (validationError) {
         // Bad Request
         const error = createError(406, validationError.message, { expose: true });

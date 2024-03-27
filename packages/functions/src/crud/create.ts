@@ -33,7 +33,7 @@ const handler = async (event) => {
   try {
     created = await service.create(body);
   } catch (error) {
-    Log.error("Creation error", { error });
+    Log.error("Creation Error", { error });
     if (error instanceof BusinessError) {
       throw createError(404, error.message, { expose: true });
     }
