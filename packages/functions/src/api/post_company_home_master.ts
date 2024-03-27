@@ -3,58 +3,55 @@ import warmup from "@middy/warmup";
 import Log from '@dazn/lambda-powertools-logger';
 import { createError, HttpError } from '@middy/util';
 import httpErrorHandler from "@middy/http-error-handler";
-import { EntitySchema, ResponseSchema } from "../schemas/app_install.schema";
+import { PathParamSchema } from "../schemas/company_home_master.schema";
+import { ResponseSchema, EntitySchema } from "../schemas/home_master.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import httpSecurityHeaders from '@middy/http-security-headers';
 import httpEventNormalizer from '@middy/http-event-normalizer';
 import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
-import { createNotFoundResponse, createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
-import { User } from "@chargebot-services/core/services/user";
+import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
+import { HomeMaster } from "@chargebot-services/core/services/home_master";
+import { Company } from "@chargebot-services/core/services/company";
 import jsonBodyParser from "@middy/http-json-body-parser";
 import { dateReviver } from "src/shared/middlewares/json-date-parser";
-import { AppInstall } from "@chargebot-services/core/services/app_install";
-
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
-  const cognito_id = event.pathParameters!.cognito_id!;
+  const company_id = +event.pathParameters!.company_id!;
   const user_id = event.requestContext?.authorizer?.jwt.claims.sub;
   const now = new Date();
   const body = event.body;
 
   try {
-    const user = await User.findByCognitoId(cognito_id);
-    if (!user) {
-      Log.debug("User not found", { cognito_id });
-      return createNotFoundResponse("User not found");
+    const existent = await HomeMaster.findByCompany(company_id);
+
+    if (existent) {
+      const update = (await HomeMaster.update(existent.id!, body))?.entity;
+      return createSuccessResponse(update);
     }
 
-    // find existent app install
-    const appInstall = await AppInstall.findOneByCriteria({user_id: user.id, app_platform_id: body.app_platform_id})
-
-    // update/create primary email
-    const response = !appInstall
-      ? await AppInstall.create({
+    const [home_master, company] = await Promise.all([
+      HomeMaster.create({
         ...body,
-        user_id: user.id,
         created_by: user_id,
         created_date: now,
         modified_by: user_id,
-        modified_date: now,
-      })
-      : await AppInstall.update(appInstall.id!, {
-        push_token: body.push_token,
-        app_version: body.app_version,
-        platform: body.platform,
-        os_version: body.os_version,
-        description: body.description,
-        modified_by: user_id,
-        modified_date: now,
-      });
+        modified_date: now
+      }),
+      Company.lazyGet(company_id)
+    ]);
 
-    return createSuccessResponse(response!.entity);
+    if (home_master?.entity) {
+      await Company.update(company!.id!, {
+        home_master_id: home_master.entity.id,
+        modified_by: user_id,
+        modified_date: now
+      });
+    }
+
+    return createSuccessResponse(home_master?.entity);
 
   } catch (error) {
     Log.error("ERROR", { error });
@@ -62,7 +59,7 @@ const handler = async (event) => {
       // re-throw when is a http error generated above
       throw error;
     }
-    const httpError = createError(406, "cannot get user profile", { expose: true });
+    const httpError = createError(406, "cannot update company home", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;
   }
@@ -75,7 +72,10 @@ export const main = middy(handler)
   .use(httpEventNormalizer())
   // .use(logTimeout())
   .use(jsonBodyParser({ reviver: dateReviver }))
-  .use(validator({ eventSchema: EntitySchema }))
+  .use(validator({
+    pathParametersSchema: PathParamSchema,
+    eventSchema: EntitySchema
+  }))
   // after: inverse order execution
   .use(jsonBodySerializer())
   .use(httpSecurityHeaders())
