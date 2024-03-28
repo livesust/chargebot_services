@@ -56,7 +56,22 @@ export function EventBusStack({ app, stack }: StackContext) {
             }
           },
         },
-      }
+      },
+      on_permission_modified: {
+        pattern: {
+          source: ["created", "deleted"],
+          detailType: ["permission"],
+        },
+        targets: {
+          on_bot_created: {
+            function: {
+              handler: "packages/functions/src/events/on_permission_modified.main",
+              timeout,
+              bind: [rdsCluster],
+            }
+          },
+        },
+      },
     },
   });
 

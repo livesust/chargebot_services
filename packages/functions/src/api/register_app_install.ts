@@ -15,6 +15,8 @@ import { User } from "@chargebot-services/core/services/user";
 import jsonBodyParser from "@middy/http-json-body-parser";
 import { dateReviver } from "src/shared/middlewares/json-date-parser";
 import { AppInstall } from "@chargebot-services/core/services/app_install";
+import { Permission } from "@chargebot-services/core/services/permission";
+import { AppInstallPermissions } from "@chargebot-services/core/services/app_install_permissions";
 
 
 // @ts-expect-error ignore any type for event
@@ -34,17 +36,9 @@ const handler = async (event) => {
     // find existent app install
     const appInstall = await AppInstall.findOneByCriteria({user_id: user.id, app_platform_id: body.app_platform_id})
 
-    // update/create primary email
-    const response = !appInstall
-      ? await AppInstall.create({
-        ...body,
-        user_id: user.id,
-        created_by: user_id,
-        created_date: now,
-        modified_by: user_id,
-        modified_date: now,
-      })
-      : await AppInstall.update(appInstall.id!, {
+    // update
+    if (appInstall) {
+      const response = await AppInstall.update(appInstall.id!, {
         push_token: body.push_token,
         app_version: body.app_version,
         platform: body.platform,
@@ -53,6 +47,35 @@ const handler = async (event) => {
         modified_by: user_id,
         modified_date: now,
       });
+      return createSuccessResponse(response!.entity);
+    }
+
+    // create
+    const [response, permissions] = await Promise.all([
+      AppInstall.create({
+        ...body,
+        user_id: user.id,
+        created_by: user_id,
+        created_date: now,
+        modified_by: user_id,
+        modified_date: now,
+      }),
+      Permission.list()
+    ]);
+
+    await Promise.all(
+      permissions.map(async (permission) => {
+        AppInstallPermissions.create({
+          permission_status: false,
+          permission_id: permission.id!,
+          app_install_id: response!.entity!.id!,
+          created_by: user_id,
+          created_date: now,
+          modified_by: user_id,
+          modified_date: now,
+        })
+      })
+    );
 
     return createSuccessResponse(response!.entity);
 
