@@ -41,6 +41,21 @@ export function EventBusStack({ app, stack }: StackContext) {
             }
           },
         },
+      },
+      outlet_equipment: {
+        pattern: {
+          source: ["deleted"],
+          detailType: ["outlet", "equipment"],
+        },
+        targets: {
+          on_outlet_or_equipment_deleted: {
+            function: {
+              handler: "packages/functions/src/events/on_outlet_or_equipment_deleted.main",
+              timeout,
+              bind: [rdsCluster],
+            }
+          },
+        },
       }
     },
   });

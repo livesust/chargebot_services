@@ -103,6 +103,26 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
+export async function unassignByOutlet(outlet_id: number, user_id: string): Promise<OutletEquipment | undefined> {
+    return db
+        .updateTable('outlet_equipment')
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .where('outlet_id', '=', outlet_id)
+        .where('deleted_by', 'is', null)
+        .returningAll()
+        .executeTakeFirst();
+}
+
+export async function unassignByEquipment(equipment_id: number, user_id: string): Promise<OutletEquipment | undefined> {
+    return db
+        .updateTable('outlet_equipment')
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .where('equipment_id', '=', equipment_id)
+        .where('deleted_by', 'is', null)
+        .returningAll()
+        .executeTakeFirst();
+}
+
 export async function unassign(equipment_id: number, outlet_id: number, user_id: string): Promise<{
   entity: OutletEquipment | undefined,
   event: unknown
