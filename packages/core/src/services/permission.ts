@@ -32,9 +32,7 @@ export async function create(permission: NewPermission): Promise<{
 
     return {
       entity: created,
-      // event to dispatch on EventBus on creation
-      // undefined as default to not dispatch any event
-      event: undefined
+      event: created
     };
 }
 
@@ -80,9 +78,7 @@ export async function remove(id: number, user_id: string): Promise<{
 
   return {
     entity: deleted,
-    // event to dispatch on EventBus on creation
-    // undefined as default to not dispatch any event
-    event: undefined
+    event: deleted
   };
 }
 
