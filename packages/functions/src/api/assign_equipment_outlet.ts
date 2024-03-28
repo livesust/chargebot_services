@@ -26,7 +26,7 @@ const handler = async (event) => {
   const overwrite = event.queryStringParameters?.overwrite ?? false;
 
   try {
-    const existsOutletEquipment = OutletEquipment.lazyFindOneByCriteria({ equipment_id, outlet_id });
+    const existsOutletEquipment = await OutletEquipment.lazyFindOneByCriteria({ equipment_id, outlet_id });
 
     if (existsOutletEquipment) {
       return createSuccessResponse(existsOutletEquipment);
@@ -69,12 +69,7 @@ const handler = async (event) => {
       user_id: user!.id!,
     });
 
-    return createSuccessResponse({
-      ...created?.entity,
-      equipment: null,
-      outlet: null,
-      user: null,
-    });
+    return createSuccessResponse(created?.entity);
 
   } catch (error) {
     Log.error("ERROR", { error });
