@@ -14,8 +14,6 @@ import executionTimeLogger from '../shared/middlewares/time-log';
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { OutletEquipment } from "@chargebot-services/core/services/outlet_equipment";
 import { User } from "@chargebot-services/core/services/user";
-import { Equipment } from "@chargebot-services/core/services/equipment";
-import { Outlet } from "@chargebot-services/core/services/outlet";
 
 
 // @ts-expect-error ignore any type for event

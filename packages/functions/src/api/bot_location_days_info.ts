@@ -16,7 +16,7 @@ import { getNumber } from "../shared/rest_utils";
 import { ChargebotGps } from "@chargebot-services/core/services/analytics/chargebot_gps";
 
 interface DaysWithData {
-  date: Date;
+  date: string;
   has_data: boolean;
 }
 
@@ -34,7 +34,7 @@ const handler = async (event) => {
 
     daysDetail.forEach((obj) => {
       response.push({
-        date: DateTime.fromJSDate(obj.bucket).setZone('UTC').toJSDate(),
+        date: DateTime.fromJSDate(obj.bucket).setZone('UTC').toISO()!,
         has_data: getNumber(obj.number_of_records) > 0
       })
     });
@@ -56,7 +56,7 @@ export const main = middy(handler)
   // .use(logTimeout())
   .use(validator({ pathParametersSchema: PathParamSchema }))
   // after: inverse order execution
-  .use(jsonBodySerializer())
+  .use(jsonBodySerializer(false))
   .use(httpSecurityHeaders())
   .use(validator({ responseSchema: ArrayResponseSchema }))
   // httpErrorHandler must be the last error handler attached, first to execute.

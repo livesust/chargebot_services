@@ -71,8 +71,8 @@ export const handler = async (event) => {
     const iotConnectedTime = iotStatus?.metadata?.reported?.connected?.timestamp;
     const inverterLastReport = inverterStatus?.length > 0 ? DateTime.fromJSDate(inverterStatus[0].timestamp) : null;
     const lastSeen = inverterLastReport
-      ? inverterLastReport.toISO()
-      : (iotConnectedTime ? DateTime.fromSeconds(iotConnectedTime).toISO() : null);
+      ? inverterLastReport.setZone('UTC').toISO()
+      : (iotConnectedTime ? DateTime.fromSeconds(iotConnectedTime).setZone('UTC').toISO() : null);
 
     const response = {
       bot_uuid,
@@ -111,7 +111,7 @@ export const main = middy(handler)
   // .use(logTimeout())
   .use(validator({ pathParametersSchema: BotUUIDPathParamSchema }))
   // after: inverse order execution
-  .use(jsonBodySerializer())
+  .use(jsonBodySerializer(false))
   .use(httpSecurityHeaders())
   .use(validator({ responseSchema: ResponseSchema }))
   // httpErrorHandler must be the last error handler attached, first to execute.

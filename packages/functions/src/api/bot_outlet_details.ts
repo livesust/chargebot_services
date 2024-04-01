@@ -15,6 +15,7 @@ import { Outlet } from "@chargebot-services/core/services/outlet";
 import { OutletSchedule } from "@chargebot-services/core/services/outlet_schedule";
 import { ChargebotPDU } from "@chargebot-services/core/services/analytics/chargebot_pdu";
 import { Equipment } from "@chargebot-services/core/services/equipment";
+import { DateTime } from "luxon";
 
 
 // @ts-expect-error ignore any type for event
@@ -41,7 +42,7 @@ const handler = async (event) => {
       pdu_outlet_number: outlet.pdu_outlet_number,
       priority_charge: outletPriority?.outlet_id === outlet.pdu_outlet_number - 1,
       status: outletStatus?.status,
-      status_timestamp: outletStatus?.timestamp,
+      status_timestamp: outletStatus && DateTime.fromJSDate(outletStatus.timestamp).setZone('UTC').toISO(),
       equipment: equipment && {
         id: equipment.id,
         name: equipment.name,
@@ -78,7 +79,7 @@ export const main = middy(handler)
   // .use(logTimeout())
   .use(validator({ pathParametersSchema: PathParamSchema }))
   // after: inverse order execution
-  .use(jsonBodySerializer())
+  .use(jsonBodySerializer(false))
   .use(httpSecurityHeaders())
   .use(validator({ responseSchema: ResponseSchema }))
   // httpErrorHandler must be the last error handler attached, first to execute.

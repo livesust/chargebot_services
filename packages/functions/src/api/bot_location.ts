@@ -13,6 +13,7 @@ import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { ChargebotGps, translateVehicleStatus } from "@chargebot-services/core/services/analytics/chargebot_gps";
+import { DateTime } from "luxon";
 
 
 // @ts-expect-error ignore any type for event
@@ -22,17 +23,17 @@ const handler = async (event) => {
   try {
     const location = await ChargebotGps.getLastPositionByBot(bot_uuid);
 
-    return createSuccessResponse({
-      bot_uuid: location?.device_id,
-      timestamp: location?.timestamp,
-      vehicle_status: translateVehicleStatus(location?.vehicle_status),
-      latitude: location?.lat,
-      longitude: location?.lon,
-      altitude: location?.altitude,
-      speed: location?.speed,
-      bearing: location?.bearing,
-      arrived_at: location?.arrived_at,
-      left_at: location?.left_at,
+    return createSuccessResponse(location && {
+      bot_uuid: location.device_id,
+      timestamp: DateTime.fromJSDate(location.timestamp).setZone('UTC').toISO()!,
+      vehicle_status: translateVehicleStatus(location.vehicle_status),
+      latitude: location.lat,
+      longitude: location.lon,
+      altitude: location.altitude,
+      speed: location.speed,
+      bearing: location.bearing,
+      arrived_at: location.arrived_at && DateTime.fromJSDate(location.arrived_at).setZone('UTC').toISO()!,
+      left_at: location.left_at && DateTime.fromJSDate(location.left_at).setZone('UTC').toISO()!,
     });
   } catch (error) {
     Log.error("ERROR", { error });
@@ -50,7 +51,7 @@ export const main = middy(handler)
   // .use(logTimeout())
   .use(validator({ pathParametersSchema: BotUUIDPathParamSchema }))
   // after: inverse order execution
-  .use(jsonBodySerializer())
+  .use(jsonBodySerializer(false))
   .use(httpSecurityHeaders())
   .use(validator({ responseSchema: ResponseSchema }))
   // httpErrorHandler must be the last error handler attached, first to execute.

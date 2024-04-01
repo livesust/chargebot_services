@@ -38,7 +38,7 @@ const handler = async (event) => {
 
         return {
           bot_uuid,
-          date: currentDay.toISO(),
+          date: DateTime.fromJSDate(start).setZone('UTC').toISO(),
           summary,
           route
         };
@@ -70,7 +70,7 @@ export const main = middy(handler)
   // .use(logTimeout())
   .use(validator({ pathParametersSchema: PathParamSchema }))
   // after: inverse order execution
-  .use(jsonBodySerializer())
+  .use(jsonBodySerializer(false))
   .use(httpSecurityHeaders())
   .use(validator({ responseSchema: ArrayResponseSchema }))
   // httpErrorHandler must be the last error handler attached, first to execute.

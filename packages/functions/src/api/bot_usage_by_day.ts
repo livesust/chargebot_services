@@ -17,8 +17,8 @@ import { getNumber } from "../shared/rest_utils";
 import { InverterVariable } from "@chargebot-services/core/timescale/chargebot_inverter";
 import { ChargebotBattery } from "@chargebot-services/core/services/analytics/chargebot_battery";
 
-interface DailyUsage {
-  timestamp: Date,
+export interface DailyUsage {
+  timestamp: string,
   energy_usage: number,
   total_charging: number,
   grid_charging: number,
@@ -89,7 +89,7 @@ export async function getUsageByDay(bot_uuid: string, from: Date, to: Date) {
   const energy_usage = getNumber(energyUsageVariables[InverterVariable.ENERGY_USAGE]);
 
   const response: DailyUsage = {
-    timestamp: from,
+    timestamp: DateTime.fromJSDate(from).setZone('UTC').toISO()!,
     energy_usage: energy_usage,
     total_charging: grid_charging + solar_charging,
     grid_charging: grid_charging,
@@ -127,7 +127,7 @@ export const main = middy(handler)
   // .use(logTimeout())
   .use(validator({ pathParametersSchema: PathParamSchema }))
   // after: inverse order execution
-  .use(jsonBodySerializer())
+  .use(jsonBodySerializer(false))
   .use(httpSecurityHeaders())
   .use(validator({ responseSchema: ResponseSchema }))
   // httpErrorHandler must be the last error handler attached, first to execute.

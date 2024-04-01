@@ -18,12 +18,16 @@ const dateReplacer = (_: string, value: unknown) => {
   return value;
 };
 
-const middleware = (): middy.MiddlewareObj<APIGatewayProxyEvent, APIGatewayProxyResult> => {
+const middleware = (parseDate: boolean = true): middy.MiddlewareObj<APIGatewayProxyEvent, APIGatewayProxyResult> => {
     const after: middy.MiddlewareFn<APIGatewayProxyEvent, APIGatewayProxyResult> = async (
         request
     ): Promise<void> => {
         if (request.response?.body) {
-            request.response.body = JSON.stringify(request.response.body, dateReplacer);
+            if (parseDate) {
+                request.response.body = JSON.stringify(request.response.body, dateReplacer);
+            } else {
+                request.response.body = JSON.stringify(request.response.body);
+            }
         }
     }
 

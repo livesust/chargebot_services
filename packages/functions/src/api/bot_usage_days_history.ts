@@ -12,17 +12,7 @@ import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import { DateTime } from "luxon";
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
-import { HourlyUsage, getUsageByDay } from "./bot_usage_by_day";
-
-interface DailyUsage {
-  timestamp: Date,
-  energy_usage: number,
-  total_charging: number,
-  grid_charging: number,
-  solar_charging: number,
-  battery_level: number,
-  hourly: HourlyUsage[]
-}
+import { DailyUsage, getUsageByDay } from "./bot_usage_by_day";
 
 interface RangeUsage {
   usage: DailyUsage[]
@@ -31,10 +21,8 @@ interface RangeUsage {
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
   const bot_uuid = event.pathParameters!.bot_uuid!;
-  const from_date = event.pathParameters!.from!;
-  const to_date = event.pathParameters!.to!;
-  const from = DateTime.fromISO(from_date).setZone('UTC');
-  const to = DateTime.fromISO(to_date).setZone('UTC').endOf('day');
+  const from = DateTime.fromISO(event.pathParameters!.from!).setZone('UTC');
+  const to = DateTime.fromISO(event.pathParameters!.to!).setZone('UTC').endOf('day');
 
   try {
     const response: RangeUsage = {
@@ -75,7 +63,7 @@ export const main = middy(handler)
   // .use(logTimeout())
   .use(validator({ pathParametersSchema: PathParamSchema }))
   // after: inverse order execution
-  .use(jsonBodySerializer())
+  .use(jsonBodySerializer(false))
   .use(httpSecurityHeaders())
   .use(validator({ responseSchema: ResponseSchema }))
   // httpErrorHandler must be the last error handler attached, first to execute.
