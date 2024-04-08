@@ -13,6 +13,8 @@ import Log from '@dazn/lambda-powertools-logger';
 import { createSuccessResponse, getNumber, isWarmingUp } from "../shared/rest_utils";
 import { ChargebotBattery } from "@chargebot-services/core/services/analytics/chargebot_battery";
 import { Bot } from "@chargebot-services/core/services/bot";
+import { Company } from "@chargebot-services/core/services/company";
+import { User } from "@chargebot-services/core/services/user";
 
 // @ts-expect-error ignore any type for event
 const handler = async ({ requestContext }) => {
@@ -23,7 +25,14 @@ const handler = async ({ requestContext }) => {
   console.log('GET Bots Assigned', user_id);
 
   try {
-    const botsByUser = await Bot.findBotsByUser(user_id);
+    const [botsByUser, user] = await Promise.all([Bot.findBotsByUser(user_id), User.lazyFindOneByCriteria({ user_id: user_id })]);
+
+    if (!user) {
+      Log.warn('User not found');
+      throw createError(404, "user not found", { expose: true });
+    }
+
+    const company = await Company.get(user.company_id);
 
     if (botsByUser?.length === 0) {
       Log.warn('User bots not found');
@@ -42,6 +51,10 @@ const handler = async ({ requestContext }) => {
           "pin_color": bot.pin_color,
           "battery_level": getNumber(battery_states?.find(l => l?.bot_uuid === bot.bot_uuid)?.battery_level),
           "battery_status": battery_states?.find(l => l?.bot_uuid === bot.bot_uuid)?.battery_status ?? 'UNKNOWN',
+          "company_id": company?.id,
+          "company_name": company?.name,
+          "customer_id": company?.customer?.id,
+          "customer_name": company?.customer?.name,
         });
       }
     }

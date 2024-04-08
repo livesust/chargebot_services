@@ -8,7 +8,11 @@ const BotAssignedSchemaDef = {
     initials: Joi.string().allow(null),
     pin_color: Joi.string().allow(null),
     battery_level: Joi.number().allow(null),
-    battery_status: Joi.string().allow(null)
+    battery_status: Joi.string().allow(null),
+    company_id: Joi.number().allow(null),
+    company_name: Joi.string().allow(null),
+    customer_id: Joi.number().allow(null),
+    customer_name: Joi.string().allow(null),
 };
 
 export const EntitySchema = Joi.object({
