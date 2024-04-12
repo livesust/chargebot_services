@@ -14,8 +14,8 @@ import executionTimeLogger from '../shared/middlewares/time-log';
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { Outlet } from "@chargebot-services/core/services/outlet";
 import { ChargebotPDU } from "@chargebot-services/core/services/analytics/chargebot_pdu";
-import { OutletEquipment } from "@chargebot-services/core/services/outlet_equipment";
 import { DateTime } from "luxon";
+import { Equipment } from "@chargebot-services/core/services/equipment";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
@@ -30,12 +30,10 @@ const handler = async (event) => {
     // Split the outlet processing into separate promises using map.
     // Each outlet is processed concurrently, allowing for better parallelism.
     const outletPromises = outlets.map(async (outlet) => {
-      const [outletStatus, outletEquipment] = await Promise.all([
+      const [outletStatus, equipment] = await Promise.all([
         ChargebotPDU.getOutletStatus(bot_uuid, outlet.pdu_outlet_number),
-        OutletEquipment.findOneByCriteria({outlet_id: outlet.id})
+        Equipment.findByOutlet(outlet.id!)
       ]);
-
-      const equipment = outletEquipment ? outletEquipment.equipment : undefined;
 
       return {
         id: outlet.id,

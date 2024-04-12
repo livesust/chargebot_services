@@ -59,7 +59,7 @@ export async function getBatteryStates(bot_uuids: string[]): Promise<{
         .select([
           'device_id',
           'battery_level',
-          sql`battery_level - LAG(battery_level) OVER (ORDER BY "time") AS battery_level_diff`,
+          sql`battery_level - MAX(battery_level) OVER (ORDER BY "time" ROWS BETWEEN 5 PRECEDING AND 1 PRECEDING) AS battery_level_diff`,
           sql`ROW_NUMBER() OVER (PARTITION BY device_id ORDER BY "time" DESC) AS row_number`
         ])
         .where('device_id', 'in', bot_uuids)
