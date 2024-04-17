@@ -153,6 +153,7 @@ export async function findByEquipment(equipment_id: number): Promise<Outlet | un
     .innerJoin('outlet_equipment', 'outlet_equipment.outlet_id', 'outlet.id')
     .where('outlet_equipment.equipment_id', '=', equipment_id)
     .where('outlet.deleted_by', 'is', null)
+    .where('outlet_equipment.deleted_by', 'is', null)
     .selectAll('outlet')
     .executeTakeFirst();
 }

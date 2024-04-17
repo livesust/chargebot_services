@@ -2,6 +2,7 @@ import { StackContext, Config, Api, Bucket, use } from "sst/constructs";
 import { RDSStack } from "./RDSStack";
 import { CognitoStack } from "./CognitoStack";
 import { LambdaStack } from "./LambdaStack";
+import { IotStack } from "./IotStack";
 
 import { IRole, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 
@@ -11,7 +12,8 @@ export function ApiStack({ app, stack }: StackContext) {
   const { rdsCluster } = use(RDSStack);
   const { eventBus } = use(EventBusStack);
   const { cognito } = use(CognitoStack);
-  const { lambdaLayers, lambdaFunctions, setupProvisionedConcurrency } = use(LambdaStack);
+  const { iotRole, IOT_ENDPOINT } = use(IotStack);
+  const { lambdaLayers, setupProvisionedConcurrency } = use(LambdaStack);
 
   // TimescaleDB Secret Keys
   const TIMESCALE_HOST = new Config.Secret(stack, "TIMESCALE_HOST");
@@ -130,10 +132,24 @@ export function ApiStack({ app, stack }: StackContext) {
       },
       "GET /bot/assigned": "packages/functions/src/api/bots_assigned.main",
       "GET /bot/{bot_uuid}/location": "packages/functions/src/api/bot_location.main",
-      // @ts-expect-error ignore check
-      "GET /bot/{bot_uuid}/status": { function: lambdaFunctions.botStatus },
-      // @ts-expect-error ignore check
-      "GET /bot/{bot_uuid}/status/encrypted": { function: lambdaFunctions.botStatusEncrypted },
+      "GET /bot/{bot_uuid}/status": { 
+        function: {
+          handler: "packages/functions/src/api/bot_status.main",
+          timeout,
+          // @ts-expect-error ignore check
+          role: iotRole,
+          bind: [IOT_ENDPOINT]
+        }
+      },
+      "GET /bot/{bot_uuid}/status/encrypted": {
+        function: {
+          handler: "packages/functions/src/api/bot_status_encrypted.main",
+          timeout,
+          // @ts-expect-error ignore check
+          role: iotRole,
+          bind: [IOT_ENDPOINT],
+        }
+      },
       "GET /bot/{bot_uuid}/outlets": "packages/functions/src/api/bot_outlets.main",
       "GET /bot/{bot_uuid}/outlet/{outlet_id}": "packages/functions/src/api/bot_outlet_details.main",
       "GET /bot/{bot_uuid}/location/from/{from}/to/{to}": "packages/functions/src/api/bot_location_history.main",
@@ -145,10 +161,24 @@ export function ApiStack({ app, stack }: StackContext) {
       "GET /equipment/customer/{customer_id}": "packages/functions/src/api/equipments_by_customer.main",
       "POST /equipment/{equipment_id}/outlet/{outlet_id}": "packages/functions/src/api/assign_equipment_outlet.main",
       "DELETE /equipment/{equipment_id}/outlet/{outlet_id}": "packages/functions/src/api/unassign_equipment_outlet.main",
-      // @ts-expect-error ignore check
-      "POST /bot/{bot_uuid}/control": { function: lambdaFunctions.botControl },
-      // @ts-expect-error ignore check
-      "POST /bot/{bot_uuid}/control/encrypted": { function: lambdaFunctions.botControlEncrypted },
+      "POST /bot/{bot_uuid}/control": {
+        function: {
+          handler: "packages/functions/src/api/control_outlet.main",
+          timeout,
+          // @ts-expect-error ignore check
+          role: iotRole,
+          bind: [IOT_ENDPOINT],
+        }
+      },
+      "POST /bot/{bot_uuid}/control/encrypted": {
+        function: {
+          handler: "packages/functions/src/api/control_outlet_encrypted.main",
+          timeout,
+          // @ts-expect-error ignore check
+          role: iotRole,
+          bind: [IOT_ENDPOINT],
+        }
+      },
       "GET /user/{cognito_id}/profile": {
         function: {
           handler: "packages/functions/src/api/get_user_profile.main",

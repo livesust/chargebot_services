@@ -28,12 +28,11 @@ export const handler = async (event) => {
 
   try {
     const [
-        batteryState, inverterStatus, pduStatus, connStatus, systemStatus, iotStatus, todayUsage
+        batteryState, inverterStatus, pduStatus, systemStatus, iotStatus, todayUsage
     ] = await Promise.all([
       ChargebotBattery.getBatteryStatus(bot_uuid),
       ChargebotInverter.getInverterStatus(bot_uuid),
       ChargebotPDU.getPDUStatus(bot_uuid),
-      ChargebotError.getConnectionStatus(bot_uuid),
       ChargebotError.getSystemStatus(bot_uuid),
       IoTData.getSystemStatus(bot_uuid, 'system'),
       ChargebotInverter.getTodayTotals(bot_uuid, [
@@ -66,7 +65,7 @@ export const handler = async (event) => {
     const gridCharging = getNumber(todayUsageVariables[InverterVariable.GRID_CHARGE_DIFF]);
     const energyUsage = getNumber(todayUsageVariables[InverterVariable.ENERGY_USAGE]);
 
-    const iotConnected = iotStatus?.state?.reported?.connected === 'true' ?? false;
+    const iotConnected = iotStatus?.state?.reported?.connected == 'true' ?? false;
 
     const iotConnectedTime = iotStatus?.metadata?.reported?.connected?.timestamp;
     const inverterLastReport = inverterStatus?.length > 0 ? DateTime.fromJSDate(inverterStatus[0].timestamp) : null;
@@ -88,8 +87,8 @@ export const handler = async (event) => {
       today_battery_charging: getNumber(batteryCharging),
       today_battery_discharging: getNumber(batteryDischarging),
       pdu_status: translatePDUState(pduVariables[PDUVariable.STATE] as number),
-      connection_status: (iotConnected || (connStatus && connStatus.value === 0)) ? 'OK' : 'ERROR',
-      system_status: systemStatus && systemStatus.value === 0 ? 'OK' : 'ERROR',
+      connection_status: iotConnected ? 'OK' : 'ERROR',
+      system_status: systemStatus && systemStatus.value == 0 ? 'OK' : 'ERROR',
       last_seen: lastSeen
     };
 

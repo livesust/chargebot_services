@@ -1,12 +1,11 @@
-import { Config, StackContext, use, Function } from "sst/constructs";
+import { Config, StackContext, Function } from "sst/constructs";
 import { LayerVersion, Code, Alias } from "aws-cdk-lib/aws-lambda";
 import { PredefinedMetric, ScalableTarget, ServiceNamespace } from "aws-cdk-lib/aws-applicationautoscaling";
-import { IotStack } from "./IotStack";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { IotToLambda, IotToLambdaProps } from "@aws-solutions-constructs/aws-iot-lambda";
 
 export function LambdaStack({ app, stack }: StackContext) {
-  const { iotRole, IOT_ENDPOINT } = use(IotStack);
+  
 
   // Lambda layers
   // axios layer: to make http requests
@@ -36,37 +35,6 @@ export function LambdaStack({ app, stack }: StackContext) {
 
   // lambda functions timeout
   const timeout = app.stage === "prod" ? "10 seconds" : "30 seconds";
-
-  // Lambda functions
-  const botStatus = {
-    handler: "packages/functions/src/api/bot_status.main",
-    timeout,
-    role: iotRole,
-    bind: [IOT_ENDPOINT],
-  };
-
-  const botStatusEncrypted = {
-    handler: "packages/functions/src/api/bot_status_encrypted.main",
-    timeout,
-    role: iotRole,
-    bind: [IOT_ENDPOINT],
-  };
-
-  const botControl = {
-    handler: "packages/functions/src/api/control_outlet.main",
-    timeout,
-    role: iotRole,
-    bind: [IOT_ENDPOINT],
-  };
-
-  const botControlEncrypted = {
-    handler: "packages/functions/src/api/control_outlet_encrypted.main",
-    timeout,
-    role: iotRole,
-    bind: [IOT_ENDPOINT],
-  };
-
-  // Lambda function to execute when messages arrive to 'chargebot/alert' IoT topic
 
   // Expo Server Access Token for Push
   const EXPO_ACCESS_TOKEN = new Config.Secret(stack, "EXPO_ACCESS_TOKEN");
@@ -133,12 +101,6 @@ export function LambdaStack({ app, stack }: StackContext) {
       luxonLayer,
       sharpLayer,
       expoServerSdkLayer,
-    },
-    lambdaFunctions: {
-      botStatus,
-      botStatusEncrypted,
-      botControl,
-      botControlEncrypted
     },
     setupProvisionedConcurrency
   };

@@ -133,6 +133,7 @@ export async function findByOutlet(outlet_id: number): Promise<Equipment | undef
     .innerJoin('outlet_equipment', 'outlet_equipment.equipment_id', 'equipment.id')
     .where('outlet_equipment.outlet_id', '=', outlet_id)
     .where('equipment.deleted_by', 'is', null)
+    .where('outlet_equipment.deleted_by', 'is', null)
     .selectAll('equipment')
     .executeTakeFirst();
 }
