@@ -41,7 +41,8 @@ const handler = async (event) => {
         outlet: outlet && {
           id: outlet.id,
           pdu_outlet_number: outlet.pdu_outlet_number,
-          notes: outlet.notes
+          notes: outlet.notes,
+          bot_id: outlet.bot_id
         }
       };
     });
