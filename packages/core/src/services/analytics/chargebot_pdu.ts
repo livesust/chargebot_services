@@ -10,21 +10,14 @@ export async function getPDUStatus(bot_uuid: string): Promise<ChargebotPDU[]> {
   // @ts-expect-error not overloads match
   return db
     .selectFrom("chargebot_pdu")
-    .select(({ fn }) => [
+    .select([
       'device_id',
       'variable',
-      fn.coalesce(
-        sql`value_int`,
-        sql`value_long`,
-        sql`value_float`,
-        sql`value_double`
-      ).as('value'),
+      sql`last(coalesce (value_int, value_long, value_float, value_double), "timestamp") as value`,
     ])
     .where('device_id', '=', bot_uuid)
     .where('variable', 'in', variables)
-    .orderBy('timestamp', 'desc')
-    // limit to get one record by variable
-    .limit(variables.length)
+    .groupBy(['device_id', 'variable'])
     .execute();
 }
 
