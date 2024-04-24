@@ -49,63 +49,49 @@ export async function getLastPositionByBot(bot_uuid: string): Promise<ChargebotG
 export async function getRouteByBot(bot_uuid: string, from: Date, to: Date): Promise<ChargebotGpsPosition[] | undefined> {
   // @ts-expect-error ignore overload not mapping
   return await db
-    .selectFrom('chargebot_gps')
-    .select([
-      'timestamp',
-      'lat as latitude',
-      'lon as longitude',
-      sql`
-        case
-          when vehicle_status = 'AT_HOME' then 'AT_HOME'
-          when vehicle_status = 'PARKED' then 'ON_LOCATION'
-          when vehicle_status in ('MOVING', 'STOPPED') then 'IN_TRANSIT'
-        end as vehicle_status
-      `
-    ])
-    .where('device_id', '=', bot_uuid)
-    .where((eb) => eb.between('timestamp', from, to))
-    .orderBy('timestamp', 'desc')
-    .execute();
-}
-
-export async function getSummaryByBot(bot_uuid: string, from: Date, to: Date): Promise<ChargebotGpsHistory[] | undefined> {
-  // @ts-expect-error ignore overload not mapping
-  return await db
     .with(
       'block_status',
-      // @ts-expect-error ignore overload not mapping
       (db) => db
-        // Get the gps locations for bot between from and to
-        // translate vehicle status in query
-        // order from recent to oldest
         .selectFrom('chargebot_gps')
+        // @ts-expect-error ignore overload not mapping
         .select([
           'timestamp',
           'lat as latitude',
           'lon as longitude',
-          'distance',
-          sql`
-            case
-              when vehicle_status = 'AT_HOME' then 'AT_HOME'
-              when vehicle_status = 'PARKED' then 'ON_LOCATION'
-              when vehicle_status in ('MOVING', 'STOPPED') then 'IN_TRANSIT'
-            end as vehicle_status
-          `
+          'vehicle_status',
+          sql`lag(vehicle_status) over (order by "timestamp") as prev_vehicle_status`,
+          sql`lead(vehicle_status) over (order by "timestamp") as next_vehicle_status`,
+          'distance'
         ])
         .where('device_id', '=', bot_uuid)
         .where((eb) => eb.between('timestamp', from, to))
         .orderBy('timestamp', 'desc')
     )
     .with(
-      'block_groups',
+      'block_status_fixed',
       (db) => db
-        // group the gps positions
-        // in blocks of vehicle status with subgroups by day
-        // that way if vehicle was AT_HOME since yesterday 9pm
-        // to today 8am, it will be 2 blocks:
-        //    records at AT_HOME between yesterday 9pm to 11:59pm
-        //    records AT_HOME between today 0am to 8am
         .selectFrom('block_status')
+        .select([
+          'timestamp',
+          'latitude',
+          'longitude',
+          'distance',
+          sql`
+            case 
+              when vehicle_status = 'AT_HOME' then 'AT_HOME'
+              when vehicle_status = 'MOVING' then 'IN_TRANSIT'
+              when vehicle_status = 'STOPPED' and next_vehicle_status = 'MOVING' then 'IN_TRANSIT'
+              when vehicle_status = 'STOPPED' and next_vehicle_status = 'PARKED' then 'ON_LOCATION'
+              when vehicle_status = 'PARKED' then 'ON_LOCATION'
+            end as vehicle_status
+          `
+        ])
+    )
+    .with(
+      'block_groups',
+      // @ts-expect-error ignore overload not mapping
+      (db) => db
+        .selectFrom('block_status_fixed')
         .select([
           'timestamp',
           'latitude',
@@ -119,17 +105,106 @@ export async function getSummaryByBot(bot_uuid: string, from: Date, to: Date): P
         ])
     )
     .selectFrom('block_groups')
-    .select(({ fn }) => [
-      // get the values by block groups
-      fn.min('timestamp').as('arrived_at'),
-      fn.max('timestamp').as('left_at'),
-      fn.max('latitude').as('latitude'),
-      fn.max('longitude').as('longitude'),
-      fn.sum('distance').as('distance'),
-      'vehicle_status'
+    .select([
+      sql`min(timestamp) as timestamp`,
+      'latitude',
+      'longitude',
+      'vehicle_status',
+      sql`sum(distance) as distance`
     ])
-    .groupBy(['block', 'vehicle_status'])
-    .orderBy('arrived_at', 'desc')
+    .groupBy(['block', 'vehicle_status', 'latitude', 'longitude'])
+    .orderBy('timestamp', 'desc')
+    .execute();
+}
+
+export async function getSummaryByBot(bot_uuid: string, from: Date, to: Date): Promise<ChargebotGpsHistory[] | undefined> {
+  // @ts-expect-error ignore overload not mapping
+  return await db
+    .with(
+      'block_status',
+      (db) => db
+        .selectFrom('chargebot_gps')
+        // @ts-expect-error ignore overload not mapping
+        .select([
+          'timestamp',
+          'lat as latitude',
+          'lon as longitude',
+          'distance',
+          'vehicle_status',
+          sql`lag(vehicle_status) over (order by "timestamp") as prev_vehicle_status`,
+          sql`lead(vehicle_status) over (order by "timestamp") as next_vehicle_status`
+        ])
+        .where('device_id', '=', bot_uuid)
+        .where((eb) => eb.between('timestamp', from, to))
+        .orderBy('timestamp', 'desc')
+    )
+    .with(
+      'block_status_fixed',
+      (db) => db
+        .selectFrom('block_status')
+        .select([
+          'timestamp',
+          'latitude',
+          'longitude',
+          'distance',
+          sql`
+            case 
+              when vehicle_status = 'AT_HOME' then 'AT_HOME'
+              when vehicle_status = 'MOVING' then 'IN_TRANSIT'
+              when vehicle_status = 'STOPPED' and next_vehicle_status = 'MOVING' then 'IN_TRANSIT'
+              when vehicle_status = 'STOPPED' and next_vehicle_status = 'PARKED' then 'ON_LOCATION'
+              when vehicle_status = 'PARKED' then 'ON_LOCATION'
+            end as vehicle_status
+          `
+        ])
+    )
+    .with(
+      'block_groups',
+      // @ts-expect-error ignore overload not mapping
+      (db) => db
+        .selectFrom('block_status_fixed')
+        .select([
+          'timestamp',
+          'latitude',
+          'longitude',
+          'distance',
+          'vehicle_status',
+          sql`
+            ROW_NUMBER() OVER (PARTITION BY to_char("timestamp", 'YYYY-MM-dd') ORDER BY "timestamp" DESC) -
+            ROW_NUMBER() OVER (PARTITION BY vehicle_status ORDER BY "timestamp" DESC) AS block
+          `
+        ])
+    )
+    .with(
+      'block_grouped',
+      (db) => db
+        .selectFrom('block_groups')
+        .select([
+          'vehicle_status',
+          sql`min("timestamp") as start_timestamp`,
+          sql`max("timestamp") as end_timestamp`,
+          sql`first("latitude", "timestamp") as latitude`,
+          sql`first("longitude", "timestamp") as longitude`,
+          sql`sum(distance) as distance`
+        ])
+        .groupBy(['vehicle_status', 'block'])
+    )
+    .selectFrom('block_grouped')
+    // @ts-expect-error ignore overload not mapping
+    .select([
+      sql`start_timestamp as start_time`,	
+      sql`
+        case 
+          when lead(start_timestamp) over (order by "start_timestamp") is null then end_timestamp
+          else lead(start_timestamp) over (order by "start_timestamp")
+        end as end_time
+      `,
+      'latitude',
+      'longitude',
+      'distance',
+      'vehicle_status',
+    ])
+    .orderBy('start_timestamp', 'desc')
     .execute();
 }
 

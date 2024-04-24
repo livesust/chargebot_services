@@ -15,10 +15,11 @@ const BotLocationHistorySchemaDef = {
     latitude: Joi.number().allow(null),
     longitude: Joi.number().allow(null),
     vehicle_status: Joi.string().allow(null),
+    distance: Joi.number().allow(null),
   }),
   summary: Joi.array().items({
-    arrived_at: Joi.date().allow(null),
-    left_at: Joi.date().allow(null),
+    start_time: Joi.date().allow(null),
+    end_time: Joi.date().allow(null),
     latitude: Joi.number().allow(null),
     longitude: Joi.number().allow(null),
     distance: Joi.number().allow(null),
