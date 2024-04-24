@@ -29,8 +29,8 @@ export enum VehicleStatus {
 }
 
 export interface ChargebotGpsHistory {
-  arrived_at: Date,
-  left_at: Date,
+  start_time: Date,
+  end_time: Date,
   latitude: number,
   longitude: number,
   distance: number,
@@ -42,4 +42,5 @@ export interface ChargebotGpsPosition {
   latitude: number,
   longitude: number,
   vehicle_status: string,
+  distance: number,
 }

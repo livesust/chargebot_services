@@ -5,7 +5,7 @@ import { EntitySchema as StateMasterSchema } from "./state_master.schema";
 
 const HomeMasterSchemaDef = {
     address_line_1: Joi.string(),
-    address_line_2: Joi.string().allow(null),
+    address_line_2: Joi.string().allow(null, ''),
     city: Joi.string().max(100),
     zip_code: Joi.string().max(100),
     latitude: Joi.number(),
