@@ -65,7 +65,6 @@ export async function getRouteByBot(bot_uuid: string, from: Date, to: Date): Pro
         ])
         .where('device_id', '=', bot_uuid)
         .where((eb) => eb.between('timestamp', from, to))
-        .orderBy('timestamp', 'desc')
     )
     .with(
       'block_status_fixed',
@@ -113,7 +112,7 @@ export async function getRouteByBot(bot_uuid: string, from: Date, to: Date): Pro
       sql`sum(distance) as distance`
     ])
     .groupBy(['block', 'vehicle_status', 'latitude', 'longitude'])
-    .orderBy('timestamp', 'desc')
+    .orderBy('timestamp', 'asc')
     .execute();
 }
 
