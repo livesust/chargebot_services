@@ -73,9 +73,11 @@ export const handler = async (event) => {
       ? inverterLastReport.setZone('UTC').toISO()
       : (iotConnectedTime ? DateTime.fromSeconds(iotConnectedTime).setZone('UTC').toISO() : null);
 
+    const battery_level = getNumber(batteryState?.battery_level);
+
     const response = {
       bot_uuid,
-      battery_level: getNumber(batteryState?.battery_level),
+      battery_level: battery_level,
       battery_status: batteryState?.battery_status ?? 'UNKNOWN',
       output_current: getNumber(pduVariables[PDUVariable.CURRENT]),
       grid_current: getNumber(inverterVariables[InverterVariable.GRID_CURRENT]),
@@ -87,7 +89,7 @@ export const handler = async (event) => {
       today_battery_charging: getNumber(batteryCharging),
       today_battery_discharging: getNumber(batteryDischarging),
       pdu_status: translatePDUState(pduVariables[PDUVariable.STATE] as number),
-      connection_status: iotConnected ? 'OK' : 'ERROR',
+      connection_status: iotConnected ? 'OK' : (battery_level <= 1 ? 'POWER_LOST' : 'SYSTEM_OFF'),
       system_status: systemStatus && systemStatus.value == 0 ? 'OK' : 'ERROR',
       last_seen: lastSeen
     };
