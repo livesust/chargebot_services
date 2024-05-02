@@ -52,35 +52,53 @@ const handler = async (event) => {
     ]);
 
     // update/create primary email
-    if (!userEmail) {
-      promises.push(UserEmail.create({
-        email_address: body.email_address,
-        user_id: user.id!,
-        primary: true
-      }));
-    } else {
-      promises.push(UserEmail.update(userEmail.id!, { email_address: body.email_address }));
+    if (body.email_address) {
+      if (!userEmail) {
+        promises.push(UserEmail.create({
+          email_address: body.email_address,
+          user_id: user.id!,
+          primary: true
+        }));
+      } else {
+        promises.push(UserEmail.update(userEmail.id!, {
+            email_address: body.email_address,
+            modified_by: user_sub,
+            modified_date: new Date(),
+        }));
+      }
+    } else if (userEmail) {
+        promises.push(UserEmail.remove(userEmail.id!, user_sub));
     }
 
     // update/create primary phone
-    if (!userPhone) {
-      promises.push(UserPhone.create({
-        phone_number: body.phone_number,
-        user_id: user.id!,
-        primary: true
-      }));
-    } else {
-      promises.push(UserPhone.update(userPhone.id!, { phone_number: body.phone_number }));
+    if (body.phone_number) {
+      if (!userPhone) {
+        promises.push(UserPhone.create({
+          phone_number: body.phone_number,
+          user_id: user.id!,
+          primary: true
+        }));
+      } else {
+        promises.push(UserPhone.update(userPhone.id!, {
+            phone_number: body.phone_number,
+            modified_by: user_sub,
+            modified_date: new Date(),
+        }));
+      }
+    } else if (userPhone) {
+      promises.push(UserPhone.remove(userPhone.id!, user_sub));
     }
 
     // update/create role
-    if (!userRole) {
-      promises.push(UserRole.create({
-        user_id: user.id!,
-        role_id: body.role_id,
-      }));
-    } else {
-      promises.push(UserRole.update(userRole.id!, { role_id: body.role_id }));
+    if (body.role_id) {
+      if (!userRole) {
+        promises.push(UserRole.create({
+          user_id: user.id!,
+          role_id: body.role_id,
+        }));
+      } else {
+        promises.push(UserRole.update(userRole.id!, { role_id: body.role_id }));
+      }
     }
 
     const [_, email, phone, role] = await Promise.all(promises);
@@ -104,7 +122,7 @@ const handler = async (event) => {
       // re-throw when is a http error generated above
       throw error;
     }
-    const httpError = createError(406, "cannot get user profile", { expose: true });
+    const httpError = createError(406, "cannot update user profile", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;
   }

@@ -9,12 +9,12 @@ const OutletDetailsSchemaDef = {
     status_timestamp: Joi.date().allow(null),
     equipment: Joi.object({
       id: Joi.number().allow(null),
-      name: Joi.string().allow(null),
-      brand: Joi.string().allow(null),
+      name: Joi.string().allow(null, ''),
+      brand: Joi.string().allow(null, ''),
       equipment_type: Joi.object({
         id: Joi.number().allow(null),
-        type: Joi.string().allow(null),
-        description: Joi.string().allow(null),
+        type: Joi.string().allow(null, ''),
+        description: Joi.string().allow(null, ''),
       }).allow(null),
     }).allow(null),
     outlet_schedule: Joi.object({

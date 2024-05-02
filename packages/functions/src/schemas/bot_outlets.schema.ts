@@ -7,7 +7,7 @@ const BotOutletSchemaDef = {
     priority_charge: Joi.boolean().allow(null),
     status: Joi.string().allow(null, 'ON', 'OFF'),
     status_timestamp: Joi.date().allow(null),
-    equipment_name: Joi.string().allow(null)
+    equipment_name: Joi.string().allow(null, '')
 };
 
 export const EntitySchema = Joi.object({

@@ -8,8 +8,8 @@ const AppInstallSchemaDef = {
     platform: Joi.string().max(100),
     app_platform_id: Joi.string(),
     os_version: Joi.string().max(100),
-    push_token: Joi.string().allow(null),
-    description: Joi.string().allow(null),
+    push_token: Joi.string().allow(null, ''),
+    description: Joi.string().allow(null, ''),
 };
 
 export const EntitySchema = Joi.object({

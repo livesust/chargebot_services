@@ -6,7 +6,7 @@ import { EntitySchema as ComponentSchema } from "./component.schema";
 
 const BotComponentSchemaDef = {
     install_date: Joi.date(),
-    component_serial: Joi.string().max(255).allow(null),
+    component_serial: Joi.string().max(255).allow(null, ''),
 };
 
 export const EntitySchema = Joi.object({

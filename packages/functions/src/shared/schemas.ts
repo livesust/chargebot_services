@@ -3,28 +3,28 @@ import Joi from 'joi';
 export const AuditedEntityCreateSchemaDef = {
     created_by: Joi.string().required(),
     created_date: Joi.date().required(),
-    modified_by: Joi.string().optional().allow(null),
+    modified_by: Joi.string().optional().allow(null, ''),
     modified_date: Joi.date().optional().allow(null),
-    deleted_by: Joi.string().optional().allow(null),
+    deleted_by: Joi.string().optional().allow(null, ''),
     deleted_date: Joi.date().optional().allow(null),
 };
 
 export const AuditedEntityUpdateSchemaDef = {
-    created_by: Joi.string().optional().allow(null),
+    created_by: Joi.string().optional().allow(null, ''),
     created_date: Joi.date().optional().allow(null),
-    modified_by: Joi.string().optional().allow(null),
+    modified_by: Joi.string().optional().allow(null, ''),
     modified_date: Joi.date().optional().allow(null),
-    deleted_by: Joi.string().optional().allow(null),
+    deleted_by: Joi.string().optional().allow(null, ''),
     deleted_date: Joi.date().optional().allow(null),
 };
 
 export const AuditedEntitySchemaDef = {
     id: Joi.number().optional().allow(null),
-    created_by: Joi.string().optional().allow(null),
+    created_by: Joi.string().optional().allow(null, ''),
     created_date: Joi.date().optional().allow(null),
-    modified_by: Joi.string().optional().allow(null),
+    modified_by: Joi.string().optional().allow(null, ''),
     modified_date: Joi.date().optional().allow(null),
-    deleted_by: Joi.string().optional().allow(null),
+    deleted_by: Joi.string().optional().allow(null, ''),
     deleted_date: Joi.date().optional().allow(null),
 };
 

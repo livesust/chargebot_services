@@ -110,7 +110,14 @@ export async function update(id: number, {{snakeCase name}}: {{pascalCase name}}
 } | undefined> {
     const updated = await db
         .updateTable('{{snakeCase name}}')
-        .set({{snakeCase name}})
+        .set({
+            ...{{snakeCase name}},
+            {{#each attributes}}
+                {{#when type 'eq' 'json'}}
+            {{snakeCase attribute}}: json({{snakeCase ../name}}.{{snakeCase attribute}}),
+                {{/when}}
+            {{/each}}
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()

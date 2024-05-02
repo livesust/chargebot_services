@@ -7,8 +7,8 @@ import { EntitySchema as HomeMasterSchema } from "./home_master.schema";
 
 const CompanySchemaDef = {
     name: Joi.string().max(255),
-    emergency_phone: Joi.string().max(255).allow(null),
-    emergency_email: Joi.string().max(255).allow(null),
+    emergency_phone: Joi.string().max(255).allow(null, ''),
+    emergency_email: Joi.string().max(255).allow(null, ''),
 };
 
 export const EntitySchema = Joi.object({

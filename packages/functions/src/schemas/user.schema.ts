@@ -6,8 +6,8 @@ import { EntitySchema as CompanySchema } from "./company.schema";
 const UserSchemaDef = {
     first_name: Joi.string().max(255),
     last_name: Joi.string().max(255),
-    title: Joi.string().max(255).allow(null),
-    photo: Joi.string().max(255).allow(null),
+    title: Joi.string().max(255).allow(null, ''),
+    photo: Joi.string().max(255).allow(null, ''),
     invite_status: Joi.number().allow(null),
     super_admin: Joi.boolean().allow(null),
     user_id: Joi.string().max(255),

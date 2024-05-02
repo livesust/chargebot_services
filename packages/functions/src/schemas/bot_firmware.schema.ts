@@ -9,7 +9,7 @@ const BotFirmwareSchemaDef = {
     firmware_version: Joi.string().max(255),
     battery_version: Joi.string().max(255),
     pdu_version: Joi.string().max(255),
-    notes: Joi.string().allow(null),
+    notes: Joi.string().allow(null, ''),
 };
 
 export const EntitySchema = Joi.object({

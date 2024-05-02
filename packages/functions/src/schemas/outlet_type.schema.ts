@@ -5,8 +5,8 @@ const OutletTypeSchemaDef = {
     type: Joi.string().max(255),
     outlet_amps: Joi.number().allow(null),
     outlet_volts: Joi.number().allow(null),
-    connector: Joi.string().max(100).allow(null),
-    description: Joi.string().allow(null),
+    connector: Joi.string().max(100).allow(null, ''),
+    description: Joi.string().allow(null, ''),
 };
 
 export const EntitySchema = Joi.object({

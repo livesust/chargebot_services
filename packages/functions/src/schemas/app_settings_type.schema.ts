@@ -3,7 +3,7 @@ import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEnti
 
 const AppSettingsTypeSchemaDef = {
     setting_name: Joi.string().max(100),
-    description: Joi.string().allow(null),
+    description: Joi.string().allow(null, ''),
 };
 
 export const EntitySchema = Joi.object({

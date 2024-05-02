@@ -7,7 +7,7 @@ import { EntitySchema as BotSchema } from "./bot.schema";
 
 const OutletSchemaDef = {
     pdu_outlet_number: Joi.number(),
-    notes: Joi.string().allow(null),
+    notes: Joi.string().allow(null, ''),
 };
 
 export const EntitySchema = Joi.object({

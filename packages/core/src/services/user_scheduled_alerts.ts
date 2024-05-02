@@ -69,7 +69,10 @@ export async function update(id: number, user_scheduled_alerts: UserScheduledAle
 } | undefined> {
     const updated = await db
         .updateTable('user_scheduled_alerts')
-        .set(user_scheduled_alerts)
+        .set({
+          ...user_scheduled_alerts,
+          settings: json(user_scheduled_alerts.settings),
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()

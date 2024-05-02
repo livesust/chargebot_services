@@ -4,7 +4,7 @@ import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEnti
 const BotVersionSchemaDef = {
     version_number: Joi.string().max(255),
     version_name: Joi.string().max(255),
-    notes: Joi.string().allow(null),
+    notes: Joi.string().allow(null, ''),
     active_date: Joi.date().allow(null),
 };
 
