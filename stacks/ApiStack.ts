@@ -11,7 +11,7 @@ import { EventBusStack } from "./EventBusStack";
 export function ApiStack({ app, stack }: StackContext) {
   const { rdsCluster } = use(RDSStack);
   const { eventBus } = use(EventBusStack);
-  const { cognito } = use(CognitoStack);
+  const { cognito, cognitoAdminRole } = use(CognitoStack);
   const { iotRole, IOT_ENDPOINT } = use(IotStack);
   const { lambdaLayers, setupProvisionedConcurrency } = use(LambdaStack);
 
@@ -24,6 +24,9 @@ export function ApiStack({ app, stack }: StackContext) {
 
   // Secret Keys
   const SECRET_KEY = new Config.Secret(stack, "SECRET_KEY");
+
+  // Secret Keys
+  const COGNITO_USER_POOL_ID = new Config.Secret(stack, "COGNITO_USER_POOL_ID");
 
   // lambda functions timeout
   const timeout = app.stage === "prod" ? "10 seconds" : "30 seconds";
@@ -200,6 +203,15 @@ export function ApiStack({ app, stack }: StackContext) {
       "POST /user/{cognito_id}/register_app_install": "packages/functions/src/api/register_app_install.main",
       "GET /company/{company_id}/home_master": "packages/functions/src/api/get_company_home_master.main",
       "POST /company/{company_id}/home_master": "packages/functions/src/api/post_company_home_master.main",
+      "GET /company/{company_id}/bots": "packages/functions/src/api/get_company_bots.main",
+      "POST /user/invite": {
+        function: {
+          handler: "packages/functions/src/api/invite_user.main",
+          // @ts-expect-error ignore check
+          role: cognitoAdminRole,
+          bind: [COGNITO_USER_POOL_ID],
+        },
+      },
     }
   });
 

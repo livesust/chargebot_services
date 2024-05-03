@@ -174,6 +174,17 @@ export async function findBotsByUser(user_id: string): Promise<Bot[]> {
     .execute();
 }
 
+export async function findByCompany(company_id: number): Promise<Bot[]> {
+  return db
+      .selectFrom("bot")
+      .innerJoin('bot_company', 'bot_company.bot_id', 'bot.id')
+      .where('bot_company.company_id', '=', company_id)
+      .where('bot_company.deleted_by', 'is', null)
+      .where('bot.deleted_by', 'is', null)
+      .selectAll('bot')
+      .execute()
+}
+
 export async function findByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
   const query = buildCriteriaQuery(criteria);
 

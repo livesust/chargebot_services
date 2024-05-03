@@ -2,12 +2,20 @@ import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 import { Company } from "./company";
 
+
+
+export enum UserInviteStatus {
+  INVITED = 'INVITED',
+  ACTIVE = 'ACTIVE',
+  EXPIRED = 'EXPIRED'
+}
+
 export interface UserTable extends AuditedEntity {
-  first_name: string;
-  last_name: string;
+  first_name?: string;
+  last_name?: string;
   title?: string;
   photo?: string;
-  invite_status?: number;
+  invite_status?: UserInviteStatus;
   super_admin?: boolean;
   user_id: string;
   company_id: number;

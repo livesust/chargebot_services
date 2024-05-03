@@ -128,6 +128,17 @@ export async function findByCognitoId(cognito_id: string): Promise<User | undefi
       .executeTakeFirst();
 }
 
+export async function findByEmail(email_address: string): Promise<User | undefined> {
+  return db
+      .selectFrom("user")
+      .innerJoin('user_email', 'user_email.user_id', 'user.id')
+      .where('user_email.email_address', '=', email_address)
+      .where('user_email.deleted_by', 'is', null)
+      .where('user.deleted_by', 'is', null)
+      .selectAll('user')
+      .executeTakeFirst();
+}
+
 export async function findByCriteria(criteria: Partial<User>): Promise<User[]> {
   const query = buildCriteriaQuery(criteria);
 
