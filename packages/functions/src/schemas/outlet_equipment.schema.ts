@@ -8,7 +8,7 @@ import { EntitySchema as OutletSchema } from "./outlet.schema";
 import { EntitySchema as UserSchema } from "./user.schema";
 
 const OutletEquipmentSchemaDef = {
-    notes: Joi.string().allow(null),
+    notes: Joi.string().allow(null, ''),
 };
 
 export const EntitySchema = Joi.object({

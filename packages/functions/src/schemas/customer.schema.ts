@@ -3,7 +3,7 @@ import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEnti
 
 const CustomerSchemaDef = {
     name: Joi.string(),
-    email: Joi.string().allow(null),
+    email: Joi.string().allow(null, ''),
     first_order_date: Joi.date().allow(null),
 };
 

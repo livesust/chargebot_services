@@ -38,6 +38,7 @@
     "packages/*"
   ],
   "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.567.0",
     "@aws-sdk/client-rds-data": "^3.431.0",
     "@aws-sdk/client-s3": "^3.490.0",
     "@aws-sdk/s3-request-presigner": "^3.490.0",

@@ -6,7 +6,7 @@ import { EntitySchema as AlertTypeSchema } from "./alert_type.schema";
 //import { EntitySchema as BotSchema } from "./bot.schema";
 
 const BotAlertSchemaDef = {
-    message_displayed: Joi.string().allow(null),
+    message_displayed: Joi.string().allow(null, ''),
     push_sent: Joi.boolean().allow(null),
     send_time: Joi.date().allow(null),
     display_time: Joi.date().allow(null),

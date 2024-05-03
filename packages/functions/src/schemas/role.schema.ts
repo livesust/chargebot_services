@@ -3,7 +3,7 @@ import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEnti
 
 const RoleSchemaDef = {
     role: Joi.string().max(255),
-    description: Joi.string().allow(null),
+    description: Joi.string().allow(null, ''),
 };
 
 export const EntitySchema = Joi.object({

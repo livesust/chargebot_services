@@ -46,7 +46,7 @@ export async function create(user_scheduled_alerts: NewUserScheduledAlerts): Pro
         .insertInto('user_scheduled_alerts')
         .values({
             ...user_scheduled_alerts,
-            settings: json(user_scheduled_alerts.settings),
+            settings: user_scheduled_alerts.settings ? json(user_scheduled_alerts.settings) : undefined,
         })
         .returningAll()
         .executeTakeFirst();
@@ -69,7 +69,10 @@ export async function update(id: number, user_scheduled_alerts: UserScheduledAle
 } | undefined> {
     const updated = await db
         .updateTable('user_scheduled_alerts')
-        .set(user_scheduled_alerts)
+        .set({
+          ...user_scheduled_alerts,
+          settings: user_scheduled_alerts.settings ? json(user_scheduled_alerts.settings) : undefined,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()

@@ -4,7 +4,7 @@ import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEnti
 //import { EntitySchema as OutletSchema } from "./outlet.schema";
 
 const OutletScheduleSchemaDef = {
-    day_of_week: Joi.string().max(255).allow(null),
+    day_of_week: Joi.string().max(255).allow(null, ''),
     all_day: Joi.boolean(),
     start_time: Joi.date().allow(null),
     end_time: Joi.date().allow(null),

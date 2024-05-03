@@ -6,7 +6,7 @@ import { EntitySchema as VehicleTypeSchema } from "./vehicle_type.schema";
 const VehicleSchemaDef = {
     name: Joi.string(),
     license_plate: Joi.string(),
-    notes: Joi.string().allow(null),
+    notes: Joi.string().allow(null, ''),
 };
 
 export const EntitySchema = Joi.object({

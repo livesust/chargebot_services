@@ -10,8 +10,8 @@ export const PathParamSchema = Joi.object({
 const EquipmentsSchemaDef = {
   id: Joi.number().required(),
   name: Joi.string().max(255),
-  brand: Joi.string().max(255).allow(null),
-  description: Joi.string().allow(null),
+  brand: Joi.string().max(255).allow(null, ''),
+  description: Joi.string().allow(null, ''),
   voltage: Joi.number().allow(null),
   max_charging_amps: Joi.number().allow(null),
   equipment_type_id: Joi.number(),

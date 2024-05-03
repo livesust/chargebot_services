@@ -3,7 +3,7 @@ import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEnti
 
 const EquipmentTypeSchemaDef = {
     type: Joi.string().max(255),
-    description: Joi.string().allow(null),
+    description: Joi.string().allow(null, ''),
 };
 
 export const EntitySchema = Joi.object({

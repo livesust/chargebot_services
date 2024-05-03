@@ -2,7 +2,7 @@ import Joi from 'joi';
 import {  JsonResponseSchemaDef } from "../shared/schemas";
 
 const MonthlyUsageSchemaDef = {
-    bot_uuid: Joi.string().allow(null),
+    bot_uuid: Joi.string().allow(null, ''),
     monthly_energy_usage: Joi.number().allow(null),
     yearly_energy_usage: Joi.number().allow(null),
     monthly: Joi.array().items({

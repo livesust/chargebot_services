@@ -3,13 +3,13 @@ import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEnti
 
 const AlertTypeSchemaDef = {
     name: Joi.string().max(255),
-    description: Joi.string().allow(null),
-    priority: Joi.string().max(255).allow(null),
-    severity: Joi.string().max(255).allow(null),
+    description: Joi.string().allow(null, ''),
+    priority: Joi.string().max(255).allow(null, ''),
+    severity: Joi.string().max(255).allow(null, ''),
     color_code: Joi.string().max(100),
     send_push: Joi.boolean().allow(null),
     alert_text: Joi.string().max(255),
-    alert_link: Joi.string().allow(null),
+    alert_link: Joi.string().allow(null, ''),
 };
 
 export const EntitySchema = Joi.object({

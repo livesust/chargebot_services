@@ -2,9 +2,9 @@ import Joi from 'joi';
 import {  JsonResponseSchemaDef } from "../shared/schemas";
 
 const BotLocationSchemaDef = {
-    bot_uuid: Joi.string().allow(null),
+    bot_uuid: Joi.string().allow(null, ''),
     timestamp: Joi.date().allow(null),
-    vehicle_status: Joi.string().allow(null),
+    vehicle_status: Joi.string().allow(null, ''),
     latitude: Joi.number().allow(null),
     longitude: Joi.number().allow(null),
     altitude: Joi.number().allow(null),

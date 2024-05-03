@@ -12,10 +12,10 @@ const UserProfileSchemaDef = {
   id: Joi.number().optional().allow(null),
   first_name: Joi.string().max(255),
   last_name: Joi.string().max(255),
-  title: Joi.string().max(255).allow(null),
-  photo: Joi.string().allow(null),
+  title: Joi.string().max(255).allow(null, ''),
+  photo: Joi.string().allow(null, ''),
   email_address: Joi.string().email(),
-  phone_number: Joi.string(),
+  phone_number: Joi.string().allow(null, ''),
   role_id: Joi.number(),
   role: Joi.string(),
   company: CompanySchema.allow(null).keys({

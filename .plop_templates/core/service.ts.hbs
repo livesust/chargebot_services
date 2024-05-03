@@ -85,7 +85,7 @@ export async function create({{snakeCase name}}: New{{pascalCase name}}): Promis
             ...{{snakeCase name}},
             {{#each attributes}}
                 {{#when type 'eq' 'json'}}
-            {{snakeCase attribute}}: json({{snakeCase ../name}}.{{snakeCase attribute}}),
+            {{snakeCase attribute}}: {{snakeCase ../name}}.{{snakeCase attribute}} ? json({{snakeCase ../name}}.{{snakeCase attribute}}) : undefined,
                 {{/when}}
             {{/each}}
         })
@@ -110,7 +110,14 @@ export async function update(id: number, {{snakeCase name}}: {{pascalCase name}}
 } | undefined> {
     const updated = await db
         .updateTable('{{snakeCase name}}')
-        .set({{snakeCase name}})
+        .set({
+            ...{{snakeCase name}},
+            {{#each attributes}}
+                {{#when type 'eq' 'json'}}
+            {{snakeCase attribute}}: {{snakeCase ../name}}.{{snakeCase attribute}} ? json({{snakeCase ../name}}.{{snakeCase attribute}}) : undefined,
+                {{/when}}
+            {{/each}}
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
