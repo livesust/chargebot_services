@@ -85,7 +85,7 @@ export async function create({{snakeCase name}}: New{{pascalCase name}}): Promis
             ...{{snakeCase name}},
             {{#each attributes}}
                 {{#when type 'eq' 'json'}}
-            {{snakeCase attribute}}: json({{snakeCase ../name}}.{{snakeCase attribute}}),
+            {{snakeCase attribute}}: {{snakeCase ../name}}.{{snakeCase attribute}} ? json({{snakeCase ../name}}.{{snakeCase attribute}}) : undefined,
                 {{/when}}
             {{/each}}
         })
@@ -114,7 +114,7 @@ export async function update(id: number, {{snakeCase name}}: {{pascalCase name}}
             ...{{snakeCase name}},
             {{#each attributes}}
                 {{#when type 'eq' 'json'}}
-            {{snakeCase attribute}}: json({{snakeCase ../name}}.{{snakeCase attribute}}),
+            {{snakeCase attribute}}: {{snakeCase ../name}}.{{snakeCase attribute}} ? json({{snakeCase ../name}}.{{snakeCase attribute}}) : undefined,
                 {{/when}}
             {{/each}}
         })
