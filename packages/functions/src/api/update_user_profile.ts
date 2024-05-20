@@ -34,15 +34,28 @@ const handler = async (event) => {
 
     const promises = [];
     // update user info
-    const update = {
+    let updatedUser = {
       first_name: body.first_name,
       last_name: body.last_name,
       title: body.title,
       photo: body.photo,
+      onboarding: false,
+      privacy_terms_last_accepted: undefined,
+      privacy_terms_version: undefined,
       modified_by: user_sub,
       modified_date: new Date(),
     };
-    promises.push(User.update(user.id!, update));
+
+    // update user info
+    if (body.onboarding && body.privacy_terms_last_accepted) {
+      updatedUser = {
+        ...updatedUser,
+        onboarding: body.onboarding && !user.onboarding ? true : user.onboarding ?? false,
+        privacy_terms_last_accepted: body.privacy_terms_last_accepted,
+        privacy_terms_version: body.privacy_terms_version,
+      };
+    }
+    promises.push(User.update(user.id!, updatedUser));
 
     // find user email, phone and role
     const [userEmail, userPhone, userRole] = await Promise.all([
@@ -105,7 +118,7 @@ const handler = async (event) => {
 
     const response = {
       id: user.id!,
-      ...update,
+      ...updatedUser,
       //@ts-expect-error ignore uknown
       email_address: email?.entity?.email_address,
       //@ts-expect-error ignore uknown

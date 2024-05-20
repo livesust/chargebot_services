@@ -17,6 +17,9 @@ export interface UserTable extends AuditedEntity {
   photo?: string;
   invite_status?: UserInviteStatus;
   super_admin?: boolean;
+  onboarding?: boolean;
+  privacy_terms_last_accepted?: Date;
+  privacy_terms_version?: string;
   user_id: string;
   company_id: number;
   company?: Company;

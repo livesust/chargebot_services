@@ -43,7 +43,8 @@ const handler = async (event) => {
       invite_status: UserInviteStatus.INVITED,
       super_admin: false,
       user_id: cognitoUser!.Username!,
-      company_id: creator!.company_id
+      company_id: creator!.company_id,
+      onboarding: false
     }))?.entity;
 
     // create email and role

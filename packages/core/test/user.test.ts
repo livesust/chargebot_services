@@ -28,8 +28,11 @@ function getUserInstance() {
         "last_name": getRandom('varchar', 255),
         "title": getRandom('varchar', 255),
         "photo": getRandom('varchar', 255),
-        "invite_status": getRandom('integer'),
+        "invite_status": getRandom('varchar', 100),
         "super_admin": getRandom('boolean'),
+        "onboarding": getRandom('boolean'),
+        "privacy_terms_last_accepted": getRandom('timestamptz'),
+        "privacy_terms_version": getRandom('varchar', 100),
         "user_id": getRandom('varchar', 255),
         // @ts-expect-error ignore any type error
         "company_id": company.id,

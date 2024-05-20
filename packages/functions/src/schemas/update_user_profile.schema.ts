@@ -18,6 +18,9 @@ const UserProfileSchemaDef = {
   phone_number: Joi.string().allow(null, ''),
   role_id: Joi.number(),
   role: Joi.string(),
+  onboarding: Joi.boolean().allow(null),
+  privacy_terms_last_accepted: Joi.date().allow(null),
+  privacy_terms_version: Joi.string().max(100).allow(null, ''),
   company: CompanySchema.allow(null).keys({
     // overwrite keys for required attributes
     customer: CustomerSchema.allow(null),
