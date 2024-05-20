@@ -43,7 +43,9 @@ export async function update(id: number, user: UserUpdate): Promise<{
 } | undefined> {
     const updated = await db
         .updateTable('user')
-        .set(user)
+        .set({
+            ...user,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -116,7 +118,7 @@ export async function get(id: number): Promise<User | undefined> {
         .select((eb) => withCompany(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
-        .executeTakeFirst();
+.executeTakeFirst();
 }
 
 export async function findByCognitoId(cognito_id: string): Promise<User | undefined> {
@@ -136,7 +138,7 @@ export async function findByEmail(email_address: string): Promise<User | undefin
       .where('user_email.deleted_by', 'is', null)
       .where('user.deleted_by', 'is', null)
       .selectAll('user')
-      .executeTakeFirst();
+        .executeTakeFirst();
 }
 
 export async function findByCriteria(criteria: Partial<User>): Promise<User[]> {
@@ -210,11 +212,28 @@ function buildCriteriaQuery(criteria: Partial<User>) {
       criteria.photo
     );
   }
-  if (criteria.invite_status) {
-    query = query.where('invite_status', '=', criteria.invite_status);
+  if (criteria.invite_status !== undefined) {
+    query = query.where(
+      'invite_status', 
+      criteria.invite_status === null ? 'is' : '=', 
+      criteria.invite_status
+    );
   }
   if (criteria.super_admin) {
     query = query.where('super_admin', '=', criteria.super_admin);
+  }
+  if (criteria.onboarding) {
+    query = query.where('onboarding', '=', criteria.onboarding);
+  }
+  if (criteria.privacy_terms_last_accepted) {
+    query = query.where('privacy_terms_last_accepted', '=', criteria.privacy_terms_last_accepted);
+  }
+  if (criteria.privacy_terms_version !== undefined) {
+    query = query.where(
+      'privacy_terms_version', 
+      criteria.privacy_terms_version === null ? 'is' : '=', 
+      criteria.privacy_terms_version
+    );
   }
   if (criteria.user_id !== undefined) {
     query = query.where(

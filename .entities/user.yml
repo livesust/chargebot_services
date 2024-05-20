@@ -4,12 +4,12 @@ attributes:
     type: varchar
     varchar_length: '255'
     tsType: string
-    not_null: true
+    not_null: false
   - attribute: last_name
     type: varchar
     varchar_length: '255'
     tsType: string
-    not_null: true
+    not_null: false
   - attribute: title
     type: varchar
     varchar_length: '255'
@@ -21,12 +21,26 @@ attributes:
     tsType: string
     not_null: false
   - attribute: invite_status
-    type: integer
-    tsType: number
+    type: varchar
+    varchar_length: '100'
+    tsType: string
     not_null: false
   - attribute: super_admin
     type: boolean
     tsType: boolean
+    not_null: false
+  - attribute: onboarding
+    type: boolean
+    tsType: boolean
+    not_null: false
+  - attribute: privacy terms last accepted
+    type: timestamptz
+    tsType: Date
+    not_null: false
+  - attribute: privacy terms version
+    type: varchar
+    varchar_length: '100'
+    tsType: string
     not_null: false
   - attribute: user_id
     type: varchar

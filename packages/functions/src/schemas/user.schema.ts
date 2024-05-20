@@ -8,8 +8,11 @@ const UserSchemaDef = {
     last_name: Joi.string().max(255).allow(null, ''),
     title: Joi.string().max(255).allow(null, ''),
     photo: Joi.string().max(255).allow(null, ''),
-    invite_status: Joi.string().allow(null),
+    invite_status: Joi.string().max(100).allow(null, ''),
     super_admin: Joi.boolean().allow(null),
+    onboarding: Joi.boolean().allow(null),
+    privacy_terms_last_accepted: Joi.date().allow(null),
+    privacy_terms_version: Joi.string().max(100).allow(null, ''),
     user_id: Joi.string().max(255),
 };
 
