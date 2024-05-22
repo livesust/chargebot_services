@@ -1,11 +1,12 @@
-import { Config, StackContext, Function } from "sst/constructs";
+import { Config, StackContext, Function , use} from "sst/constructs";
+import { RDSStack } from "./RDSStack";
 import { LayerVersion, Code, Alias } from "aws-cdk-lib/aws-lambda";
 import { PredefinedMetric, ScalableTarget, ServiceNamespace } from "aws-cdk-lib/aws-applicationautoscaling";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { IotToLambda, IotToLambdaProps } from "@aws-solutions-constructs/aws-iot-lambda";
 
 export function LambdaStack({ app, stack }: StackContext) {
-  
+  const { rdsCluster } = use(RDSStack);
 
   // Lambda layers
   // axios layer: to make http requests
@@ -47,24 +48,18 @@ export function LambdaStack({ app, stack }: StackContext) {
     nodejs: {
       install: ["expo-server-sdk"],
     },
-    bind: [EXPO_ACCESS_TOKEN],
+    bind: [rdsCluster, EXPO_ACCESS_TOKEN],
   });
 
-  let logGroup = LogGroup.fromLogGroupName(stack, `ChargebotIoTAlertLogGroup_${app.stage}`, `ChargebotIoTAlertLogGroup_${app.stage}`);
-  if (!logGroup) {
-    logGroup = new LogGroup(stack, `ChargebotIoTAlertLogGroup_${app.stage}`, {
-      logGroupName: `ChargebotIoTAlertLogGroup_${app.stage}`,
-      retention: RetentionDays.ONE_MONTH
-    });
-  }
+  const logGroup = new LogGroup(stack, `ChargebotIoTAlertLogGroup_${app.stage}`, {
+    logGroupName: `ChargebotIoTAlertLogGroup_${app.stage}`,
+    retention: RetentionDays.ONE_MONTH
+  });
 
-  let errorLogGroup = LogGroup.fromLogGroupName(stack, `ChargebotIoTAlertErrorLogGroup_${app.stage}`, `ChargebotIoTAlertErrorLogGroup_${app.stage}`);
-  if (!errorLogGroup) {
-    errorLogGroup = new LogGroup(stack, `ChargebotIoTAlertErrorLogGroup_${app.stage}`, {
-      logGroupName: `ChargebotIoTAlertErrorLogGroup_${app.stage}`,
-      retention: RetentionDays.ONE_MONTH
-    });
-  }
+  const errorLogGroup = new LogGroup(stack, `ChargebotIoTAlertErrorLogGroup_${app.stage}`, {
+    logGroupName: `ChargebotIoTAlertErrorLogGroup_${app.stage}`,
+    retention: RetentionDays.ONE_MONTH
+  });
 
   const constructProps: IotToLambdaProps = {
     // @ts-expect-error ignore typing
@@ -72,13 +67,13 @@ export function LambdaStack({ app, stack }: StackContext) {
     iotTopicRuleProps: {
       topicRulePayload: {
         ruleDisabled: false,
-        description: "Processing of ChargeBot alerts.",
-        sql: "SELECT * FROM 'chargebot/alert'",
+        description: "ChargeBot alerts to Lambda",
+        sql: "SELECT * FROM 'chargebot/alert/lambda'",
         actions: [
           {
             cloudwatchLogs: {
               logGroupName: logGroup.logGroupName,
-              roleArn: 'arn:aws:iam::881739832873:role/livesust-iot-cluster-kms-role'
+              roleArn: 'arn:aws:iam::881739832873:role/livesust-iot-cluster-kms-role',
             }
           }
         ],
@@ -101,6 +96,9 @@ export function LambdaStack({ app, stack }: StackContext) {
       luxonLayer,
       sharpLayer,
       expoServerSdkLayer,
+    },
+    functions: {
+      processIotAlertsFunction
     },
     setupProvisionedConcurrency
   };

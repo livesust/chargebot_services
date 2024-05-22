@@ -22,7 +22,10 @@ import { ExpoPush } from "@chargebot-services/core/services/expo/expo_push";
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
   console.log('SEND ALERT EVENT: ', event);
-  const body = event.body;
+  // payload will come on body when called from API
+  // but direct on event when from IoT
+  const body = event.body ?? event;
+  // bot_uuid from IoT, device_id from API
   const bot_uuid = body.bot_uuid ?? body.device_id;
 
   try {

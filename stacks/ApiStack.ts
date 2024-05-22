@@ -13,7 +13,7 @@ export function ApiStack({ app, stack }: StackContext) {
   const { eventBus } = use(EventBusStack);
   const { cognito, cognitoAdminRole } = use(CognitoStack);
   const { iotRole, IOT_ENDPOINT } = use(IotStack);
-  const { lambdaLayers, setupProvisionedConcurrency } = use(LambdaStack);
+  const { lambdaLayers, functions, setupProvisionedConcurrency } = use(LambdaStack);
 
   // TimescaleDB Secret Keys
   const TIMESCALE_HOST = new Config.Secret(stack, "TIMESCALE_HOST");
@@ -212,6 +212,11 @@ export function ApiStack({ app, stack }: StackContext) {
           bind: [COGNITO_USER_POOL_ID],
         },
       },
+      "POST /send-alert": {
+        cdk: {
+          function: functions.processIotAlertsFunction
+        }
+      }
     }
   });
 
