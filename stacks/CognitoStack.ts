@@ -1,6 +1,7 @@
-import { StackContext, Cognito, toCdkDuration } from "sst/constructs";
+import { StackContext, Cognito, toCdkDuration, use, Cron } from "sst/constructs";
 import { AccountRecovery, NumberAttribute, OAuthScope } from "aws-cdk-lib/aws-cognito";
 import { Effect, IRole, Policy, PolicyStatement, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
+import { RDSStack } from "./RDSStack";
 
 export function CognitoStack({ app, stack }: StackContext) {
 
@@ -69,8 +70,9 @@ export function CognitoStack({ app, stack }: StackContext) {
                   requireDigits: false,
                   requireLowercase: false,
                   requireUppercase: false,
-                  requireSymbols: false
-                }
+                  requireSymbols: false,
+                  tempPasswordValidity: toCdkDuration('30 day')
+                },
             },
             userPoolClient: {
                 authFlows: {
@@ -116,10 +118,23 @@ export function CognitoStack({ app, stack }: StackContext) {
 
     cognito.attachPermissionsForAuthUsers(stack, ["ssm"])
 
+    // Cron function to expire user invitations
+    const { rdsCluster } = use(RDSStack);
+    new Cron(stack, "ExpireUserInvitationsCron", {
+      schedule: app.stage === "dev" ? "rate(5 minutes)" : "rate(1 day)",
+      job: {
+        function: {
+          handler: "packages/functions/src/api/expire_user_invitation.main",
+          timeout: app.stage === "prod" ? "10 seconds" : "30 seconds",
+          bind: [rdsCluster],
+        }
+      },
+    });
+
     stack.addOutputs({
         CognitoUserPoolId: cognito.userPoolId,
         CognitoIdentityPoolId: cognito.cognitoIdentityPoolId,
-        CognitoUserPoolClientId: cognito.userPoolClientId
+        CognitoUserPoolClientId: cognito.userPoolClientId,
     });
 
     return {

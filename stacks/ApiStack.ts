@@ -212,6 +212,14 @@ export function ApiStack({ app, stack }: StackContext) {
           bind: [COGNITO_USER_POOL_ID],
         },
       },
+      "POST /user/disable": {
+        function: {
+          handler: "packages/functions/src/api/disable_user.main",
+          // @ts-expect-error ignore check
+          role: cognitoAdminRole,
+          bind: [COGNITO_USER_POOL_ID],
+        },
+      },
       "POST /send-alert": {
         cdk: {
           function: functions.processIotAlertsFunction

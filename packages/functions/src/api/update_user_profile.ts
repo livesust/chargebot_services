@@ -17,6 +17,7 @@ import { UserPhone } from "@chargebot-services/core/services/user_phone";
 import { UserRole } from "@chargebot-services/core/services/user_role";
 import jsonBodyParser from "@middy/http-json-body-parser";
 import { dateReviver } from "src/shared/middlewares/json-date-parser";
+import { UserInviteStatus } from "@chargebot-services/core/database/user";
 
 
 // @ts-expect-error ignore any type for event
@@ -40,6 +41,7 @@ const handler = async (event) => {
       title: body.title,
       photo: body.photo,
       onboarding: false,
+      invite_status: UserInviteStatus.INVITED,
       privacy_terms_last_accepted: undefined,
       privacy_terms_version: undefined,
       modified_by: user_sub,
@@ -48,9 +50,11 @@ const handler = async (event) => {
 
     // update user info
     if (body.onboarding && body.privacy_terms_last_accepted) {
+      const onboarding_complete = body.onboarding && !user.onboarding ? true : user.onboarding ?? false;
       updatedUser = {
         ...updatedUser,
-        onboarding: body.onboarding && !user.onboarding ? true : user.onboarding ?? false,
+        onboarding: onboarding_complete,
+        invite_status: UserInviteStatus.ACTIVE,
         privacy_terms_last_accepted: body.privacy_terms_last_accepted,
         privacy_terms_version: body.privacy_terms_version,
       };

@@ -5,7 +5,9 @@ import {
   AdminGetUserCommandOutput,
   AdminCreateUserCommand,
   AdminCreateUserCommandOutput,
-  UserType
+  AdminDisableUserCommand,
+  UserType,
+  AdminDisableUserCommandOutput
 } from "@aws-sdk/client-cognito-identity-provider";
 import { Config } from "sst/node/config";
 
@@ -44,6 +46,21 @@ export const createUser = async (email: string): Promise<UserType | undefined> =
     if (response?.$metadata.httpStatusCode == 200) {
       return response.User!;
     }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+export const disableUser = async (email: string): Promise<boolean | undefined> => {
+  // Parameters for getting user by email
+  try {
+    const command = new AdminDisableUserCommand({
+      UserPoolId: userPoolId,
+      Username: email
+    });
+  
+    const response: AdminDisableUserCommandOutput = await cognitoClient.send(command);
+    return response?.$metadata.httpStatusCode == 200;
   } catch (err) {
     console.error(err);
   }

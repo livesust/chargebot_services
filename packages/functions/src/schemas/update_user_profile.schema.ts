@@ -10,8 +10,8 @@ export const PathParamSchema = Joi.object({
 
 const UserProfileSchemaDef = {
   id: Joi.number().optional().allow(null),
-  first_name: Joi.string().max(255),
-  last_name: Joi.string().max(255),
+  first_name: Joi.string().max(255).allow(null, ''),
+  last_name: Joi.string().max(255).allow(null, ''),
   title: Joi.string().max(255).allow(null, ''),
   photo: Joi.string().allow(null, ''),
   email_address: Joi.string().email(),
