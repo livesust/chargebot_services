@@ -1,8 +1,12 @@
-import { StackContext, Cognito, toCdkDuration } from "sst/constructs";
+import { StackContext, Config, Cognito, toCdkDuration, use, Cron } from "sst/constructs";
 import { AccountRecovery, NumberAttribute, OAuthScope } from "aws-cdk-lib/aws-cognito";
 import { Effect, IRole, Policy, PolicyStatement, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
+import { RDSStack } from "./RDSStack";
 
 export function CognitoStack({ app, stack }: StackContext) {
+
+    // Secret Keys
+    const COGNITO_USER_POOL_ID = new Config.Secret(stack, "COGNITO_USER_POOL_ID");
 
     // Cognito admin role
     const cognitoAdminRole: IRole = new Role(stack, "CognitoAdminRole", {
@@ -14,6 +18,11 @@ export function CognitoStack({ app, stack }: StackContext) {
         effect: Effect.ALLOW,
         actions: [
           "cognito-idp:AdminCreateUser",
+          "cognito-idp:AdminDeleteUser",
+          "cognito-idp:AdminGetUser",
+          "cognito-idp:AdminDisableUser",
+          "cognito-idp:AdminEnableUser",
+          "cognito-idp:AdminResetUserPassword",
         ],
         resources: ["*"]
       })]
@@ -69,8 +78,9 @@ export function CognitoStack({ app, stack }: StackContext) {
                   requireDigits: false,
                   requireLowercase: false,
                   requireUppercase: false,
-                  requireSymbols: false
-                }
+                  requireSymbols: false,
+                  tempPasswordValidity: toCdkDuration('30 day')
+                },
             },
             userPoolClient: {
                 authFlows: {
@@ -116,14 +126,30 @@ export function CognitoStack({ app, stack }: StackContext) {
 
     cognito.attachPermissionsForAuthUsers(stack, ["ssm"])
 
+    // Cron function to expire user invitations
+    const { rdsCluster } = use(RDSStack);
+    new Cron(stack, "ExpireUserInvitationsCron", {
+      schedule: app.stage === "dev" ? "rate(5 minutes)" : "rate(1 day)",
+      job: {
+        function: {
+          handler: "packages/functions/src/api/expire_user_invitation.main",
+          timeout: app.stage === "prod" ? "10 seconds" : "30 seconds",
+          bind: [rdsCluster, COGNITO_USER_POOL_ID],
+          // @ts-expect-error ignore check
+          role: cognitoAdminRole,
+        }
+      },
+    });
+
     stack.addOutputs({
         CognitoUserPoolId: cognito.userPoolId,
         CognitoIdentityPoolId: cognito.cognitoIdentityPoolId,
-        CognitoUserPoolClientId: cognito.userPoolClientId
+        CognitoUserPoolClientId: cognito.userPoolClientId,
     });
 
     return {
         cognito,
-        cognitoAdminRole
+        cognitoAdminRole,
+        COGNITO_USER_POOL_ID
     };
 }

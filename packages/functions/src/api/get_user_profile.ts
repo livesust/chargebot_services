@@ -18,6 +18,7 @@ import { UserEmail } from "@chargebot-services/core/services/user_email";
 import { UserPhone } from "@chargebot-services/core/services/user_phone";
 import { UserRole } from "@chargebot-services/core/services/user_role";
 import { HomeMaster } from "@chargebot-services/core/services/home_master";
+import { BotUser } from "@chargebot-services/core/services/bot_user";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
@@ -32,12 +33,13 @@ const handler = async (event) => {
     }
 
     const filename = `profile_user_${user?.id}`;
-    const [homeMaster, userEmail, userPhone, userRole, photoUrl] = await Promise.all([
+    const [homeMaster, userEmail, userPhone, userRole, photoUrl, userBots] = await Promise.all([
       HomeMaster.findByCompany(user.company_id),
       UserEmail.findOneByCriteria({user_id: user.id, primary: true}),
       UserPhone.findOneByCriteria({user_id: user.id, primary: true}),
       UserRole.findOneByCriteria({user_id: user.id}),
-      S3.getDownloadUrl(Bucket.userProfile.bucketName, filename)
+      S3.getDownloadUrl(Bucket.userProfile.bucketName, filename),
+      BotUser.findByCriteria({user_id: user.id})
     ]);
 
     const response = {
@@ -58,6 +60,7 @@ const handler = async (event) => {
         customer: null,
         home_master: null
       },
+      bot_ids: userBots.map((bot_user) => bot_user.bot_id),
       home_master: homeMaster
     };
 

@@ -10,8 +10,8 @@ export const PathParamSchema = Joi.object({
 
 const UserProfileSchemaDef = {
   id: Joi.number().optional().allow(null),
-  first_name: Joi.string().max(255),
-  last_name: Joi.string().max(255),
+  first_name: Joi.string().max(255).allow(null, ''),
+  last_name: Joi.string().max(255).allow(null, ''),
   title: Joi.string().max(255).allow(null, ''),
   photo: Joi.string().allow(null, ''),
   email_address: Joi.string().email(),
@@ -19,6 +19,7 @@ const UserProfileSchemaDef = {
   role_id: Joi.number(),
   role: Joi.string(),
   onboarding: Joi.boolean().allow(null),
+  invite_status: Joi.string().max(100).allow(null, ''),
   privacy_terms_last_accepted: Joi.date().allow(null),
   privacy_terms_version: Joi.string().max(100).allow(null, ''),
   company: CompanySchema.allow(null).keys({
@@ -27,8 +28,9 @@ const UserProfileSchemaDef = {
     home_master: HomeMasterSchema.allow(null),
   }),
   home_master: HomeMasterSchema.allow(null),
+  bot_ids: Joi.array<number>(),
   modified_by: Joi.string(),
-  modified_date: Joi.date()
+  modified_date: Joi.date(),
 };
 
 export const EntitySchema = Joi.object({

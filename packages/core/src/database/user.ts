@@ -7,6 +7,7 @@ import { Company } from "./company";
 export enum UserInviteStatus {
   INVITED = 'INVITED',
   ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
   EXPIRED = 'EXPIRED'
 }
 

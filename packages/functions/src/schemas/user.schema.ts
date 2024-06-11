@@ -20,7 +20,6 @@ export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
     ...UserSchemaDef,
     company_id: Joi.number(),
-    
     company: CompanySchema,
 });
 

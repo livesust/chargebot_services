@@ -1,9 +1,9 @@
 import middy from "@middy/core";
 import warmup from "@middy/warmup";
-import { createError, HttpError } from '@middy/util';
 import Log from '@dazn/lambda-powertools-logger';
+import { createError, HttpError } from '@middy/util';
 import httpErrorHandler from "@middy/http-error-handler";
-import { EntitySchema } from "../schemas/send_push_alert.schema";
+import { ResponseSchema } from "../schemas/user.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import httpSecurityHeaders from '@middy/http-security-headers';
@@ -11,44 +11,44 @@ import httpEventNormalizer from '@middy/http-event-normalizer';
 import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import { createNotFoundResponse, createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
-import { Bot } from "@chargebot-services/core/services/bot";
-import { BotUser } from "@chargebot-services/core/services/bot_user";
-import { AppInstall } from "@chargebot-services/core/services/app_install";
-import { SuccessResponseSchema } from "src/shared/schemas";
+import { User } from "@chargebot-services/core/services/user";
 import jsonBodyParser from "@middy/http-json-body-parser";
 import { dateReviver } from "src/shared/middlewares/json-date-parser";
-import { ExpoPush } from "@chargebot-services/core/services/expo/expo_push";
+import { UserInviteStatus } from "@chargebot-services/core/database/user";
+import { Cognito } from "@chargebot-services/core/services/aws/cognito";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
-  // payload will come on body when called from API
-  // but direct on event when from IoT
-  const body = event.body ?? event;
-  // bot_uuid from IoT, device_id from API
-  const bot_uuid = body.bot_uuid ?? body.device_id;
+  const cognito_id = event.pathParameters!.cognito_id!;
+  const user_sub = event.requestContext?.authorizer?.jwt.claims.sub;
 
   try {
-    if (!bot_uuid) {
-      return createError(400, "bot uuid not provided", { expose: true });
+    let existentUser = await User.findByCognitoId(cognito_id);
+    if (!existentUser) {
+      Log.debug("User not found", { cognito_id });
+      return createNotFoundResponse("User not found");
     }
 
-    const bot = await Bot.findOneByCriteria({ bot_uuid })
-
-    if (!bot) {
-      return createNotFoundResponse({ "response": "bot not found" });
+    if (existentUser.invite_status != UserInviteStatus.ACTIVE && existentUser.invite_status != UserInviteStatus.INVITED) {
+      Log.debug(`User ${cognito_id} is not invited/active`);
+      return createNotFoundResponse(`User ${cognito_id} is not invited/active`);
     }
 
-    const usersByBot = await BotUser.findByCriteria({ bot_id: bot.id });
-    const user_ids = usersByBot.map(ub => ub.user_id);
-    const appInstalls = await AppInstall.getAppsToNotify(user_ids);
-
-    const pushTokens = appInstalls?.map(ai => ai.push_token!);
-    
-    if (pushTokens && pushTokens.length > 0) {
-      ExpoPush.send_push_notifications(pushTokens, body.message, body.name, {bot_uuid, bot_id: bot.id})
+    // disable user
+    const userDisabled = await Cognito.disableUser(cognito_id);
+    if (!userDisabled) {
+      const httpError = createError(406, "cannot disable user", { expose: true });
+      throw httpError;
     }
 
-    return createSuccessResponse({ "response": "success" });
+    // save as inactive
+    existentUser = (await User.update(existentUser.id!, {
+      invite_status: UserInviteStatus.INACTIVE,
+      modified_by: user_sub,
+      modified_date: new Date()
+    }))?.entity;
+
+    return createSuccessResponse(existentUser);
 
   } catch (error) {
     Log.error("ERROR", { error });
@@ -56,7 +56,7 @@ const handler = async (event) => {
       // re-throw when is a http error generated above
       throw error;
     }
-    const httpError = createError(406, "cannot send alert", { expose: true });
+    const httpError = createError(406, "cannot disable user", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;
   }
@@ -69,11 +69,10 @@ export const main = middy(handler)
   .use(httpEventNormalizer())
   // .use(logTimeout())
   .use(jsonBodyParser({ reviver: dateReviver }))
-  .use(validator({ eventSchema: EntitySchema }))
   // after: inverse order execution
   .use(jsonBodySerializer())
   .use(httpSecurityHeaders())
-  .use(validator({ responseSchema: SuccessResponseSchema }))
+  .use(validator({ responseSchema: ResponseSchema }))
   // httpErrorHandler must be the last error handler attached, first to execute.
   // When non-http errors (those without statusCode) occur they will be returned with a 500 status code.
   .use(httpErrorHandler());

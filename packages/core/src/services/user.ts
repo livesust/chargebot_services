@@ -2,7 +2,8 @@ export * as User from "./user";
 import db, { Database } from '../database';
 import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
-import { User, UserUpdate, NewUser } from "../database/user";
+import { DateTime } from "luxon";
+import { User, UserUpdate, NewUser, UserInviteStatus } from "../database/user";
 
 export function withCompany(eb: ExpressionBuilder<Database, 'user'>) {
     return jsonObjectFrom(
@@ -138,7 +139,18 @@ export async function findByEmail(email_address: string): Promise<User | undefin
       .where('user_email.deleted_by', 'is', null)
       .where('user.deleted_by', 'is', null)
       .selectAll('user')
-        .executeTakeFirst();
+      .executeTakeFirst();
+}
+
+export async function findExpired(days: number): Promise<User[] | undefined> {
+  const dateLimit = DateTime.now().minus({minutes: days}).toJSDate();
+  return db
+      .selectFrom("user")
+      .where('user.invite_status', '=', UserInviteStatus.INVITED)
+      .where('user.created_date', '<=', dateLimit)
+      .where('user.deleted_by', 'is', null)
+      .selectAll()
+      .execute();
 }
 
 export async function findByCriteria(criteria: Partial<User>): Promise<User[]> {
