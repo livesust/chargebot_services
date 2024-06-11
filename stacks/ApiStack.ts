@@ -11,7 +11,7 @@ import { EventBusStack } from "./EventBusStack";
 export function ApiStack({ app, stack }: StackContext) {
   const { rdsCluster } = use(RDSStack);
   const { eventBus } = use(EventBusStack);
-  const { cognito, cognitoAdminRole } = use(CognitoStack);
+  const { cognito, cognitoAdminRole, COGNITO_USER_POOL_ID } = use(CognitoStack);
   const { iotRole, IOT_ENDPOINT } = use(IotStack);
   const { lambdaLayers, functions, setupProvisionedConcurrency } = use(LambdaStack);
 
@@ -24,9 +24,6 @@ export function ApiStack({ app, stack }: StackContext) {
 
   // Secret Keys
   const SECRET_KEY = new Config.Secret(stack, "SECRET_KEY");
-
-  // Secret Keys
-  const COGNITO_USER_POOL_ID = new Config.Secret(stack, "COGNITO_USER_POOL_ID");
 
   // lambda functions timeout
   const timeout = app.stage === "prod" ? "10 seconds" : "30 seconds";
@@ -188,7 +185,6 @@ export function ApiStack({ app, stack }: StackContext) {
           bind: [bucket]
         }
       },
-      "PATCH /user/{cognito_id}/profile": "packages/functions/src/api/update_user_profile.main",
       "PUT /user/{cognito_id}/photo": {
         function: {
           handler: "packages/functions/src/api/upload_user_photo.main",
@@ -212,9 +208,34 @@ export function ApiStack({ app, stack }: StackContext) {
           bind: [COGNITO_USER_POOL_ID],
         },
       },
-      "POST /user/disable": {
+      "PATCH /user/{cognito_id}/profile": "packages/functions/src/api/update_user_profile.main",
+      "POST /user/reinvite": {
         function: {
-          handler: "packages/functions/src/api/disable_user.main",
+          handler: "packages/functions/src/api/reinvite_user.main",
+          // @ts-expect-error ignore check
+          role: cognitoAdminRole,
+          bind: [COGNITO_USER_POOL_ID],
+        },
+      },
+      "POST /user/expire_invitations": {
+        function: {
+          handler: "packages/functions/src/api/expire_user_invitation.main",
+          // @ts-expect-error ignore check
+          role: cognitoAdminRole,
+          bind: [COGNITO_USER_POOL_ID],
+        },
+      },
+      "PATCH /user/{cognito_id}/inactivate": {
+        function: {
+          handler: "packages/functions/src/api/inactivate_user.main",
+          // @ts-expect-error ignore check
+          role: cognitoAdminRole,
+          bind: [COGNITO_USER_POOL_ID],
+        },
+      },
+      "PATCH /user/{cognito_id}/activate": {
+        function: {
+          handler: "packages/functions/src/api/activate_user.main",
           // @ts-expect-error ignore check
           role: cognitoAdminRole,
           bind: [COGNITO_USER_POOL_ID],

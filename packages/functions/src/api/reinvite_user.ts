@@ -11,10 +11,8 @@ import httpSecurityHeaders from '@middy/http-security-headers';
 import httpEventNormalizer from '@middy/http-event-normalizer';
 import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
-import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
+import { createNotFoundResponse, createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { User } from "@chargebot-services/core/services/user";
-import { UserEmail } from "@chargebot-services/core/services/user_email";
-import { UserRole } from "@chargebot-services/core/services/user_role";
 import jsonBodyParser from "@middy/http-json-body-parser";
 import { dateReviver } from "src/shared/middlewares/json-date-parser";
 import { UserInviteStatus } from "@chargebot-services/core/database/user";
@@ -25,84 +23,58 @@ import { BotUser } from "@chargebot-services/core/services/bot_user";
 const handler = async (event) => {
   const user_sub = event.requestContext?.authorizer?.jwt.claims.sub;
   const body = event.body;
-  const now = new Date();
   const email_address = body.email_address;
 
   try {
-    const [existentLocal, creator, existentCognito] = await Promise.all([
-      User.findByEmail(email_address),
-      User.findByCognitoId(user_sub),
-      Cognito.getUserByEmail(email_address)
-    ]);
+    
+    let existentUser = await User.findByEmail(email_address);
+    if (!existentUser) {
+      Log.debug(`User ${body.email_address} does not exists`);
+      return createNotFoundResponse(`User ${body.email_address} does not exists`);
+    }
 
-    if (existentLocal) {
-      Log.debug(`User already exists with email ${email_address}`);
-      const httpError = createError(406, `A user with email '${email_address}' was already invited`, { expose: true });
+    if (existentUser.invite_status != UserInviteStatus.EXPIRED && existentUser.invite_status != UserInviteStatus.INVITED) {
+      Log.debug(`User ${body.email_address} is not invited/expired`);
+      return createNotFoundResponse(`User ${body.email_address} is not invited/expired`);
+    }
+
+    // Enable on cognito
+    const userEnabled = await Cognito.enableUser(body.email_address);
+    if (!userEnabled) {
+      const httpError = createError(406, "cannot re-invite user", { expose: true });
       throw httpError;
     }
 
-    if (existentCognito) {
-      await Cognito.deleteUser(email_address);
-    }
-
-    const cognitoUser = await Cognito.createUser(email_address);
-    if (!cognitoUser) {
-      Log.error(`Cannot create email on cognito ${email_address}`);
-      const httpError = createError(406, `Cannot create user with email '${email_address}'`, { expose: true });
-      throw httpError;
-    }
-
-    const user = (await User.create({
+    // Set status as invited
+    existentUser = (await User.update(existentUser.id!, {
       invite_status: UserInviteStatus.INVITED,
-      super_admin: false,
-      user_id: cognitoUser!.Username!,
-      company_id: creator!.company_id,
-      onboarding: false,
-      created_by: user_sub,
-      created_date: now,
       modified_by: user_sub,
-      modified_date: now,
+      modified_date: new Date()
     }))?.entity;
 
-    // create email and role
-    const promises = [];
+    // Modify bots assigned to user
+    if (body.bot_ids) {
+      const assignedBots = await BotUser.findByCriteria({user_id: existentUser!.id!})
+      const botsToAssign = body.bot_ids.filter((id: number) => !assignedBots.some(a => a.bot_id == id));
+      const botsToRemove = assignedBots.map(b => b.bot_id).filter((id: number) => !body.bot_ids.some((bot_id: number) => bot_id == id))
+      const now = new Date();
+      await Promise.all([
+        botsToRemove.map(async (bot_id: number) => BotUser.remove(bot_id, user_sub)),
+        botsToAssign.map(async (bot_id: number) =>
+          BotUser.create({
+            bot_id: bot_id,
+            assignment_date: now,
+            user_id: existentUser!.id!,
+            created_by: user_sub,
+            created_date: now,
+            modified_by: user_sub,
+            modified_date: now,
+          })
+        )
+      ]);
+    }
 
-    promises.push(UserEmail.create({
-      email_address: email_address,
-      user_id: user!.id!,
-      primary: true,
-      created_by: user_sub,
-      created_date: now,
-      modified_by: user_sub,
-      modified_date: now,
-    }));
-
-    promises.push(UserRole.create({
-      user_id: user!.id!,
-      role_id: body.role_id,
-      created_by: user_sub,
-      created_date: now,
-      modified_by: user_sub,
-      modified_date: now,
-    }));
-
-    promises.push(
-      body.bot_ids.map(async (bot_id: number) =>
-        BotUser.create({
-          bot_id: bot_id,
-          assignment_date: now,
-          user_id: user!.id!,
-          created_by: user_sub,
-          created_date: now,
-          modified_by: user_sub,
-          modified_date: now,
-        })
-      )
-    )
-
-    await Promise.all(promises);
-
-    return createSuccessResponse(user);
+    return createSuccessResponse(existentUser);
 
   } catch (error) {
     Log.error("ERROR", { error });
@@ -110,9 +82,8 @@ const handler = async (event) => {
       // re-throw when is a http error generated above
       throw error;
     }
-    const httpError = createError(406, "cannot invite user", { expose: true });
+    const httpError = createError(406, "cannot disable user", { expose: true });
     httpError.details = (<Error>error).message;
-    await Cognito.deleteUser(email_address);
     throw httpError;
   }
 };

@@ -139,14 +139,14 @@ export async function findByEmail(email_address: string): Promise<User | undefin
       .where('user_email.deleted_by', 'is', null)
       .where('user.deleted_by', 'is', null)
       .selectAll('user')
-        .executeTakeFirst();
+      .executeTakeFirst();
 }
 
 export async function findExpired(days: number): Promise<User[] | undefined> {
   const dateLimit = DateTime.now().minus({minutes: days}).toJSDate();
   return db
       .selectFrom("user")
-      .where('user.invite_status', 'is', UserInviteStatus.INVITED)
+      .where('user.invite_status', '=', UserInviteStatus.INVITED)
       .where('user.created_date', '<=', dateLimit)
       .where('user.deleted_by', 'is', null)
       .selectAll()

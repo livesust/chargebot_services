@@ -86,6 +86,30 @@ export async function update(id: number, bot_user: BotUserUpdate): Promise<{
     };
 }
 
+export async function removeByUser(user_id: number, deleted_by_id: string): Promise<{
+  entity: BotUser | undefined,
+  event: unknown
+} | undefined> {
+    const deleted = await db
+        .updateTable('bot_user')
+        .set({ deleted_date: new Date(), deleted_by: deleted_by_id })
+        .where('user_id', '=', user_id)
+        .where('deleted_by', 'is', null)
+        .returningAll()
+        .executeTakeFirst();
+
+  if (!deleted) {
+    return undefined;
+  }
+
+  return {
+    entity: deleted,
+    // event to dispatch on EventBus on creation
+    // undefined as default to not dispatch any event
+    event: undefined
+  };
+}
+
 export async function remove(id: number, user_id: string): Promise<{
   entity: BotUser | undefined,
   event: unknown

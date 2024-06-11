@@ -1,9 +1,12 @@
-import { StackContext, Cognito, toCdkDuration, use, Cron } from "sst/constructs";
+import { StackContext, Config, Cognito, toCdkDuration, use, Cron } from "sst/constructs";
 import { AccountRecovery, NumberAttribute, OAuthScope } from "aws-cdk-lib/aws-cognito";
 import { Effect, IRole, Policy, PolicyStatement, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { RDSStack } from "./RDSStack";
 
 export function CognitoStack({ app, stack }: StackContext) {
+
+    // Secret Keys
+    const COGNITO_USER_POOL_ID = new Config.Secret(stack, "COGNITO_USER_POOL_ID");
 
     // Cognito admin role
     const cognitoAdminRole: IRole = new Role(stack, "CognitoAdminRole", {
@@ -15,6 +18,11 @@ export function CognitoStack({ app, stack }: StackContext) {
         effect: Effect.ALLOW,
         actions: [
           "cognito-idp:AdminCreateUser",
+          "cognito-idp:AdminDeleteUser",
+          "cognito-idp:AdminGetUser",
+          "cognito-idp:AdminDisableUser",
+          "cognito-idp:AdminEnableUser",
+          "cognito-idp:AdminResetUserPassword",
         ],
         resources: ["*"]
       })]
@@ -126,7 +134,9 @@ export function CognitoStack({ app, stack }: StackContext) {
         function: {
           handler: "packages/functions/src/api/expire_user_invitation.main",
           timeout: app.stage === "prod" ? "10 seconds" : "30 seconds",
-          bind: [rdsCluster],
+          bind: [rdsCluster, COGNITO_USER_POOL_ID],
+          // @ts-expect-error ignore check
+          role: cognitoAdminRole,
         }
       },
     });
@@ -139,6 +149,7 @@ export function CognitoStack({ app, stack }: StackContext) {
 
     return {
         cognito,
-        cognitoAdminRole
+        cognitoAdminRole,
+        COGNITO_USER_POOL_ID
     };
 }

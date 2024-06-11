@@ -3,7 +3,6 @@ import warmup from "@middy/warmup";
 import Log from '@dazn/lambda-powertools-logger';
 import { createError, HttpError } from '@middy/util';
 import httpErrorHandler from "@middy/http-error-handler";
-import { EntitySchema } from "../schemas/disable_user.schema";
 import { ResponseSchema } from "../schemas/user.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
@@ -20,25 +19,31 @@ import { Cognito } from "@chargebot-services/core/services/aws/cognito";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
+  const cognito_id = event.pathParameters!.cognito_id!;
   const user_sub = event.requestContext?.authorizer?.jwt.claims.sub;
-  const body = event.body;
 
   try {
-    let existentUser = await User.findByEmail(body.email_address);
+    let existentUser = await User.findByCognitoId(cognito_id);
     if (!existentUser) {
-      Log.debug(`User ${body.email_address} does not exists`);
-      return createNotFoundResponse(`User ${body.email_address} does not exists`);
+      Log.debug("User not found", { cognito_id });
+      return createNotFoundResponse("User not found");
     }
 
-    const userDisabled = await Cognito.disableUser(body.email_address);
+    if (existentUser.invite_status != UserInviteStatus.ACTIVE && existentUser.invite_status != UserInviteStatus.INVITED) {
+      Log.debug(`User ${cognito_id} is not invited/active`);
+      return createNotFoundResponse(`User ${cognito_id} is not invited/active`);
+    }
 
+    // disable user
+    const userDisabled = await Cognito.disableUser(cognito_id);
     if (!userDisabled) {
       const httpError = createError(406, "cannot disable user", { expose: true });
       throw httpError;
     }
 
+    // save as inactive
     existentUser = (await User.update(existentUser.id!, {
-      invite_status: UserInviteStatus.DISABLED,
+      invite_status: UserInviteStatus.INACTIVE,
       modified_by: user_sub,
       modified_date: new Date()
     }))?.entity;
@@ -64,7 +69,6 @@ export const main = middy(handler)
   .use(httpEventNormalizer())
   // .use(logTimeout())
   .use(jsonBodyParser({ reviver: dateReviver }))
-  .use(validator({ eventSchema: EntitySchema }))
   // after: inverse order execution
   .use(jsonBodySerializer())
   .use(httpSecurityHeaders())
