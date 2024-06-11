@@ -129,7 +129,7 @@ export function CognitoStack({ app, stack }: StackContext) {
     // Cron function to expire user invitations
     const { rdsCluster } = use(RDSStack);
     new Cron(stack, "ExpireUserInvitationsCron", {
-      schedule: app.stage === "dev" ? "rate(5 minutes)" : "rate(1 day)",
+      schedule: app.stage === "dev" ? "rate(60 minutes)" : "rate(1 day)",
       job: {
         function: {
           handler: "packages/functions/src/api/expire_user_invitation.main",

@@ -7,7 +7,7 @@ import { UserEmail } from '@chargebot-services/core/database/user_email';
 
 export const main = async () => {
   try {
-    const expiredUsers = await User.findExpired(2);
+    const expiredUsers = await User.findExpired(30);
 
     if (expiredUsers?.length === 0) {
       Log.debug(`Not users to expire invitation`);
