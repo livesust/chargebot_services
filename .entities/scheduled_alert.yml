@@ -10,7 +10,7 @@ attributes:
     type: text
     tsType: string
     not_null: false
-  - attribute: alert content
-    type: text
-    tsType: string
+  - attribute: config settings
+    type: json
+    tsType: object
     not_null: false

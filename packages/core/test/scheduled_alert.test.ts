@@ -20,7 +20,7 @@ function getScheduledAlertInstance() {
     return {
         "name": getRandom('varchar', 255),
         "description": getRandom('text'),
-        "alert_content": getRandom('text'),
+        "config_settings": getRandom('json'),
     };
 }
 

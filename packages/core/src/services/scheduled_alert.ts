@@ -1,5 +1,5 @@
 export * as ScheduledAlert from "./scheduled_alert";
-import db from '../database';
+import db, { json } from '../database';
 import { ScheduledAlert, ScheduledAlertUpdate, NewScheduledAlert } from "../database/scheduled_alert";
 
 
@@ -22,6 +22,7 @@ export async function create(scheduled_alert: NewScheduledAlert): Promise<{
         .insertInto('scheduled_alert')
         .values({
             ...scheduled_alert,
+            config_settings: scheduled_alert.config_settings ? json(scheduled_alert.config_settings) : undefined,
         })
         .returningAll()
         .executeTakeFirst();
@@ -33,8 +34,7 @@ export async function create(scheduled_alert: NewScheduledAlert): Promise<{
     return {
       entity: created,
       // event to dispatch on EventBus on creation
-      // undefined as default to not dispatch any event
-      event: undefined
+      event: created
     };
 }
 
@@ -44,7 +44,10 @@ export async function update(id: number, scheduled_alert: ScheduledAlertUpdate):
 } | undefined> {
     const updated = await db
         .updateTable('scheduled_alert')
-        .set(scheduled_alert)
+        .set({
+          ...scheduled_alert,
+          config_settings: scheduled_alert.config_settings ? json(scheduled_alert.config_settings) : undefined,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -174,12 +177,8 @@ function buildCriteriaQuery(criteria: Partial<ScheduledAlert>) {
       criteria.description
     );
   }
-  if (criteria.alert_content !== undefined) {
-    query = query.where(
-      'alert_content', 
-      criteria.alert_content === null ? 'is' : '=', 
-      criteria.alert_content
-    );
+  if (criteria.config_settings) {
+    query = query.where('config_settings', '=', criteria.config_settings);
   }
 
 
