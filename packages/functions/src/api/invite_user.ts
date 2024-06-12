@@ -11,15 +11,15 @@ import httpSecurityHeaders from '@middy/http-security-headers';
 import httpEventNormalizer from '@middy/http-event-normalizer';
 import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
+import db from '@chargebot-services/core/database';
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { User } from "@chargebot-services/core/services/user";
-import { UserEmail } from "@chargebot-services/core/services/user_email";
-import { UserRole } from "@chargebot-services/core/services/user_role";
 import jsonBodyParser from "@middy/http-json-body-parser";
 import { dateReviver } from "src/shared/middlewares/json-date-parser";
 import { UserInviteStatus } from "@chargebot-services/core/database/user";
 import { Cognito } from "@chargebot-services/core/services/aws/cognito";
-import { BotUser } from "@chargebot-services/core/services/bot_user";
+import { ScheduledAlert as ScheduledAlertService } from "@chargebot-services/core/services/scheduled_alert";
+import { sql } from "kysely";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
@@ -29,10 +29,11 @@ const handler = async (event) => {
   const email_address = body.email_address;
 
   try {
-    const [existentLocal, creator, existentCognito] = await Promise.all([
+    const [existentLocal, creator, existentCognito, scheduledAlerts] = await Promise.all([
       User.findByEmail(email_address),
       User.findByCognitoId(user_sub),
-      Cognito.getUserByEmail(email_address)
+      Cognito.getUserByEmail(email_address),
+      ScheduledAlertService.list()
     ]);
 
     if (existentLocal) {
@@ -52,55 +53,83 @@ const handler = async (event) => {
       throw httpError;
     }
 
-    const user = (await User.create({
-      invite_status: UserInviteStatus.INVITED,
-      super_admin: false,
-      user_id: cognitoUser!.Username!,
-      company_id: creator!.company_id,
-      onboarding: false,
+    const audit = {
       created_by: user_sub,
       created_date: now,
       modified_by: user_sub,
       modified_date: now,
-    }))?.entity;
+    };
 
-    // create email and role
-    const promises = [];
-
-    promises.push(UserEmail.create({
-      email_address: email_address,
-      user_id: user!.id!,
-      primary: true,
-      created_by: user_sub,
-      created_date: now,
-      modified_by: user_sub,
-      modified_date: now,
-    }));
-
-    promises.push(UserRole.create({
-      user_id: user!.id!,
-      role_id: body.role_id,
-      created_by: user_sub,
-      created_date: now,
-      modified_by: user_sub,
-      modified_date: now,
-    }));
-
-    promises.push(
-      body.bot_ids.map(async (bot_id: number) =>
-        BotUser.create({
-          bot_id: bot_id,
-          assignment_date: now,
-          user_id: user!.id!,
-          created_by: user_sub,
-          created_date: now,
-          modified_by: user_sub,
-          modified_date: now,
+    const user = await db.transaction().execute(async(trx) => {
+      const new_user = await trx.insertInto('user')
+        .values({
+          invite_status: UserInviteStatus.INVITED,
+          super_admin: false,
+          user_id: cognitoUser!.Username!,
+          company_id: creator!.company_id,
+          onboarding: false,
+          ...audit
         })
-      )
-    )
+        .returningAll()
+        .executeTakeFirst();
 
-    await Promise.all(promises);
+      // insert email
+      await trx.insertInto('user_email')
+        .values({
+          email_address: email_address,
+          user_id: new_user!.id!,
+          primary: true,
+          ...audit
+        }).execute();
+
+      // insert role
+      await trx.insertInto('user_role')
+        .values({
+          user_id: new_user!.id!,
+          role_id: body.role_id,
+          ...audit
+        }).execute();
+
+      // insert bots
+      for (const bot_id of body.bot_ids) {
+        await trx.insertInto('bot_user')
+          .values({
+            bot_id: bot_id,
+            assignment_date: now,
+            user_id: new_user!.id!,
+            ...audit
+          })
+          .execute();
+      }
+
+      // insert scheduled alerts
+      for (const alert of scheduledAlerts) {
+        // @ts-expect-error ignore error
+        const attrs = Object.keys(alert.config_settings);
+        const scheduled = {
+          user_id: new_user!.id!,
+          scheduled_alert_id: alert.id!,
+          alert_status: true,
+          settings: alert.config_settings ? attrs.reduce((acc, key) => {
+            // @ts-expect-error ignore error
+            acc[key] = alert.config_settings![key].default;
+            return acc;
+          }, {}) : undefined,
+          ...audit
+        };
+        await trx.insertInto('user_scheduled_alerts')
+          .values({
+            ...scheduled,
+            settings: sql`CAST(${JSON.stringify(scheduled.settings)} AS JSONB)`
+          })
+          .execute()
+      }
+
+      return new_user;
+    }).catch(async (error) => {
+      await Cognito.deleteUser(email_address);
+      throw error;
+    });
 
     return createSuccessResponse(user);
 
@@ -112,7 +141,6 @@ const handler = async (event) => {
     }
     const httpError = createError(406, "cannot invite user", { expose: true });
     httpError.details = (<Error>error).message;
-    await Cognito.deleteUser(email_address);
     throw httpError;
   }
 };

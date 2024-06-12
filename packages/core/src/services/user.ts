@@ -143,7 +143,7 @@ export async function findByEmail(email_address: string): Promise<User | undefin
 }
 
 export async function findExpired(days: number): Promise<User[] | undefined> {
-  const dateLimit = DateTime.now().minus({minutes: days}).toJSDate();
+  const dateLimit = DateTime.now().minus({days: days}).toJSDate();
   return db
       .selectFrom("user")
       .where('user.invite_status', '=', UserInviteStatus.INVITED)

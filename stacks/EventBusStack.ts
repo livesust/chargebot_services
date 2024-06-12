@@ -72,6 +72,21 @@ export function EventBusStack({ app, stack }: StackContext) {
           },
         },
       },
+      scheduled_alert_created: {
+        pattern: {
+          source: ["created"],
+          detailType: ["scheduled_alert"],
+        },
+        targets: {
+          on_scheduled_alert_created: {
+            function: {
+              handler: "packages/functions/src/events/on_scheduled_alert_created.main",
+              timeout,
+              bind: [rdsCluster],
+            }
+          },
+        },
+      },
     },
   });
 

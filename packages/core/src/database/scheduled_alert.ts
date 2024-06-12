@@ -4,7 +4,7 @@ import { AuditedEntity } from "./audited_entity";
 export interface ScheduledAlertTable extends AuditedEntity {
   name: string;
   description?: string;
-  alert_content?: string;
+  config_settings?: object;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should
