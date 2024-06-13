@@ -1,0 +1,28 @@
+{
+  "push_alerts": {
+    "battery_low": {
+      "name": "Battery Low",
+      "message": "Your ChargeBot's \"{{{device_id}}}\" battery is at {{{state_of_charge}}}% and may soon require charging."
+    },
+    "battery_critical": {
+      "name": "Battery Critical",
+      "message": "Your ChargeBot's \"{{{device_id}}}\" has a critically low battery and will be unable to charge more equipment until plugged into a power source."
+    },
+    "battery_temperature_low": {
+      "name": "Battery Temperature Low",
+      "message": "Your ChargeBot's \"{{{device_id}}}\" temperature is currently at {{{temperature_f}}}°F, charge performance may be reduced. To protect your battery, turn off the battery breaker while temperatures are below 32°F."
+    },
+    "battery_temperature_critical": {
+      "name": "Battery Freeze",
+      "message": "Your ChargeBot's \"{{{device_id}}}\" temperature is currently at {{{temperature_f}}}°F. Risk of battery freeze! Disconnect your battery and move it to a warmer space to prevent permanent damage!"
+    },
+    "battery_charging": {
+      "name": "Battery Charging",
+      "message": "Your ChargeBot's \"{{{device_id}}}\" is charging. Battery is at {{{state_of_charge}}}%."
+    },
+    "battery_discharging": {
+      "name": "Battery Discharging",
+      "message": "Your ChargeBot's \"{{{device_id}}}\" is discharging. Battery is at {{{state_of_charge}}}%."
+    }
+  }
+}

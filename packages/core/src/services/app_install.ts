@@ -122,11 +122,16 @@ export async function get(id: number): Promise<AppInstall | undefined> {
 export async function getAppsToNotify(user_ids: number[]): Promise<AppInstall[] | undefined> {
     return await db
         .selectFrom("app_install")
+        .innerJoin('app_install_permissions', 'app_install_permissions.app_install_id', 'app_install.id')
+        .innerJoin('permission', 'permission.id', 'app_install_permissions.permission_id')
+        .selectAll('app_install')
         .selectAll()
         .select((eb) => withUser(eb))
-        .where('user_id', 'in', user_ids)
-        .where('push_token', 'is not', null)
-        .where('deleted_by', 'is', null)
+        .where('app_install.user_id', 'in', user_ids)
+        .where('app_install.push_token', 'is not', null)
+        .where('permission.name', '=', 'Notifications')
+        .where('app_install_permissions.permission_status', 'is', true)
+        .where('app_install.deleted_by', 'is', null)
         .execute();
 }
 
