@@ -104,13 +104,11 @@ const handler = async (event) => {
 
       // insert scheduled alerts
       for (const alert of scheduledAlerts) {
-        // @ts-expect-error ignore error
-        const attrs = Object.keys(alert.config_settings);
         const scheduled = {
           user_id: new_user!.id!,
           scheduled_alert_id: alert.id!,
           alert_status: true,
-          settings: alert.config_settings ? attrs.reduce((acc, key) => {
+          settings: alert.config_settings ? Object.keys(alert.config_settings).reduce((acc, key) => {
             // @ts-expect-error ignore error
             acc[key] = alert.config_settings![key].default;
             return acc;
@@ -120,7 +118,7 @@ const handler = async (event) => {
         await trx.insertInto('user_scheduled_alerts')
           .values({
             ...scheduled,
-            settings: sql`CAST(${JSON.stringify(scheduled.settings)} AS JSONB)`
+            settings: scheduled.settings ? sql`CAST(${JSON.stringify(scheduled.settings)} AS JSONB)` : undefined
           })
           .execute()
       }
