@@ -243,7 +243,7 @@ export function ApiStack({ app, stack }: StackContext) {
       },
       "POST /send-alert": {
         cdk: {
-          function: functions.processIotAlertsFunction
+          function: functions.processIotAlertsFunction,
         }
       }
     }

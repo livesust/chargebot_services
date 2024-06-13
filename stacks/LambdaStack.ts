@@ -34,6 +34,11 @@ export function LambdaStack({ app, stack }: StackContext) {
     code: Code.fromAsset("layers/expo-server-sdk"),
   });
 
+  // i18n layer: to manage localization
+  const i18nLayer = new LayerVersion(stack, "i18n-layer", {
+    code: Code.fromAsset("layers/i18n"),
+  });
+
   // lambda functions timeout
   const timeout = app.stage === "prod" ? "10 seconds" : "30 seconds";
 
@@ -44,9 +49,9 @@ export function LambdaStack({ app, stack }: StackContext) {
     handler: "packages/functions/src/api/send_push_alert.main",
     timeout,
     // @ts-expect-error ignore type errors
-    layers: [expoServerSdkLayer],
+    layers: [expoServerSdkLayer, i18nLayer],
     nodejs: {
-      install: ["expo-server-sdk"],
+      install: ["expo-server-sdk", "i18n"],
     },
     bind: [rdsCluster, EXPO_ACCESS_TOKEN],
   });
@@ -96,6 +101,7 @@ export function LambdaStack({ app, stack }: StackContext) {
       luxonLayer,
       sharpLayer,
       expoServerSdkLayer,
+      i18nLayer,
     },
     functions: {
       processIotAlertsFunction

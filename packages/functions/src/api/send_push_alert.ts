@@ -18,6 +18,7 @@ import { SuccessResponseSchema } from "src/shared/schemas";
 import jsonBodyParser from "@middy/http-json-body-parser";
 import { dateReviver } from "src/shared/middlewares/json-date-parser";
 import { ExpoPush } from "@chargebot-services/core/services/expo/expo_push";
+import i18n from '../shared/i18n/i18n';
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
@@ -44,8 +45,12 @@ const handler = async (event) => {
 
     const pushTokens = appInstalls?.map(ai => ai.push_token!);
     
+    const message = i18n.__(`push_alerts.${body.name}.message`, body.message);
+    const title = i18n.__(`push_alerts.${body.name}.name`);
     if (pushTokens && pushTokens.length > 0) {
-      ExpoPush.send_push_notifications(pushTokens, body.message, body.name, {bot_uuid, bot_id: bot.id})
+      ExpoPush.send_push_notifications(pushTokens, message, title,
+        {bot_uuid, bot_id: bot.id}
+      )
     }
 
     return createSuccessResponse({ "response": "success" });

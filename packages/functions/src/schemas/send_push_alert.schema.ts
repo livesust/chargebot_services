@@ -7,7 +7,7 @@ const SendAlertSchemaDef = {
   timestamp: Joi.date().allow(null),
   code: Joi.string().max(255).allow(null, ''),
   name: Joi.string().max(255).allow(null, ''),
-  message: Joi.string().allow(null, ''),
+  message: Joi.object().allow(null),
   payload: Joi.string().allow(null, ''),
 };
 
