@@ -6,7 +6,6 @@ import jsonBodyParser from "@middy/http-json-body-parser";
 import { dateReviver } from "src/shared/middlewares/json-date-parser";
 import { ChargebotGeocoding } from "@chargebot-services/core/services/analytics/chargebot_geocoding";
 import { Geolocation, Place } from "@chargebot-services/core/services/aws/geolocation";
-import { SearchForPositionResult, SearchPlaceIndexForPositionResponse } from "@aws-sdk/client-location"
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {

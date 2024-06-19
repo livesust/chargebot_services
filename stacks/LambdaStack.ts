@@ -105,27 +105,29 @@ export function LambdaStack({ app, stack }: StackContext) {
   /**
    * Subscribe to chargebot gps parked location and execute a lambda function
    */
-  new CfnPlaceIndex(stack, 'ChargebotEsriPlaceIndex', {
-    dataSource: 'Esri',
-    indexName: 'ChargebotEsriPlaceIndex',
-  
-    // the properties below are optional
-    dataSourceConfiguration: {
-      intendedUse: 'Storage',
-    },
-    description: 'AWS Location Esri Place Index for Chargebot',
-  });
+  if ("staging" === app.stage) {
+    new CfnPlaceIndex(stack, 'ChargebotEsriPlaceIndex', {
+      dataSource: 'Esri',
+      indexName: 'ChargebotEsriPlaceIndex',
+    
+      // the properties below are optional
+      dataSourceConfiguration: {
+        intendedUse: 'Storage',
+      },
+      description: 'AWS Location Esri Place Index for Chargebot',
+    });
 
-  new CfnPlaceIndex(stack, 'ChargebotHerePlaceIndex', {
-    dataSource: 'Here',
-    indexName: 'ChargebotHerePlaceIndex',
-  
-    // the properties below are optional
-    dataSourceConfiguration: {
-      intendedUse: 'Storage',
-    },
-    description: 'AWS Location Here Place Index for Chargebot',
-  });
+    new CfnPlaceIndex(stack, 'ChargebotHerePlaceIndex', {
+      dataSource: 'Here',
+      indexName: 'ChargebotHerePlaceIndex',
+    
+      // the properties below are optional
+      dataSourceConfiguration: {
+        intendedUse: 'Storage',
+      },
+      description: 'AWS Location Here Place Index for Chargebot',
+    });
+  }
 
   const geolocationAdminRole: IRole = new Role(stack, "GeolocationAdminRole", {
     assumedBy: new ServicePrincipal("lambda.amazonaws.com"),

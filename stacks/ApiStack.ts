@@ -245,11 +245,11 @@ export function ApiStack({ app, stack }: StackContext) {
       },
       // UNCOMMENT JUST FOR TESTING IN DEV MODE
       // IN OTHER CASE THE Throttling will cause errors when processing from Kafka
-      "POST /test-gps-geocoding": {
-        cdk: {
-          function: functions.processIotGpsParkedFunction,
-        }
-      }
+      // "POST /test-gps-geocoding": {
+      //   cdk: {
+      //     function: functions.processIotGpsParkedFunction,
+      //   }
+      // }
     }
   });
 
