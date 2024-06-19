@@ -24,6 +24,14 @@ const BotLocationHistorySchemaDef = {
     longitude: Joi.number().allow(null),
     distance: Joi.number().allow(null),
     vehicle_status: Joi.string().allow(null, ''),
+    address: Joi.string().allow(null, ''),
+    country: Joi.string().allow(null, ''),
+    state: Joi.string().allow(null, ''),
+    county: Joi.string().allow(null, ''),
+    city: Joi.string().allow(null, ''),
+    neighborhood: Joi.string().allow(null, ''),
+    street: Joi.string().allow(null, ''),
+    address_number: Joi.string().allow(null, ''),
   })
 };
 

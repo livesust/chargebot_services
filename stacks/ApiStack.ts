@@ -1,4 +1,5 @@
 import { StackContext, Config, Api, Bucket, use } from "sst/constructs";
+import { TimescaleStack } from "./TimescaleStack";
 import { RDSStack } from "./RDSStack";
 import { CognitoStack } from "./CognitoStack";
 import { LambdaStack } from "./LambdaStack";
@@ -10,17 +11,11 @@ import { EventBusStack } from "./EventBusStack";
 
 export function ApiStack({ app, stack }: StackContext) {
   const { rdsCluster } = use(RDSStack);
+  const { timescaleConfigs } = use(TimescaleStack);
   const { eventBus } = use(EventBusStack);
   const { cognito, cognitoAdminRole, COGNITO_USER_POOL_ID } = use(CognitoStack);
   const { iotRole, IOT_ENDPOINT } = use(IotStack);
   const { lambdaLayers, functions, setupProvisionedConcurrency } = use(LambdaStack);
-
-  // TimescaleDB Secret Keys
-  const TIMESCALE_HOST = new Config.Secret(stack, "TIMESCALE_HOST");
-  const TIMESCALE_USER = new Config.Secret(stack, "TIMESCALE_USER");
-  const TIMESCALE_PASSWORD = new Config.Secret(stack, "TIMESCALE_PASSWORD");
-  const TIMESCALE_PORT = new Config.Secret(stack, "TIMESCALE_PORT");
-  const TIMESCALE_DATABASE = new Config.Secret(stack, "TIMESCALE_DATABASE");
 
   // Secret Keys
   const SECRET_KEY = new Config.Secret(stack, "SECRET_KEY");
@@ -66,6 +61,8 @@ export function ApiStack({ app, stack }: StackContext) {
         * API Gateway begins to throttle requests.
         * Clients may receive 429 Too Many Requests error responses at this point.
         * Upon catching such exceptions, the client can resubmit the failed requests in a way that is rate limiting.
+        * 
+        * https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-throttling.html
         */
         rate: 2000,
         burst: 100,
@@ -74,11 +71,11 @@ export function ApiStack({ app, stack }: StackContext) {
         timeout,
         bind: [
           rdsCluster,
-          TIMESCALE_HOST,
-          TIMESCALE_USER,
-          TIMESCALE_PASSWORD,
-          TIMESCALE_PORT,
-          TIMESCALE_DATABASE,
+          timescaleConfigs.TIMESCALE_HOST,
+          timescaleConfigs.TIMESCALE_USER,
+          timescaleConfigs.TIMESCALE_PASSWORD,
+          timescaleConfigs.TIMESCALE_PORT,
+          timescaleConfigs.TIMESCALE_DATABASE,
           SECRET_KEY,
         ],
         // @ts-expect-error ignore error
@@ -245,6 +242,13 @@ export function ApiStack({ app, stack }: StackContext) {
         cdk: {
           function: functions.processIotAlertsFunction,
         }
+      },
+      // UNCOMMENT JUST FOR TESTING IN DEV MODE
+      // IN OTHER CASE THE Throttling will cause errors when processing from Kafka
+      "POST /test-gps-geocoding": {
+        cdk: {
+          function: functions.processIotGpsParkedFunction,
+        }
       }
     }
   });
@@ -258,6 +262,7 @@ export function ApiStack({ app, stack }: StackContext) {
   stack.addOutputs({
     ApiEndpoint: api.url,
     ApiDomainUrl: api.customDomainUrl,
-    BucketName: bucket.bucketName
+    BucketName: bucket.bucketName,
+    GpsParkedLambdaArn: functions.processIotGpsParkedFunction.functionArn,
   });
 }
