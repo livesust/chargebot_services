@@ -1,7 +1,33 @@
 export * as ChargebotGps from "./chargebot_gps";
-import { sql } from "kysely";
+import { JoinBuilder, sql } from "kysely";
 import db from '../../timescale';
 import { ChargebotGps, ChargebotGpsHistory, ChargebotGpsPosition, VehicleStatus } from "../../timescale/chargebot_gps";
+
+export interface ChargebotLocation {
+  device_id: string,
+  timestamp: Date,
+  vehicle_status: string,
+  lat: number,
+  lon: number,
+  altitude: number,
+  speed: number,
+  bearing: number,
+  distance: number,
+  arrived_at: Date | undefined,
+  left_at: Date | undefined,
+  address: string | undefined,
+  country: string | undefined,
+  state: string | undefined,
+  county: string | undefined,
+  city: string | undefined,
+  neighborhood: string | undefined,
+  street: string | undefined,
+  address_number: string | undefined,
+  postal_code: string | undefined,
+  place_id: string | undefined,
+  timezone: string | undefined,
+  timezone_offset: number | undefined,
+}
 
 export function translateVehicleStatus(vehicle_status: VehicleStatus | string | undefined): string | undefined {
   if (!vehicle_status) {
@@ -17,33 +43,51 @@ export function translateVehicleStatus(vehicle_status: VehicleStatus | string | 
     );
 }
 
-export async function getLastPositionByBot(bot_uuid: string): Promise<ChargebotGps | undefined> {
+export async function getLastPositionByBot(bot_uuid: string): Promise<ChargebotLocation | undefined> {
   const location: ChargebotGps | undefined = await db
-    .selectFrom("chargebot_gps")
-    .selectAll()
-    .where('device_id', '=', bot_uuid)
-    .orderBy('timestamp', 'desc')
-    .limit(1)
-    .executeTakeFirst();
+  .selectFrom("chargebot_gps")
+  .selectAll()
+  .where('device_id', '=', bot_uuid)
+  .orderBy('timestamp', 'desc')
+  .limit(1)
+  .executeTakeFirst();
   if (location) {
-    let arrived_at = undefined;
-    if (location.vehicle_status === VehicleStatus.AT_HOME) {
-      arrived_at = await getArrivedAtWhenAtHome(location);
-    }
-    if (location.vehicle_status === VehicleStatus.PARKED) {
-      arrived_at = await getArrivedAtWhenParked(location);
-    }
-    location.arrived_at = arrived_at?.timestamp ?? undefined;
+    const [arrived_at, left_at, geocoding] = await Promise.all([
+      location.vehicle_status === VehicleStatus.AT_HOME
+        ? getArrivedAtWhenAtHome(location)
+        : (location.vehicle_status === VehicleStatus.PARKED ? await getArrivedAtWhenParked(location) : Promise.resolve(undefined)),
+      
+        location.vehicle_status === VehicleStatus.MOVING || location.vehicle_status === VehicleStatus.STOPPED ? await getLeftAtWhenInTransit(location) : Promise.resolve(undefined),
 
+        getLastParkedAtHomePosition(bot_uuid)
+    ])
 
-    let left_at = undefined;
-    if (location.vehicle_status === VehicleStatus.MOVING || location.vehicle_status === VehicleStatus.STOPPED) {
-      left_at = await getLeftAtWhenInTransit(location);
-    }
-    location.left_at = left_at?.timestamp ?? undefined;
+    return {
+      device_id: location.device_id,
+      timestamp: location.timestamp,
+      vehicle_status: location.vehicle_status,
+      lat: location.lat,
+      lon: location.lon,
+      altitude: location.altitude,
+      speed: location.speed,
+      bearing: location.bearing,
+      distance: location.distance,
+      arrived_at: arrived_at?.timestamp ?? undefined,
+      left_at: left_at?.timestamp ?? undefined,
+      address: geocoding?.address,
+      country: geocoding?.country,
+      state: geocoding?.state,
+      county: geocoding?.county,
+      city: geocoding?.city,
+      neighborhood: geocoding?.neighborhood,
+      street: geocoding?.street,
+      address_number: geocoding?.address_number,
+      postal_code: geocoding?.postal_code,
+      place_id: geocoding?.place_id,
+      timezone: geocoding?.timezone,
+      timezone_offset: geocoding?.timezone_offset
+    };
   }
-
-  return location;
 }
 
 export async function getRouteByBot(bot_uuid: string, from: Date, to: Date): Promise<ChargebotGpsPosition[] | undefined> {
@@ -88,9 +132,9 @@ export async function getRouteByBot(bot_uuid: string, from: Date, to: Date): Pro
     )
     .with(
       'block_groups',
-      // @ts-expect-error ignore overload not mapping
       (db) => db
         .selectFrom('block_status_fixed')
+        // @ts-expect-error ignore overload not mapping
         .select([
           'timestamp',
           'latitude',
@@ -135,7 +179,7 @@ export async function getSummaryByBot(bot_uuid: string, from: Date, to: Date): P
         ])
         .where('device_id', '=', bot_uuid)
         .where((eb) => eb.between('timestamp', from, to))
-        .orderBy('timestamp', 'desc')
+        .orderBy('timestamp', 'asc')
     )
     .with(
       'block_status_fixed',
@@ -159,9 +203,9 @@ export async function getSummaryByBot(bot_uuid: string, from: Date, to: Date): P
     )
     .with(
       'block_groups',
-      // @ts-expect-error ignore overload not mapping
       (db) => db
         .selectFrom('block_status_fixed')
+        // @ts-expect-error ignore overload not mapping
         .select([
           'timestamp',
           'latitude',
@@ -188,8 +232,20 @@ export async function getSummaryByBot(bot_uuid: string, from: Date, to: Date): P
         ])
         .groupBy(['vehicle_status', 'block'])
     )
+    // .with(
+    //   'block_geocoding',
+    //   (db) => db
+    //     .selectFrom(['block_grouped', 'chargebot_geocoding'])
+    //     .selectAll('chargebot_geocoding')
+    //     .where(sql`block_grouped.latitude = ANY(chargebot_geocoding.latitudes)`)
+    //     .where(sql`block_grouped.longitude = ANY(chargebot_geocoding.longitudes)`)
+    //     .limit(1)
+    // )
+    // .selectFrom(['block_grouped', 'block_geocoding as geo'])
     .selectFrom('block_grouped')
-    // @ts-expect-error ignore overload not mapping
+    // @ts-expect-error ignore
+    .leftJoin('chargebot_geocoding as geo', (jb: JoinBuilder) => jb.on(sql`latitude = ANY(geo.latitudes) AND longitude = ANY(geo.longitudes) AND vehicle_status != 'IN_TRANSIT'`))
+    // @ts-expect-error ignore
     .select([
       sql`start_timestamp as start_time`,	
       sql`
@@ -202,8 +258,16 @@ export async function getSummaryByBot(bot_uuid: string, from: Date, to: Date): P
       'longitude',
       'distance',
       'vehicle_status',
+      'geo.label as address',
+      'geo.country',
+      'geo.state',
+      'geo.county',
+      'geo.city',
+      'geo.neighborhood',
+      'geo.street',
+      'geo.address_number'
     ])
-    .orderBy('start_timestamp', 'desc')
+    .orderBy('start_timestamp', 'asc')
     .execute();
 }
 
@@ -211,9 +275,9 @@ export async function getDaysWithData(bot_uuid: string, from: Date, to: Date): P
   bucket: Date,
   number_of_records: number
 }[]> {
-  // @ts-expect-error not overloads match
   const query = db
     .selectFrom("chargebot_gps")
+    // @ts-expect-error ignore overload not mapping
     .select(({ fn }) => [
       sql`time_bucket_gapfill('1 day', "timestamp") AS bucket`,
       fn.count<number>('id').as('number_of_records'),
@@ -262,9 +326,9 @@ async function getArrivedAtWhenAtHome(location: ChargebotGps) {
   return db
     .with(
       'vehicle_status_groups',
-      // @ts-expect-error ignore overload not mapping
       (db) => db
         .selectFrom('chargebot_gps')
+        // @ts-expect-error ignore overload not mapping
         .select([
           'timestamp',
           'vehicle_status',
@@ -291,9 +355,9 @@ async function getArrivedAtWhenParked(location: ChargebotGps) {
   return db
     .with(
       'vehicle_status_groups',
-      // @ts-expect-error ignore overload not mapping
       (db) => db
         .selectFrom('chargebot_gps')
+        // @ts-expect-error ignore overload not mapping
         .select([
           'timestamp',
           'vehicle_status',
@@ -312,28 +376,69 @@ async function getArrivedAtWhenParked(location: ChargebotGps) {
 async function getLeftAtWhenInTransit(location: ChargebotGps) {
   // Vehicle is currently MOVING or STOPPED
   // We need to find the first MOVING in the current bucket of reports
-
-  // Get the last report where vehicle was PARKED/AT_HOME
-  const prev = await db
-    .selectFrom('chargebot_gps')
-    .select(({ fn }) => [
-      fn.max('chargebot_gps.timestamp').as('timestamp'),
-    ])
-    .where('device_id', '=', location.device_id)
-    .where('vehicle_status', 'in', [VehicleStatus.AT_HOME, VehicleStatus.PARKED])
-    .where('timestamp', '<', location.timestamp)
-    .executeTakeFirst();
-
-  if (prev) {
+  return db
+    .with(
+      'last_report_parked_home',
+      // Get the last report where vehicle was PARKED/AT_HOME
+      (db) => db
+        .selectFrom('chargebot_gps')
+        .select(({ fn }) => [
+          fn.max('chargebot_gps.timestamp').as('timestamp'),
+        ])
+        .where('device_id', '=', location.device_id)
+        .where('vehicle_status', 'in', [VehicleStatus.AT_HOME, VehicleStatus.PARKED])
+        .where('timestamp', '<', location.timestamp)
+    )
     // Now get the first MOVING report after being PARKED/AT_HOME
-    return db
-      .selectFrom('chargebot_gps')
-      .select(({ fn }) => [
-        fn.min('chargebot_gps.timestamp').as('timestamp'),
-      ])
-      .where('device_id', '=', location.device_id)
-      .where('vehicle_status', '=', VehicleStatus.MOVING)
-      .where('timestamp', '>', prev.timestamp)
-      .executeTakeFirst();
-  }
+    .selectFrom(['chargebot_gps', 'last_report_parked_home'])
+    .select(({ fn }) => [
+      fn.min('chargebot_gps.timestamp').as('timestamp'),
+    ])
+    .where('chargebot_gps.device_id', '=', location.device_id)
+    .where('chargebot_gps.vehicle_status', '=', VehicleStatus.MOVING)
+    .where(sql`chargebot_gps.timestamp > last_report_parked_home.timestamp`)
+    .executeTakeFirst();
+}
+
+async function getLastParkedAtHomePosition(bot_uuid: string): Promise<ChargebotLocation | undefined> {
+  // @ts-expect-error ignore overload not mapping
+  return db
+    .with(
+      'last_position',
+      (db) => db
+        .selectFrom("chargebot_gps")
+        .selectAll()
+        .where('device_id', '=', bot_uuid)
+        .where('vehicle_status', 'in', [VehicleStatus.AT_HOME, VehicleStatus.PARKED])
+        .orderBy('timestamp', 'desc')
+        .limit(1)
+    )
+    .selectFrom(['last_position as lp', 'chargebot_geocoding as geo'])
+    .select([
+      'lp.device_id',
+      'lp.timestamp',
+      'lp.vehicle_status',
+      'lp.lat',
+      'lp.lon',
+      'lp.altitude',
+      'lp.speed',
+      'lp.bearing',
+      'lp.distance',
+      'geo.label as address',
+      'geo.country',
+      'geo.state',
+      'geo.county',
+      'geo.city',
+      'geo.neighborhood',
+      'geo.street',
+      'geo.address_number',
+      'geo.postal_code',
+      'geo.place_id',
+      'geo.timezone',
+      'geo.timezone_offset',
+    ])
+    .where(sql`lp.lat = ANY(geo.latitudes)`)
+    .where(sql`lp.lon = ANY(geo.longitudes)`)
+    .limit(1)
+    .executeTakeFirst();
 }

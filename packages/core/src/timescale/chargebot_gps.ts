@@ -12,8 +12,6 @@ export interface ChargebotGpsTable {
   speed: ColumnType<number, never, never>,
   bearing: ColumnType<number, never, never>,
   distance: ColumnType<number, never, never>,
-  arrived_at: ColumnType<Date | undefined, never, never>,
-  left_at: ColumnType<Date | undefined, never, never>,
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

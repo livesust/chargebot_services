@@ -1,5 +1,6 @@
 import { SSTConfig } from "sst";
 import { RDSStack } from "./stacks/RDSStack";
+import { TimescaleStack } from "./stacks/TimescaleStack";
 import { CognitoStack } from "./stacks/CognitoStack";
 import { ApiStack } from "./stacks/ApiStack";
 import { LambdaStack } from "./stacks/LambdaStack";
@@ -18,6 +19,7 @@ export default {
     if (app.stage !== "prod") {
       app.setDefaultRemovalPolicy("destroy");
     }
+    app.stack(TimescaleStack);
     app.stack(RDSStack);
     app.stack(CognitoStack);
     app.stack(IotStack);
