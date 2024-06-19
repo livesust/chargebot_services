@@ -45,8 +45,12 @@ const handler = async (event) => {
 
     const pushTokens = appInstalls?.map(ai => ai.push_token!);
     
+    // when called from API the body.message is a JSON, but when called from IoT is a string
+    body.message = typeof(body.message) === "string" ? JSON.parse(body.message) : body.message;
     const message = i18n.__(`push_alerts.${body.name}.message`, body.message);
     const title = i18n.__(`push_alerts.${body.name}.name`);
+
+    console.log('SEND PUSH', event, body, title, message);
     if (pushTokens && pushTokens.length > 0) {
       ExpoPush.send_push_notifications(pushTokens, message, title,
         {bot_uuid, bot_id: bot.id}
