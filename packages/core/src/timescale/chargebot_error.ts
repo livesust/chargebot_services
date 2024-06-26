@@ -11,6 +11,11 @@ export interface ChargebotErrorTable {
     module: ColumnType<string, never, never>,
     level: ColumnType<string, never, never>,
     message: ColumnType<string, never, never>,
+    error_status: ColumnType<string, never, never>,
+    occurrence_count: ColumnType<number, never, never>,
+    last_occurrence: ColumnType<Date, never, never>,
+    resolved_on: ColumnType<Date, never, never>,
+    notified_on: ColumnType<Date, never, never>,
 }
 
 // You should not use the table schema interfaces directly. Instead, you should
@@ -32,6 +37,11 @@ export enum ErrorLevel {
   MINOR = "MINOR",
   MEDIUM = "MEDIUM",
   EMERGENCY = "EMERGENCY",
+}
+
+export enum ErrorStatus {
+  ACTIVE = "ACTIVE",
+  RESOLVED = "RESOLVED",
 }
 
 export enum ErrorModule {

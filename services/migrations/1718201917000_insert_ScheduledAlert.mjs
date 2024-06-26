@@ -94,7 +94,7 @@ export async function up(db) {
       const scheduled = {
         alert_status: true,
         user_id: user.id,
-        scheduled_alert_id: 1,
+        scheduled_alert_id: alert.id,
         settings: alert.config_settings ? Object.keys(alert.config_settings).reduce((acc, key) => {
           acc[key] = alert.config_settings[key].default;
           return acc;

@@ -2,27 +2,141 @@
   "push_alerts": {
     "battery_low": {
       "name": "Battery Low",
-      "message": "Your ChargeBot's \"{{{device_id}}}\" battery is at {{{state_of_charge}}}% and may soon require charging."
+      "message": "Your ChargeBot \"{{{device_id}}}\" battery is at {{{state_of_charge}}}% and may soon require charging."
     },
     "battery_critical": {
       "name": "Battery Critical",
-      "message": "Your ChargeBot's \"{{{device_id}}}\" has a critically low battery and will be unable to charge more equipment until plugged into a power source."
+      "message": "Your ChargeBot \"{{{device_id}}}\" has a critically low battery and will be unable to charge more equipment until plugged into a power source."
     },
     "battery_temperature_low": {
       "name": "Battery Temperature Low",
-      "message": "Your ChargeBot's \"{{{device_id}}}\" temperature is currently at {{{temperature_f}}}°F, charge performance may be reduced. To protect your battery, turn off the battery breaker while temperatures are below 32°F."
+      "message": "Your ChargeBot \"{{{device_id}}}\" temperature is currently at {{{temperature_f}}}°F, charge performance may be reduced. To protect your battery, turn off the battery breaker while temperatures are below 32°F."
     },
     "battery_temperature_critical": {
       "name": "Battery Freeze",
-      "message": "Your ChargeBot's \"{{{device_id}}}\" temperature is currently at {{{temperature_f}}}°F. Risk of battery freeze! Disconnect your battery and move it to a warmer space to prevent permanent damage!"
+      "message": "Your ChargeBot \"{{{device_id}}}\" temperature is currently at {{{temperature_f}}}°F. Risk of battery freeze! Disconnect your battery and move it to a warmer space to prevent permanent damage!"
     },
     "battery_charging": {
       "name": "Battery Charging",
-      "message": "Your ChargeBot's \"{{{device_id}}}\" is charging. Battery is at {{{state_of_charge}}}%."
+      "message": "Your ChargeBot \"{{{device_id}}}\" is charging. Battery is at {{{state_of_charge}}}%."
     },
     "battery_discharging": {
       "name": "Battery Discharging",
-      "message": "Your ChargeBot's \"{{{device_id}}}\" is discharging. Battery is at {{{state_of_charge}}}%."
+      "message": "Your ChargeBot \"{{{device_id}}}\" is discharging. Battery is at {{{state_of_charge}}}%."
+    }
+  },
+  "errors": {
+    "level": {
+      "MINOR": "Low",
+      "MEDIUM": "Medium",
+      "HIGH": "High"
+    },
+    "severity": {
+      "INFO": "INFORMATION",
+      "URGENT": "URGENT"
+    },
+    "status": {
+      "ACTIVE": "Active",
+      "RESOLVED": "Past"
+    },
+    "module": {
+      "INVERTER": "Inverter",
+      "BATTERY": "Battery",
+      "GPS": "GPS",
+      "PDU": "PDU",
+      "TEMPERATURE": "Temperature",
+      "FAN": "Fan",
+      "GENERAL": "General"
+    },
+    "GENERAL": {
+      "iot_connection": {
+        "title": "Internet Error",
+        "message": "Your ChargeBot \"{{{device_id}}}\" is not connected to internet."
+      },
+      "iot_subscribe": {
+        "title": "Config Error",
+        "message": "Your ChargeBot \"{{{device_id}}}\" is having issues connecting cloud services. Please contact support."
+      },
+      "iot_unsubscribe": {
+        "title": "Config Error",
+        "message": "Your ChargeBot \"{{{device_id}}}\" is having issues connecting cloud services. Please contact support."
+      },
+      "iot_publish": {
+        "title": "Config Error",
+        "message": "Your ChargeBot \"{{{device_id}}}\" is having issues connecting cloud services. Please contact support."
+      },
+      "system_usage_cpu": {
+        "title": "High CPU Usage",
+        "message": "Your ChargeBot \"{{{device_id}}}\" experiencing high CPU usage. Please contact support if the problem persists."
+      },
+      "system_usage_temperature": {
+        "title": "High Temperature",
+        "message": "Your ChargeBot \"{{{device_id}}}\" experiencing high temperature. Please contact support if the problem persists."
+      },
+      "system_usage_undervoltage": {
+        "title": "Undervoltage",
+        "message": "Your ChargeBot \"{{{device_id}}}\" experiencing low voltage. Please contact support if the problem persists."
+      },
+      "system_usage_low_volt_core": {
+        "title": "Undervoltage",
+        "message": "Your ChargeBot \"{{{device_id}}}\" experiencing low voltage. Please contact support if the problem persists."
+      },
+      "system_usage_memory": {
+        "title": "High Memory Usage",
+        "message": "Your ChargeBot \"{{{device_id}}}\" experiencing high memory usage. Please contact support if the problem persists."
+      },
+      "system_usage_disk": {
+        "title": "High Disk Usage",
+        "message": "Your ChargeBot \"{{{device_id}}}\" is running out of disk space. Please contact support."
+      }
+    },
+    "BATTERY": {
+      "connection_error": {
+        "title": "Connection Error",
+        "message": "Your ChargeBot \"{{{device_id}}}\" battery is not present. It may not be plugged in."
+      }
+    },
+    "PDU": {
+      "connection_error": {
+        "title": "Connection Error",
+        "message": "Your ChargeBot \"{{{device_id}}}\" PDU is not present. It may be off or not be plugged in."
+      },
+      "command_error_start_priority_charge": {
+        "title": "Start Priority Charge Failed",
+        "message": "Your ChargeBot \"{{{device_id}}}\" could not start a priority charge."
+      },
+      "command_error_stop_priority_charge": {
+        "title": "Stop Priority Charge Failed",
+        "message": "Your ChargeBot \"{{{device_id}}}\" could not stop a priority charge."
+      },
+      "command_error_set_schedule": {
+        "title": "Set Grid Charging Schedule Failed",
+        "message": "Your ChargeBot \"{{{device_id}}}\" could not setup grid charging schedule."
+      }
+    },
+    "INVERTER": {
+      "connection_error": {
+        "title": "Connection Error",
+        "message": "Your ChargeBot \"{{{device_id}}}\" inverter is not present. It may not be plugged in or failed"
+      }
+    },
+    "GPS": {
+      "connection_error": {
+        "title": "Connection Error",
+        "message": "Your ChargeBot \"{{{device_id}}}\" GPS is not present. It may not be plugged in or failed."
+      }
+    },
+    "TEMPERATURE": {
+      "connection_error": {
+        "title": "Connection Error",
+        "message": "Your ChargeBot \"{{{device_id}}}\" temperature sensor is not present. It may not be plugged in or failed."
+      }
+    },
+    "FAN": {
+      "connection_error": {
+        "title": "Connection Error",
+        "message": "Your ChargeBot \"{{{device_id}}}\" fans are not present. It may not be plugged in or failed."
+      }
     }
   }
 }

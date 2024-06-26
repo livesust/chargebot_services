@@ -1,7 +1,7 @@
 export * as ChargebotError from "./chargebot_error";
 import { sql } from "kysely";
 import db from '../../timescale';
-import { ErrorCode } from "../../timescale/chargebot_error";
+import { ChargebotError, ErrorCode, ErrorStatus } from "../../timescale/chargebot_error";
 
 export async function getSystemStatus(bot_uuid: string): Promise<{
   value: number
@@ -19,4 +19,65 @@ export async function getSystemStatus(bot_uuid: string): Promise<{
       ErrorCode.DEVICE_CONNECTION
     ])
     .executeTakeFirst();
+}
+
+export async function getActiveErrors(bot_uuid: string): Promise<ChargebotError[] | undefined> {
+  // @ts-expect-error ignore
+  return db
+    .with(
+      'block_errors',
+      (db) => db
+        .selectFrom('chargebot_error')
+        // @ts-expect-error ignore overload not mapping
+        .select([
+          'timestamp',
+          'module',
+          'level',
+          'code',
+          'name',
+          sql`max(error_status) as error_status`,
+          sql`max(resolved_on) as resolved_on`,
+          sql`max(message) as message`,
+          sql`max(occurrence_count) as occurrence_count`
+        ])
+        .where('device_id', '=', bot_uuid)
+        .groupBy(['timestamp', 'module', 'level', 'code', 'name'])
+    )
+    .selectFrom('block_errors')
+    .selectAll()
+    .where('error_status', '=', ErrorStatus.ACTIVE)
+    .orderBy('timestamp', 'desc')
+    .orderBy('level', 'desc')
+    .execute()
+}
+
+export async function getPastErrors(bot_uuid: string): Promise<ChargebotError[] | undefined> {
+  // @ts-expect-error ignore
+  return db
+    .with(
+      'block_errors',
+      (db) => db
+        .selectFrom('chargebot_error')
+        // @ts-expect-error ignore overload not mapping
+        .select([
+          'timestamp',
+          'module',
+          'level',
+          'code',
+          'name',
+          sql`max(error_status) as error_status`,
+          sql`max(resolved_on) as resolved_on`,
+          sql`max(message) as message`,
+          sql`max(occurrence_count) as occurrence_count`
+        ])
+        .where('device_id', '=', bot_uuid)
+        .groupBy(['timestamp', 'module', 'level', 'code', 'name'])
+    )
+    .selectFrom('block_errors')
+    .selectAll()
+    .where('error_status', '=', ErrorStatus.RESOLVED)
+    .where('timestamp', '>', sql`now() - interval '7 days'`)
+    .orderBy('timestamp', 'desc')
+    .orderBy('level', 'desc')
+    .execute()
 }
