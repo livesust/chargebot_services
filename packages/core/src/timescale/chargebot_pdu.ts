@@ -57,9 +57,12 @@ export enum PDUFirmwareState {
   PROBING_OUTLETS = 5,
   PRIORITY_CHARGE = 6,
   HIGH_TEMP = 7,
+  SHUTDOWN = 8,
+  ECO_MODE = 9
 }
 
 export enum PDUState {
+  STARTUP = "STARTUP",
   NORMAL = "NORMAL",
   LIMITED = "LIMITED",
   PRIORITY_CHARGE = "PRIORITY",
