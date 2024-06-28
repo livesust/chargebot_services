@@ -5,6 +5,7 @@ import { Bot } from "./bot";
 
 export interface OutletTable extends AuditedEntity {
   pdu_outlet_number: number;
+  priority_charge_state?: string;
   notes?: string;
   outlet_type_id: number;
   bot_id: number;
@@ -18,3 +19,10 @@ export interface OutletTable extends AuditedEntity {
 export type Outlet = Selectable<OutletTable>
 export type NewOutlet = Insertable<OutletTable>
 export type OutletUpdate = Updateable<OutletTable>
+
+export enum OutletPriorityChargeState {
+  ACTIVATING = "ACTIVATING",
+  ACTIVE = "ACTIVE",
+  INACTIVE = "INACTIVE",
+  DEACTIVATING = "DEACTIVATING",
+}

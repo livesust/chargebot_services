@@ -16,6 +16,7 @@ import { Outlet } from "@chargebot-services/core/services/outlet";
 import { IoTData } from "@chargebot-services/core/services/aws/iot_data";
 import jsonBodyParser from "@middy/http-json-body-parser";
 import { dateReviver } from "src/shared/middlewares/json-date-parser";
+import { OutletPriorityChargeState } from "@chargebot-services/core/database/outlet";
 
 // @ts-expect-error ignore any type for event
 export const handler = async (event) => {
@@ -23,7 +24,7 @@ export const handler = async (event) => {
   const body = event.body;
 
   try {
-    const outlet = await Outlet.findByBotAndPduNumber(bot_uuid, body.pdu_outlet_number);
+    const outlet = await Outlet.findByBotAndPduOutletNumber(bot_uuid, body.pdu_outlet_number);
     if (!outlet) {
       return createNotFoundResponse({ "response": "outlet not found" });
     }
@@ -39,8 +40,16 @@ export const handler = async (event) => {
     const sent = await IoTData.publish(topic, payload);
 
     if (sent) {
+      await Outlet.update(outlet.id!, {
+        priority_charge_state: body.command == 'start_priority_charge'
+          ? OutletPriorityChargeState.ACTIVATING
+          : (body.command == 'stop_priority_charge' ? OutletPriorityChargeState.DEACTIVATING : OutletPriorityChargeState.INACTIVE)
+      })
       return createSuccessResponse({ "response": "success" });
     } else {
+      await Outlet.update(outlet.id!, {
+        priority_charge_state: OutletPriorityChargeState.INACTIVE
+      })
       throw createError(406, "error publishing command to device", { expose: true });
     }
 

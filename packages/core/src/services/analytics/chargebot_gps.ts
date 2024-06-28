@@ -259,6 +259,7 @@ export async function getSummaryByBot(bot_uuid: string, from: Date, to: Date): P
       'distance',
       'vehicle_status',
       'geo.label as address',
+      'geo.postal_code',
       'geo.country',
       'geo.state',
       'geo.county',

@@ -39,6 +39,7 @@ const handler = async (event) => {
         id: outlet.id,
         pdu_outlet_number: outlet.pdu_outlet_number,
         priority_charge: outletPriority?.outlet_id === outlet.pdu_outlet_number - 1,
+        priority_charge_state: outlet.priority_charge_state,
         status: outletStatus?.status,
         status_timestamp: outletStatus && DateTime.fromJSDate(outletStatus.timestamp).setZone('UTC').toISO(),
         equipment_name: equipment?.name

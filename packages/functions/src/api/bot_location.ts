@@ -30,6 +30,7 @@ const handler = async (event) => {
       latitude: location.lat,
       longitude: location.lon,
       address: location.address,
+      postal_code: location.postal_code,
       country: location.country,
       state: location.state,
       county: location.county,

@@ -103,6 +103,54 @@ export function LambdaStack({ app, stack }: StackContext) {
   new IotToLambda(stack, `ChargebotIoTAlertRuleToLambda_${app.stage}`, iotAlertsToLambda);
 
   /**
+   * Subscribe to chargebot command execution results and execute a lambda function
+   */
+  const processControlOutletResponseFunction = new Function(stack, "chargebotControlOutletResponseProcess", {
+    handler: "packages/functions/src/api/control_outlet_result.main",
+    timeout,
+    bind: [rdsCluster],
+  });
+
+  const controlOutletResponseLogGroup = new LogGroup(stack, `ChargebotControlOutletResponseLogGroup_${app.stage}`, {
+    logGroupName: `ChargebotControlOutletResponseLogGroup_${app.stage}`,
+    retention: RetentionDays.ONE_MONTH
+  });
+
+  const controlOutletResponseErrorLogGroup = new LogGroup(stack, `ChargebotControlOutletResponseErrorLogGroup_${app.stage}`, {
+    logGroupName: `ChargebotControlOutletResponseErrorLogGroup_${app.stage}`,
+    retention: RetentionDays.ONE_MONTH
+  });
+
+  const controlOutletResponseToLambda: IotToLambdaProps = {
+    // @ts-expect-error ignore typing
+    existingLambdaObj: processControlOutletResponseFunction,
+    iotTopicRuleProps: {
+      topicRulePayload: {
+        ruleDisabled: false,
+        description: "ChargeBot control outlet response to Lambda",
+        sql: "SELECT * FROM 'chargebot/control/+/outlet/result'",
+        actions: [
+          {
+            cloudwatchLogs: {
+              logGroupName: controlOutletResponseLogGroup.logGroupName,
+              roleArn: 'arn:aws:iam::881739832873:role/livesust-iot-cluster-kms-role',
+            }
+          }
+        ],
+        errorAction:
+        {
+          cloudwatchLogs: {
+            logGroupName: controlOutletResponseErrorLogGroup.logGroupName,
+            roleArn: 'arn:aws:iam::881739832873:role/livesust-iot-cluster-kms-role'
+          }
+        }
+      }
+    }
+  };
+
+  new IotToLambda(stack, `ChargebotControlOutletResponseRuleToLambda_${app.stage}`, controlOutletResponseToLambda);
+
+  /**
    * Subscribe to chargebot gps parked location and execute a lambda function
    */
   if ("staging" === app.stage) {

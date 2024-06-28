@@ -26,6 +26,7 @@ const BotLocationHistorySchemaDef = {
     vehicle_status: Joi.string().allow(null, ''),
     address: Joi.string().allow(null, ''),
     country: Joi.string().allow(null, ''),
+    postal_code: Joi.string().allow(null, ''),
     state: Joi.string().allow(null, ''),
     county: Joi.string().allow(null, ''),
     city: Joi.string().allow(null, ''),

@@ -4,6 +4,11 @@ attributes:
     type: integer
     tsType: number
     not_null: true
+  - attribute: priority charge state
+    type: varchar
+    varchar_length: '255'
+    tsType: string
+    not_null: false
   - attribute: notes
     type: text
     tsType: string

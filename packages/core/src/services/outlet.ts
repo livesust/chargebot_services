@@ -136,7 +136,7 @@ export async function findByBot(bot_uuid: string): Promise<Outlet[]> {
     .execute();
 }
 
-export async function findByBotAndPduNumber(bot_uuid: string, pdu_outlet_number: number): Promise<Outlet[]> {
+export async function findByBotAndPduOutletNumber(bot_uuid: string, pdu_outlet_number: number): Promise<Outlet | undefined> {
   return await db
     .selectFrom('outlet')
     .innerJoin('bot', 'bot.id', 'outlet.bot_id')
@@ -144,7 +144,7 @@ export async function findByBotAndPduNumber(bot_uuid: string, pdu_outlet_number:
     .where('outlet.pdu_outlet_number', '=', pdu_outlet_number)
     .where('outlet.deleted_by', 'is', null)
     .selectAll('outlet')
-    .execute();
+    .executeTakeFirst();
 }
 
 export async function findByEquipment(equipment_id: number): Promise<Outlet | undefined> {
