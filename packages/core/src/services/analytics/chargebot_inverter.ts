@@ -24,7 +24,8 @@ export async function getInverterStatus(bot_uuid: string): Promise<ChargebotInve
       InverterVariable.GRID_CURRENT
     ])
     .orderBy('timestamp', 'desc')
-    .limit(1)
+    .orderBy('variable', 'desc')
+    .limit(2)
     .execute();
 }
 

@@ -11,32 +11,52 @@ export async function getBatteryStatus(bot_uuid: string): Promise<{
   // @ts-expect-error ignore type
   return db
     .with(
-      'battery_status',
+      'battery_state',
       (db) => db
-        .selectFrom('chargebot_battery_level_aggregate')
-        // @ts-expect-error ignore overload not mapping
-        .select([
+        .selectFrom('chargebot_battery')
+        .select(({ fn }) => [
           'device_id',
-          'battery_level',
-          sql`battery_level - LAG(battery_level) OVER (ORDER BY "time") AS battery_level_diff`,
-          sql`ROW_NUMBER() OVER (PARTITION BY device_id ORDER BY "time" DESC) AS row_number`
+          fn.coalesce(
+            'value_int',
+            'value_long',
+            'value_float',
+            'value_double'
+          ).as('value'),
         ])
         .where('device_id', '=', bot_uuid)
-        .orderBy('time', 'desc')
+        .where('variable', '=', 'battery_state')
+        .orderBy('timestamp', 'desc')
         .limit(1)
     )
-    .selectFrom('battery_status')
-    .select([
-      'device_id as bot_uuid',
+    .with(
       'battery_level',
+      (db) => db
+        .selectFrom('chargebot_battery')
+        .select(({ fn }) => [
+          'device_id',
+          fn.coalesce(
+            'value_int',
+            'value_long',
+            'value_float',
+            'value_double'
+          ).as('value'),
+        ])
+        .where('device_id', '=', bot_uuid)
+        .where('variable', '=', 'state_of_charge')
+        .orderBy('timestamp', 'desc')
+        .limit(1)
+    )
+    .selectFrom(['battery_state', 'battery_level'])
+    .select([
+      'battery_state.device_id as bot_uuid',
+      'battery_level.value as battery_level',
       sql`
       CASE
-          WHEN battery_level_diff > 0 THEN 'CHARGING'
-          WHEN battery_level_diff < 0 THEN 'DISCHARGING'
+          WHEN battery_state.value = 1 THEN 'CHARGING'
+          WHEN battery_state.value = -1 THEN 'DISCHARGING'
           ELSE 'IDLE'
       END AS battery_status
     `])
-    .where('row_number', '=', 1)
     .executeTakeFirst();
 }
 

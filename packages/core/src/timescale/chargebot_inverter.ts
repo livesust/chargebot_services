@@ -35,7 +35,7 @@ export enum InverterVariable {
   BATTERY_DISCHARGE_DIFF = 'batt_discharge_diff',
   SOLAR_CHARGE_DIFF = 'pv_charge_diff',
   GRID_CHARGE_DIFF = 'mains_charge_diff',
-  ENERGY_USAGE = 'energy_usage',
+  ENERGY_USAGE = 'load_energy_usage',
   LOAD_VOLTAGE = 'load_dc_voltage',
   LOAD_CURRENT = 'load_dc_current',
   LOAD_POWER = 'load_dc_power',

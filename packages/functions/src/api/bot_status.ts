@@ -59,11 +59,12 @@ export const handler = async (event) => {
       return acc;
     }, {});
 
-    const batteryCharging = getNumber(todayUsageVariables[InverterVariable.BATTERY_CHARGE_DIFF]);
-    const batteryDischarging = getNumber(todayUsageVariables[InverterVariable.BATTERY_DISCHARGE_DIFF]);
-    const solarCharging = getNumber(todayUsageVariables[InverterVariable.SOLAR_CHARGE_DIFF]);
-    const gridCharging = getNumber(todayUsageVariables[InverterVariable.GRID_CHARGE_DIFF]);
-    const energyUsage = getNumber(todayUsageVariables[InverterVariable.ENERGY_USAGE]);
+    // convert values from kWh to Wh
+    const batteryCharging = getNumber(todayUsageVariables[InverterVariable.BATTERY_CHARGE_DIFF]) * 1000;
+    const batteryDischarging = getNumber(todayUsageVariables[InverterVariable.BATTERY_DISCHARGE_DIFF]) * 1000;
+    const solarCharging = getNumber(todayUsageVariables[InverterVariable.SOLAR_CHARGE_DIFF]) * 1000;
+    const gridCharging = getNumber(todayUsageVariables[InverterVariable.GRID_CHARGE_DIFF]) * 1000;
+    const energyUsage = getNumber(todayUsageVariables[InverterVariable.ENERGY_USAGE]) * 1000;
 
     const iotConnected = iotStatus?.state?.reported?.connected == 'true' ?? false;
 
