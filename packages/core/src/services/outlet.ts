@@ -133,6 +133,7 @@ export async function findByBot(bot_uuid: string): Promise<Outlet[]> {
     .where('bot.bot_uuid', '=', bot_uuid)
     .where('outlet.deleted_by', 'is', null)
     .selectAll('outlet')
+    .orderBy('pdu_outlet_number', 'asc')
     .execute();
 }
 

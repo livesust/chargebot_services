@@ -158,6 +158,16 @@ export function ApiStack({ app, stack }: StackContext) {
           },
         }
       },
+      "GET /bot/{bot_uuid}/warning_alerts": {
+        function: {
+          handler: "packages/functions/src/api/bot_warning_alerts.main",
+          // @ts-expect-error ignore type errors
+          layers: [lambdaLayers.i18nLayer],
+          nodejs: {
+            install: ["i18n"],
+          },
+        }
+      },
       "GET /bot/{bot_uuid}/outlet/{outlet_id}": "packages/functions/src/api/bot_outlet_details.main",
       "GET /bot/{bot_uuid}/location/from/{from}/to/{to}": "packages/functions/src/api/bot_location_history.main",
       "GET /bot/{bot_uuid}/location/days_info/from/{from}/to/{to}": "packages/functions/src/api/bot_location_days_info.main",

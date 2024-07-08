@@ -5,6 +5,7 @@ import { ChargebotBatteryTable } from "./chargebot_battery";
 import { ChargebotInverterTable } from "./chargebot_inverter";
 import { ChargebotPDUTable } from "./chargebot_pdu";
 import { ChargebotErrorTable } from "./chargebot_error";
+import { ChargebotAlertTable } from "./chargebot_alert";
 import { ChargebotGeocodingTable } from "./chargebot_geocoding";
 import { Config } from "sst/node/config";
 import { ChargebotBatteryLevelAggregate } from "./chargebot_battery_level_aggregate";
@@ -15,6 +16,7 @@ export interface AnalyticsDatabase {
     chargebot_inverter: ChargebotInverterTable,
     chargebot_pdu: ChargebotPDUTable,
     chargebot_error: ChargebotErrorTable,
+    chargebot_alert: ChargebotAlertTable,
     chargebot_geocoding: ChargebotGeocodingTable,
     chargebot_battery_level_aggregate: ChargebotBatteryLevelAggregate,
 }
@@ -42,11 +44,11 @@ const psqlDialect = new PostgresDialect({
 export default new Kysely<AnalyticsDatabase>({
     dialect: psqlDialect,
     plugins: [new ParseJSONResultsPlugin()],
-    // log(event): void {
-    //   if (event.level === 'query') {
-    //     console.log(`TimescaleDB Time: ${Math.round(event.queryDurationMillis)}ms
-    //       SQL: ${event.query.sql}
-    //       Params: ${JSON.stringify(event.query.parameters, null, 2)}`);
-    //   }
-    // },
+    log(event): void {
+      if (event.level === 'query') {
+        console.log(`TimescaleDB Time: ${Math.round(event.queryDurationMillis)}ms
+          SQL: ${event.query.sql}
+          Params: ${JSON.stringify(event.query.parameters, null, 2)}`);
+      }
+    },
 });
