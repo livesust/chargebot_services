@@ -59,7 +59,7 @@ const handler = async (event) => {
   } catch (error) {
     Log.error("ERROR", { error });
     console.log(JSON.stringify(error));
-    const httpError = createError(406, "cannot query bot outlets ", { expose: true });
+    const httpError = createError(406, "cannot query bot errors", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;
   }
