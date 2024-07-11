@@ -2,6 +2,7 @@ import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
 
 import { EntitySchema as CompanySchema } from "./company.schema";
+import { EntitySchema as UserEmailSchema } from "./user_email.schema";
 
 const UserSchemaDef = {
     first_name: Joi.string().max(255).allow(null, ''),
@@ -21,6 +22,7 @@ export const EntitySchema = Joi.object({
     ...UserSchemaDef,
     company_id: Joi.number(),
     company: CompanySchema,
+    user_email: UserEmailSchema,
 });
 
 export const CreateSchema = Joi.object({

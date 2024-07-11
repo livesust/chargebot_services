@@ -25,6 +25,7 @@ export interface ChargebotBatteryTable {
 export type ChargebotBattery = Selectable<ChargebotBatteryTable>
 
 export enum BatteryVariables {
+  STATE = 'battery_state',
   LEVEL_SOC = 'state_of_charge',
   HEALTH = 'battery_health',
   FULL_CAPACITY = 'full_capacity',
@@ -39,4 +40,17 @@ export enum BatteryVariables {
   CUMULATIVE_DISCHARGE_TIME = 'cumulative_discharge_time',
   CYCLE_COUNTS = 'cycle_counts',
 }
+
+export enum BatteryFirmwareState {
+  DISCHARGING = -1,
+  IDLE = 0,
+  CHARGING = 1,
+}
+
+export enum BatteryState {
+  DISCHARGING = "DISCHARGING",
+  CHARGING = "CHARGING",
+  IDLE = "IDLE",
+}
+
 

@@ -13,6 +13,17 @@ export function withCompany(eb: ExpressionBuilder<Database, 'user'>) {
     ).as('company')
 }
 
+export function withEmail(eb: ExpressionBuilder<Database, 'user'>) {
+  return jsonObjectFrom(
+    eb.selectFrom('user_email')
+      .selectAll()
+      .whereRef('user_email.user_id', '=', 'user.id')
+      .where('user_email.deleted_by', 'is', null)
+      .where('user_email.primary', 'is', true)
+      .limit(1)
+  ).as('user_email')
+}
+
 
 export async function create(user: NewUser): Promise<{
   entity: User | undefined,
@@ -159,6 +170,7 @@ export async function findByCriteria(criteria: Partial<User>): Promise<User[]> {
   return query
     .selectAll()
     .select((eb) => withCompany(eb))
+    .select((eb) => withEmail(eb))
     .execute();
 }
 

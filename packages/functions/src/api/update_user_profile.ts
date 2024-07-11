@@ -8,7 +8,7 @@ import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import httpSecurityHeaders from '@middy/http-security-headers';
 import httpEventNormalizer from '@middy/http-event-normalizer';
-import executionTimeLogger from '../shared/middlewares/time-log';
+// import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import { createNotFoundResponse, createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { User } from "@chargebot-services/core/services/user";
@@ -85,8 +85,6 @@ const handler = async (event) => {
             modified_date: now,
         }));
       }
-    } else if (userEmail) {
-        promises.push(UserEmail.remove(userEmail.id!, user_sub));
     }
 
     // update/create primary phone
@@ -104,8 +102,6 @@ const handler = async (event) => {
             modified_date: now,
         }));
       }
-    } else if (userPhone) {
-      promises.push(UserPhone.remove(userPhone.id!, user_sub));
     }
 
     // update/create role
@@ -124,10 +120,10 @@ const handler = async (event) => {
     if (body.bot_ids) {
       const assignedBots = await BotUser.findByCriteria({user_id: user.id!})
       const botsToAssign = body.bot_ids.filter((id: number) => !assignedBots.some(a => a.bot_id == id));
-      const botsToRemove = assignedBots.map(b => b.bot_id).filter((id: number) => !body.bot_ids.some((bot_id: number) => bot_id == id))
+      const botsToRemove = assignedBots.filter(botUser => !body.bot_ids.some((bot_id: number) => bot_id === botUser.bot_id));
       const now = new Date();
       promises.push([
-        botsToRemove.map(async (bot_id: number) => BotUser.remove(bot_id, user_sub)),
+        botsToRemove.map(async (botUser) => BotUser.remove(botUser!.id!, user_sub)),
         botsToAssign.map(async (bot_id: number) =>
           BotUser.create({
             bot_id: bot_id,
@@ -171,7 +167,7 @@ const handler = async (event) => {
 export const main = middy(handler)
   // before
   .use(warmup({ isWarmingUp }))
-  .use(executionTimeLogger())
+  // .use(executionTimeLogger())
   .use(httpEventNormalizer())
   // .use(logTimeout())
   .use(validator({ pathParametersSchema: PathParamSchema }))

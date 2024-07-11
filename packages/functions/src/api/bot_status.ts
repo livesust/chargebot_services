@@ -8,10 +8,10 @@ import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import httpSecurityHeaders from '@middy/http-security-headers';
 import httpEventNormalizer from '@middy/http-event-normalizer';
-import executionTimeLogger from '../shared/middlewares/time-log';
+// import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
-import { ChargebotBattery } from "@chargebot-services/core/services/analytics/chargebot_battery";
+import { ChargebotBattery, translateBatteryState } from "@chargebot-services/core/services/analytics/chargebot_battery";
 import { ChargebotInverter } from "@chargebot-services/core/services/analytics/chargebot_inverter";
 import { ChargebotPDU, translatePDUState } from "@chargebot-services/core/services/analytics/chargebot_pdu";
 import { ChargebotError } from "@chargebot-services/core/services/analytics/chargebot_error";
@@ -21,6 +21,7 @@ import { BotUUIDPathParamSchema } from "src/shared/schemas";
 import { getNumber } from "../shared/rest_utils";
 import { DateTime } from "luxon";
 import { PDUVariable } from "@chargebot-services/core/timescale/chargebot_pdu";
+import { BatteryVariables } from "@chargebot-services/core/timescale/chargebot_battery";
 
 // @ts-expect-error ignore any type for event
 export const handler = async (event) => {
@@ -28,7 +29,7 @@ export const handler = async (event) => {
 
   try {
     const [
-        batteryState, inverterStatus, pduStatus, systemStatus, iotStatus, todayUsage
+        batteryStatus, inverterStatus, pduStatus, systemStatus, iotStatus, todayUsage
     ] = await Promise.all([
       ChargebotBattery.getBatteryStatus(bot_uuid),
       ChargebotInverter.getInverterStatus(bot_uuid),
@@ -43,6 +44,11 @@ export const handler = async (event) => {
         InverterVariable.ENERGY_USAGE
       ]),
     ]);
+
+    const batteryVariables: { [key: string]: unknown } = batteryStatus.reduce((acc: { [key: string]: unknown }, obj) => {
+      acc[obj.variable] = obj.value;
+      return acc;
+    }, {});
 
     const inverterVariables: { [key: string]: unknown } = inverterStatus.reduce((acc: { [key: string]: unknown }, obj) => {
       acc[obj.variable] = obj.value;
@@ -74,14 +80,14 @@ export const handler = async (event) => {
       ? inverterLastReport.setZone('UTC').toISO()
       : (iotConnectedTime ? DateTime.fromSeconds(iotConnectedTime).setZone('UTC').toISO() : null);
 
-    const battery_level = getNumber(batteryState?.battery_level);
+    const battery_level = getNumber(batteryVariables[BatteryVariables.LEVEL_SOC]);
 
     const response = {
       bot_uuid,
       battery_level: battery_level,
-      battery_status: batteryState?.battery_status ?? 'UNKNOWN',
+      battery_status: translateBatteryState(batteryVariables[BatteryVariables.STATE] as number),
       output_current: getNumber(pduVariables[PDUVariable.CURRENT]),
-      grid_current: getNumber(inverterVariables[InverterVariable.GRID_CURRENT]),
+      grid_power: getNumber(inverterVariables[InverterVariable.GRID_CURRENT]) * getNumber(inverterVariables[InverterVariable.GRID_VOLTAGE], 120),
       solar_power: getNumber(inverterVariables[InverterVariable.SOLAR_POWER]),
       today_energy_usage: getNumber(energyUsage),
       today_total_charging: getNumber(gridCharging) + getNumber(solarCharging),
@@ -108,7 +114,7 @@ export const handler = async (event) => {
 export const main = middy(handler)
   // before
   .use(warmup({ isWarmingUp }))
-  .use(executionTimeLogger())
+  // .use(executionTimeLogger())
   .use(httpEventNormalizer())
   // .use(logTimeout())
   .use(validator({ pathParametersSchema: BotUUIDPathParamSchema }))

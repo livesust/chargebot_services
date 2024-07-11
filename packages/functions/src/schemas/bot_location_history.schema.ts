@@ -11,6 +11,7 @@ const BotLocationHistorySchemaDef = {
   bot_uuid: Joi.string().required(),
   date: Joi.date().required(),
   route: Joi.array().items({
+    id: Joi.number().optional().allow(null),
     timestamp: Joi.date().allow(null),
     latitude: Joi.number().allow(null),
     longitude: Joi.number().allow(null),
@@ -18,8 +19,10 @@ const BotLocationHistorySchemaDef = {
     distance: Joi.number().allow(null),
   }),
   summary: Joi.array().items({
+    id: Joi.number().optional().allow(null),
     start_time: Joi.date().allow(null),
     end_time: Joi.date().allow(null),
+    timezone: Joi.string().allow(null, ''),
     latitude: Joi.number().allow(null),
     longitude: Joi.number().allow(null),
     distance: Joi.number().allow(null),

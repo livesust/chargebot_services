@@ -1,5 +1,5 @@
 export * as ChargebotGps from "./chargebot_gps";
-import { JoinBuilder, sql } from "kysely";
+import { sql } from "kysely";
 import db from '../../timescale';
 import { ChargebotGps, ChargebotGpsHistory, ChargebotGpsPosition, VehicleStatus } from "../../timescale/chargebot_gps";
 
@@ -99,6 +99,7 @@ export async function getRouteByBot(bot_uuid: string, from: Date, to: Date): Pro
         .selectFrom('chargebot_gps')
         // @ts-expect-error ignore overload not mapping
         .select([
+          'id',
           'timestamp',
           'lat as latitude',
           'lon as longitude',
@@ -115,6 +116,7 @@ export async function getRouteByBot(bot_uuid: string, from: Date, to: Date): Pro
       (db) => db
         .selectFrom('block_status')
         .select([
+          'id',
           'timestamp',
           'latitude',
           'longitude',
@@ -136,6 +138,7 @@ export async function getRouteByBot(bot_uuid: string, from: Date, to: Date): Pro
         .selectFrom('block_status_fixed')
         // @ts-expect-error ignore overload not mapping
         .select([
+          'id',
           'timestamp',
           'latitude',
           'longitude',
@@ -149,6 +152,7 @@ export async function getRouteByBot(bot_uuid: string, from: Date, to: Date): Pro
     )
     .selectFrom('block_groups')
     .select([
+      sql`max(id) as id`,
       sql`min(timestamp) as timestamp`,
       'latitude',
       'longitude',
@@ -169,7 +173,9 @@ export async function getSummaryByBot(bot_uuid: string, from: Date, to: Date): P
         .selectFrom('chargebot_gps')
         // @ts-expect-error ignore overload not mapping
         .select([
+          'id',
           'timestamp',
+          'timezone',
           'lat as latitude',
           'lon as longitude',
           'distance',
@@ -186,7 +192,9 @@ export async function getSummaryByBot(bot_uuid: string, from: Date, to: Date): P
       (db) => db
         .selectFrom('block_status')
         .select([
+          'id',
           'timestamp',
+          'timezone',
           'latitude',
           'longitude',
           'distance',
@@ -207,7 +215,9 @@ export async function getSummaryByBot(bot_uuid: string, from: Date, to: Date): P
         .selectFrom('block_status_fixed')
         // @ts-expect-error ignore overload not mapping
         .select([
+          'id',
           'timestamp',
+          'timezone',
           'latitude',
           'longitude',
           'distance',
@@ -224,29 +234,30 @@ export async function getSummaryByBot(bot_uuid: string, from: Date, to: Date): P
         .selectFrom('block_groups')
         .select([
           'vehicle_status',
+          sql`max("id") as id`,
           sql`min("timestamp") as start_timestamp`,
           sql`max("timestamp") as end_timestamp`,
+          sql`min("timezone") as timezone`,
           sql`first("latitude", "timestamp") as latitude`,
           sql`first("longitude", "timestamp") as longitude`,
           sql`sum(distance) as distance`
         ])
         .groupBy(['vehicle_status', 'block'])
     )
-    // .with(
-    //   'block_geocoding',
-    //   (db) => db
-    //     .selectFrom(['block_grouped', 'chargebot_geocoding'])
-    //     .selectAll('chargebot_geocoding')
-    //     .where(sql`block_grouped.latitude = ANY(chargebot_geocoding.latitudes)`)
-    //     .where(sql`block_grouped.longitude = ANY(chargebot_geocoding.longitudes)`)
-    //     .limit(1)
-    // )
-    // .selectFrom(['block_grouped', 'block_geocoding as geo'])
-    .selectFrom('block_grouped')
-    // @ts-expect-error ignore
-    .leftJoin('chargebot_geocoding as geo', (jb: JoinBuilder) => jb.on(sql`latitude = ANY(geo.latitudes) AND longitude = ANY(geo.longitudes) AND vehicle_status != 'IN_TRANSIT'`))
+    .with(
+      'block_geocoding',
+      (db) => db
+        .selectFrom(['block_grouped', 'chargebot_geocoding'])
+        .selectAll('chargebot_geocoding')
+        .where(sql`block_grouped.latitude = ANY(chargebot_geocoding.latitudes)`)
+        .where(sql`block_grouped.longitude = ANY(chargebot_geocoding.longitudes)`)
+        .orderBy('timestamp', 'desc')
+        .limit(1)
+    )
+    .selectFrom(['block_grouped', 'block_geocoding as geo'])
     // @ts-expect-error ignore
     .select([
+      'block_grouped.id',
       sql`start_timestamp as start_time`,	
       sql`
         case 
@@ -254,6 +265,7 @@ export async function getSummaryByBot(bot_uuid: string, from: Date, to: Date): P
           else lead(start_timestamp) over (order by "start_timestamp")
         end as end_time
       `,
+      'block_grouped.timezone',	
       'latitude',
       'longitude',
       'distance',

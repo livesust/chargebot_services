@@ -7,14 +7,15 @@ import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import httpSecurityHeaders from '@middy/http-security-headers';
 import httpEventNormalizer from '@middy/http-event-normalizer';
-import executionTimeLogger from '../shared/middlewares/time-log';
+// import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import Log from '@dazn/lambda-powertools-logger';
 import { createSuccessResponse, getNumber, isWarmingUp } from "../shared/rest_utils";
-import { ChargebotBattery } from "@chargebot-services/core/services/analytics/chargebot_battery";
+import { ChargebotBattery, translateBatteryState } from "@chargebot-services/core/services/analytics/chargebot_battery";
 import { Bot } from "@chargebot-services/core/services/bot";
 import { Company } from "@chargebot-services/core/services/company";
 import { User } from "@chargebot-services/core/services/user";
+import { BatteryVariables } from "@chargebot-services/core/timescale/chargebot_battery";
 
 // @ts-expect-error ignore any type for event
 const handler = async ({ requestContext }) => {
@@ -41,16 +42,21 @@ const handler = async ({ requestContext }) => {
 
     if (botsByUser) {
       const bot_uuids = botsByUser.map(b => b.bot_uuid);
-      const battery_states = await ChargebotBattery.getBatteryStates(bot_uuids);
+      const batteryStatus = await ChargebotBattery.getBatteryStatuses(bot_uuids);
       for (const bot of botsByUser) {
+        const batteryVariables: { [key: string]: unknown } = batteryStatus?.filter(l => l?.device_id === bot.bot_uuid)
+          .reduce((acc: { [key: string]: unknown }, obj) => {
+            acc[obj.variable] = obj.value;
+            return acc;
+          }, {});
         response.push({
           "id": bot.id,
           "bot_uuid": bot.bot_uuid,
           "name": bot.name,
           "initials": bot.initials,
           "pin_color": bot.pin_color,
-          "battery_level": getNumber(battery_states?.find(l => l?.bot_uuid === bot.bot_uuid)?.battery_level),
-          "battery_status": battery_states?.find(l => l?.bot_uuid === bot.bot_uuid)?.battery_status ?? 'UNKNOWN',
+          "battery_level": getNumber(batteryVariables[BatteryVariables.LEVEL_SOC]),
+          "battery_status": translateBatteryState(batteryVariables[BatteryVariables.STATE] as number),
           "company_id": company?.id,
           "company_name": company?.name,
           "customer_id": company?.customer?.id,
@@ -76,7 +82,7 @@ const handler = async ({ requestContext }) => {
 export const main = middy(handler)
   // before
   .use(warmup({ isWarmingUp }))
-  .use(executionTimeLogger())
+  // .use(executionTimeLogger())
   .use(httpEventNormalizer())
   // .use(logTimeout())
   // after: inverse order execution

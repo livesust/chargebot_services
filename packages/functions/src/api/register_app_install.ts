@@ -8,7 +8,7 @@ import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import httpSecurityHeaders from '@middy/http-security-headers';
 import httpEventNormalizer from '@middy/http-event-normalizer';
-import executionTimeLogger from '../shared/middlewares/time-log';
+// import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import { createNotFoundResponse, createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { User } from "@chargebot-services/core/services/user";
@@ -17,6 +17,7 @@ import { dateReviver } from "src/shared/middlewares/json-date-parser";
 import { AppInstall } from "@chargebot-services/core/services/app_install";
 import { Permission } from "@chargebot-services/core/services/permission";
 import { AppInstallPermissions } from "@chargebot-services/core/services/app_install_permissions";
+import { PermissionName } from "@chargebot-services/core/database/permission";
 
 
 // @ts-expect-error ignore any type for event
@@ -34,20 +35,32 @@ const handler = async (event) => {
     }
 
     // find existent app install
-    const appInstall = await AppInstall.findOneByCriteria({user_id: user.id, app_platform_id: body.app_platform_id})
+    const [appInstall, notificationPermission] = await Promise.all([
+      AppInstall.findOneByCriteria({user_id: user.id, app_platform_id: body.app_platform_id}),
+      Permission.findOneByCriteria({name: PermissionName.NOTIFICATIONS})
+    ]);
 
     // update
     if (appInstall) {
-      const response = await AppInstall.update(appInstall.id!, {
-        push_token: body.push_token,
-        app_version: body.app_version,
-        platform: body.platform,
-        os_version: body.os_version,
-        description: body.description,
-        modified_by: user_id,
-        modified_date: now,
-      });
-      return createSuccessResponse(response!.entity);
+      const [appInstallUpdated, appInstallPermission] = await Promise.all([
+        AppInstall.update(appInstall.id!, {
+          push_token: body.push_token,
+          app_version: body.app_version,
+          platform: body.platform,
+          os_version: body.os_version,
+          description: body.description,
+          modified_by: user_id,
+          modified_date: now,
+        }),
+        AppInstallPermissions.findOneByCriteria({permission_id: notificationPermission?.id, app_install_id: appInstall.id!})
+      ]);
+      if (appInstallPermission){
+        // if no push token is provided, then user removed notifications access
+        await AppInstallPermissions.update(appInstallPermission.id!, {
+          permission_status: body.push_token ? true : false,
+        });
+      }
+      return createSuccessResponse(appInstallUpdated!.entity);
     }
 
     // create
@@ -66,7 +79,7 @@ const handler = async (event) => {
     await Promise.all(
       permissions.map(async (permission) => {
         AppInstallPermissions.create({
-          permission_status: false,
+          permission_status: permission.name === PermissionName.NOTIFICATIONS && body.push_token ? true : false,
           permission_id: permission.id!,
           app_install_id: response!.entity!.id!,
           created_by: user_id,
@@ -94,7 +107,7 @@ const handler = async (event) => {
 export const main = middy(handler)
   // before
   .use(warmup({ isWarmingUp }))
-  .use(executionTimeLogger())
+  // .use(executionTimeLogger())
   .use(httpEventNormalizer())
   // .use(logTimeout())
   .use(jsonBodyParser({ reviver: dateReviver }))

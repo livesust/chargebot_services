@@ -7,9 +7,8 @@ export async function getInverterStatus(bot_uuid: string): Promise<ChargebotInve
   // @ts-expect-error not overloads match
   return db
     .selectFrom("chargebot_inverter")
+    .distinctOn("variable")
     .select(({ fn }) => [
-      'timestamp',
-      'timezone',
       'variable',
       fn.coalesce(
         'value_int',
@@ -21,11 +20,11 @@ export async function getInverterStatus(bot_uuid: string): Promise<ChargebotInve
     .where('device_id', '=', bot_uuid)
     .where('variable', 'in', [
       InverterVariable.SOLAR_POWER,
-      InverterVariable.GRID_CURRENT
+      InverterVariable.GRID_CURRENT,
+      InverterVariable.GRID_VOLTAGE
     ])
-    .orderBy('timestamp', 'desc')
     .orderBy('variable', 'desc')
-    .limit(2)
+    .orderBy('timestamp', 'desc')
     .execute();
 }
 
@@ -94,13 +93,12 @@ export async function getEnergyUsageByHourBucket(bot_uuid: string, from: Date, t
   variable: string,
   value: number
 }[]> {
-  // @ts-expect-error not overloads match
   const query = db
     .selectFrom("chargebot_inverter")
+    // @ts-expect-error not overloads match
     .select(({ fn }) => [
       sql`time_bucket_gapfill('1 hour', "timestamp") AS hour`,
       'variable',
-      // @ts-expect-error not overloads match
       fn.sum(fn.coalesce(
           'value_int',
           'value_long',
@@ -130,6 +128,7 @@ export async function getMonthlyEnergyUsage(bot_uuid: string, from: Date, to: Da
   // @ts-expect-error not overloads match
   return db
     .selectFrom("chargebot_inverter")
+    // @ts-expect-error not overloads match
     .select(({ fn }) => [
       sql`time_bucket('1 month', "timestamp") as "time"`,
       'variable',
@@ -158,6 +157,7 @@ export async function getMonthlyEnergyUsageByDay(bot_uuid: string, from: Date, t
   // @ts-expect-error not overloads match
   return db
     .selectFrom("chargebot_inverter")
+    // @ts-expect-error not overloads match
     .select(({ fn }) => [
       sql`time_bucket('1 day', "timestamp") as "time"`,
       'variable',
@@ -186,6 +186,7 @@ export async function getYearlyEnergyUsage(bot_uuid: string, from: Date, to: Dat
   // @ts-expect-error not overloads match
   return db
     .selectFrom("chargebot_inverter")
+    // @ts-expect-error not overloads match
     .select(({ fn }) => [
       sql`time_bucket('1 year', "timestamp") as "time"`,
       'variable',
@@ -214,6 +215,7 @@ export async function getYearlyEnergyUsageByMonth(bot_uuid: string, from: Date, 
   // @ts-expect-error not overloads match
   return db
     .selectFrom("chargebot_inverter")
+    // @ts-expect-error not overloads match
     .select(({ fn }) => [
       sql`time_bucket('1 month', "timestamp") as "time"`,
       'variable',
@@ -238,9 +240,9 @@ export async function getDaysWithData(bot_uuid: string, from: Date, to: Date): P
   bucket: Date,
   number_of_records: number
 }[]> {
-  // @ts-expect-error not overloads match
   const query = db
     .selectFrom("chargebot_inverter")
+    // @ts-expect-error not overloads match
     .select(({ fn }) => [
       sql`time_bucket_gapfill('1 day', "timestamp") AS bucket`,
       fn.count<number>('id').as('number_of_records'),
