@@ -6,7 +6,7 @@ const BotStatusSchemaDef = {
     battery_level: Joi.number().allow(null),
     battery_status: Joi.string().allow(null, ''),
     output_current: Joi.number().allow(null),
-    grid_current: Joi.number().allow(null),
+    grid_power: Joi.number().allow(null),
     solar_power: Joi.number().allow(null),
     today_energy_usage: Joi.number().allow(null),
     today_total_charging: Joi.number().allow(null),

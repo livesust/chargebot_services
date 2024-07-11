@@ -8,7 +8,7 @@ import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import httpSecurityHeaders from '@middy/http-security-headers';
 import httpEventNormalizer from '@middy/http-event-normalizer';
-import executionTimeLogger from '../shared/middlewares/time-log';
+// import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import { createNotFoundResponse, createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { BotUUIDPathParamSchema, SuccessResponseSchema } from "src/shared/schemas";
@@ -68,7 +68,7 @@ export const handler = async (event) => {
 export const main = middy(handler)
   // before
   .use(warmup({ isWarmingUp }))
-  .use(executionTimeLogger())
+  // .use(executionTimeLogger())
   .use(httpEventNormalizer())
   // .use(logTimeout())
   .use(jsonBodyParser({ reviver: dateReviver }))

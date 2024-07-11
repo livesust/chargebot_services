@@ -12,3 +12,8 @@ export interface PermissionTable extends AuditedEntity {
 export type Permission = Selectable<PermissionTable>
 export type NewPermission = Insertable<PermissionTable>
 export type PermissionUpdate = Updateable<PermissionTable>
+
+export enum PermissionName {
+  NOTIFICATIONS = "Notifications",
+  LOCATION = "Location"
+}

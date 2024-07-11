@@ -95,9 +95,9 @@ export const validateArrayResponse = async (response, entity_name: string) => {
     }
 }
 
-export const getNumber = (value: unknown):number => {
+export const getNumber = (value: unknown, default_value = 0):number => {
   if (!value || isNaN(value as number)) {
-    return 0;
+    return default_value;
   }
   return value as number;
 }

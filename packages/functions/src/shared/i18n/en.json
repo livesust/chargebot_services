@@ -16,6 +16,10 @@
       "title": "Battery Freeze",
       "message": "Your ChargeBot \"{{{device_id}}}\" temperature is currently at {{{temperature_f}}}°F. Risk of battery freeze! Disconnect your battery and move it to a warmer space to prevent permanent damage!"
     },
+    "battery_temperature_normalized": {
+      "title": "Battery Temperature Normal",
+      "message": "Your ChargeBot \"{{{device_id}}}\" temperature is currently at {{{temperature_f}}}°F, charge performance restored."
+    },
     "battery_charging": {
       "ntitleame": "Battery Charging",
       "message": "Your ChargeBot \"{{{device_id}}}\" is charging. Battery is at {{{state_of_charge}}}%."

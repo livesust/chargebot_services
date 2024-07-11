@@ -1,7 +1,7 @@
 import middy from "@middy/core";
 import httpErrorHandler from "@middy/http-error-handler";
 import httpEventNormalizer from '@middy/http-event-normalizer';
-import executionTimeLogger from '../shared/middlewares/time-log';
+// import executionTimeLogger from '../shared/middlewares/time-log';
 import jsonBodyParser from "@middy/http-json-body-parser";
 import { dateReviver } from "src/shared/middlewares/json-date-parser";
 import { Outlet } from "@chargebot-services/core/services/outlet";
@@ -23,7 +23,7 @@ const handler = async (event) => {
 
 export const main = middy(handler)
   // before
-  .use(executionTimeLogger())
+  // .use(executionTimeLogger())
   .use(httpEventNormalizer())
   .use(jsonBodyParser({ reviver: dateReviver }))
   // httpErrorHandler must be the last error handler attached, first to execute.

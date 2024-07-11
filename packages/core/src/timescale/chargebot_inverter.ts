@@ -30,6 +30,7 @@ export enum InverterVariable {
   BATTERY_VOLTAGE = 'batt_voltage',
   BATTERY_POWER = 'batt_power',
   GRID_CURRENT = 'grid_current',
+  GRID_VOLTAGE = 'grid_voltage',
   SOLAR_POWER = 'pv_panel_power',
   BATTERY_CHARGE_DIFF = 'batt_charge_diff',
   BATTERY_DISCHARGE_DIFF = 'batt_discharge_diff',
