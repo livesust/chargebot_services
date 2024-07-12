@@ -22,7 +22,7 @@ export const EntitySchema = Joi.object({
     ...UserSchemaDef,
     company_id: Joi.number(),
     company: CompanySchema,
-    user_email: UserEmailSchema,
+    user_email: UserEmailSchema.allow(null),
 });
 
 export const CreateSchema = Joi.object({
