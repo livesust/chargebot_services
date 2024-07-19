@@ -46,6 +46,16 @@ function getHourlyRecord(records: HourlyUsage[], hour_of_day: number): HourlyUsa
 }
 
 export async function getUsageByDay(bot_uuid: string, from: Date, to: Date) {
+  const now = DateTime.now().setZone('UTC');
+  from = DateTime.fromJSDate(from).setZone('UTC').startOf('day').toJSDate();
+  if (now >= DateTime.fromJSDate(to)) {
+    to = DateTime.fromJSDate(to).setZone('UTC').endOf('day').toJSDate();
+  } else {
+    to = now.toJSDate();
+  }
+  
+
+
   const [energyUsageTotals, inverterHourlyBuckets, batteryLevelSoc, batteryHourlyBuckets] = await Promise.all([
     ChargebotInverter.getTotalEnergyUsage(bot_uuid, from, to),
     ChargebotInverter.getEnergyUsageByHourBucket(bot_uuid, from, to),

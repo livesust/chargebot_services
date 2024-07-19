@@ -30,7 +30,7 @@ export async function getActiveErrors(bot_uuid: string): Promise<ChargebotError[
         .selectFrom('chargebot_error')
         // @ts-expect-error ignore overload not mapping
         .select([
-          'timestamp',
+          sql`max(timestamp) as timestamp`,
           'module',
           'level',
           'code',
@@ -41,11 +41,12 @@ export async function getActiveErrors(bot_uuid: string): Promise<ChargebotError[
           sql`max(occurrence_count) as occurrence_count`
         ])
         .where('device_id', '=', bot_uuid)
-        .groupBy(['timestamp', 'module', 'level', 'code', 'name'])
+        .groupBy(['module', 'level', 'code', 'name'])
     )
     .selectFrom('block_errors')
     .selectAll()
     .where('error_status', '=', ErrorStatus.ACTIVE)
+    .where('timestamp', '>', sql`now() - interval '7 days'`)
     .orderBy('timestamp', 'desc')
     .orderBy('level', 'desc')
     .execute()
@@ -60,7 +61,7 @@ export async function getPastErrors(bot_uuid: string): Promise<ChargebotError[] 
         .selectFrom('chargebot_error')
         // @ts-expect-error ignore overload not mapping
         .select([
-          'timestamp',
+          sql`max(timestamp) as timestamp`,
           'module',
           'level',
           'code',
@@ -71,7 +72,7 @@ export async function getPastErrors(bot_uuid: string): Promise<ChargebotError[] 
           sql`max(occurrence_count) as occurrence_count`
         ])
         .where('device_id', '=', bot_uuid)
-        .groupBy(['timestamp', 'module', 'level', 'code', 'name'])
+        .groupBy(['module', 'level', 'code', 'name'])
     )
     .selectFrom('block_errors')
     .selectAll()

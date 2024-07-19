@@ -54,7 +54,7 @@ export async function getBatteryStatuses(bot_uuids: string[]): Promise<Chargebot
     .execute();
 }
 
-export async function getAvgBatteryLevel(bot_uuid: string, from: Date, to: Date): Promise<number | unknown> {
+export async function getAvgBatteryLevel(bot_uuid: string, from: Date, to: Date): Promise<number> {
   const levelSoc: ChargebotBattery | undefined = await db
     .selectFrom("chargebot_battery")
     // @ts-expect-error not overloads match
@@ -71,7 +71,7 @@ export async function getAvgBatteryLevel(bot_uuid: string, from: Date, to: Date)
     .where((eb) => eb.between('timestamp', from, to))
     .executeTakeFirst();
 
-  return levelSoc?.value ?? 0;
+  return levelSoc?.value ? levelSoc?.value as number : 0;
 }
 
 export async function getBatteryLevelByHourBucket(bot_uuid: string, from: Date, to: Date): Promise<{
@@ -79,22 +79,37 @@ export async function getBatteryLevelByHourBucket(bot_uuid: string, from: Date, 
   value: number
 }[]> {
   const results = await db
-    .selectFrom("chargebot_battery")
-    // @ts-expect-error implicit any
-    .select(() => [
-      sql`time_bucket_gapfill('1 hour', "timestamp") AS hour`,
-      sql`round(avg(coalesce(
-        value_int,
-        value_long,
-        value_float,
-        value_double
-      ))) as value`,
+    .with(
+      'block_data',
+      // Get report data
+      (db) => db
+        .selectFrom("chargebot_battery")
+        // @ts-expect-error implicit any
+        .select(() => [
+          sql`time_bucket_gapfill('1 hour', "timestamp") AS hour`,
+          sql`round(avg(coalesce(
+            value_int,
+            value_long,
+            value_float,
+            value_double
+          ))) as value`,
+        ])
+        .where('device_id', '=', bot_uuid)
+        .where('variable', '=', BatteryVariables.LEVEL_SOC)
+        .where((eb) => eb.between('timestamp', from, to))
+        .groupBy('hour')
+        .orderBy('hour', 'asc')
+    )
+    .selectFrom('block_data')
+    .select([
+      'hour',
+      sql`
+        case 
+          when value is not NULL then value
+          else 0
+        end as value
+      `
     ])
-    .where('device_id', '=', bot_uuid)
-    .where('variable', '=', BatteryVariables.LEVEL_SOC)
-    .where((eb) => eb.between('timestamp', from, to))
-    .groupBy('hour')
-    .orderBy('hour', 'asc')
     .execute();
 
     // @ts-expect-error not overloads match

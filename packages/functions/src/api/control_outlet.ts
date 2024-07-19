@@ -24,7 +24,7 @@ export const handler = async (event) => {
   const body = event.body;
 
   try {
-    const outlet = await Outlet.findByBotAndPduOutletNumber(bot_uuid, body.pdu_outlet_number);
+    const [outlet, botOutlets] = await Promise.all([Outlet.findByBotAndPduOutletNumber(bot_uuid, body.pdu_outlet_number), Outlet.findByBot(bot_uuid)]);
     if (!outlet) {
       return createNotFoundResponse({ "response": "outlet not found" });
     }
@@ -40,11 +40,16 @@ export const handler = async (event) => {
     const sent = await IoTData.publish(topic, payload);
 
     if (sent) {
-      await Outlet.update(outlet.id!, {
-        priority_charge_state: body.command == 'start_priority_charge'
-          ? OutletPriorityChargeState.ACTIVATING
-          : (body.command == 'stop_priority_charge' ? OutletPriorityChargeState.DEACTIVATING : OutletPriorityChargeState.INACTIVE)
-      })
+      await Promise.all([
+        Outlet.update(outlet.id!, {
+          priority_charge_state: body.command == 'start_priority_charge'
+            ? OutletPriorityChargeState.ACTIVATING
+            : (body.command == 'stop_priority_charge' ? OutletPriorityChargeState.DEACTIVATING : OutletPriorityChargeState.INACTIVE)
+        }),
+        botOutlets
+          .filter(b => b.id != outlet.id!)
+          .map(async (botOulet) => Outlet.update(botOulet.id!, {priority_charge_state: OutletPriorityChargeState.INACTIVE}))
+      ]);
       return createSuccessResponse({ "response": "success" });
     } else {
       await Outlet.update(outlet.id!, {
