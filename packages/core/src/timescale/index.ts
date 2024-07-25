@@ -44,11 +44,11 @@ const psqlDialect = new PostgresDialect({
 export default new Kysely<AnalyticsDatabase>({
     dialect: psqlDialect,
     plugins: [new ParseJSONResultsPlugin()],
-    // log(event): void {
-    //   if (event.level === 'query') {
-    //     console.log(`TimescaleDB Time: ${Math.round(event.queryDurationMillis)}ms
-    //       SQL: ${event.query.sql}
-    //       Params: ${JSON.stringify(event.query.parameters, null, 2)}`);
-    //   }
-    // },
+    log(event): void {
+      if (event.level === 'query') {
+        console.log(`TimescaleDB Time: ${Math.round(event.queryDurationMillis)}ms
+          SQL: ${event.query.sql}
+          Params: ${JSON.stringify(event.query.parameters, null, 2)}`);
+      }
+    },
 });

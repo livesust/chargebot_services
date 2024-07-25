@@ -215,18 +215,19 @@ export async function getSummaryByBot(bot_uuid: string, from: Date, to: Date): P
         .selectFrom('block_status_fixed')
         // @ts-expect-error ignore overload not mapping
         .select([
-          'id',
+          sql`max("id") as id`,
           'timestamp',
-          'timezone',
-          'latitude',
-          'longitude',
-          'distance',
-          'vehicle_status',
+          sql`max("timezone") as timezone`,
+          sql`max("latitude") as latitude`,
+          sql`max("longitude") as longitude`,
+          sql`max("distance") as distance`,
+          sql`max("vehicle_status") as vehicle_status`,
           sql`
             ROW_NUMBER() OVER (PARTITION BY to_char("timestamp", 'YYYY-MM-dd') ORDER BY "timestamp" DESC) -
-            ROW_NUMBER() OVER (PARTITION BY vehicle_status ORDER BY "timestamp" DESC) AS block
+            ROW_NUMBER() OVER (PARTITION BY first("vehicle_status", "timestamp") ORDER BY "timestamp" DESC) AS block
           `
         ])
+        .groupBy(['timestamp'])
     )
     .with(
       'block_grouped',
@@ -247,15 +248,26 @@ export async function getSummaryByBot(bot_uuid: string, from: Date, to: Date): P
     .with(
       'block_geocoding',
       (db) => db
-        .selectFrom(['block_grouped', 'chargebot_geocoding'])
-        .selectAll('chargebot_geocoding')
-        .where(sql`block_grouped.latitude = ANY(chargebot_geocoding.latitudes)`)
-        .where(sql`block_grouped.longitude = ANY(chargebot_geocoding.longitudes)`)
-        .orderBy('timestamp', 'desc')
-        .limit(1)
+        .selectFrom(['block_grouped as bg', 'chargebot_geocoding as cg'])
+        // @ts-expect-error ignore
+        .select([
+          'cg.label as address',
+          'cg.postal_code',
+          'cg.country',
+          'cg.state',
+          'cg.county',
+          'cg.city',
+          'cg.neighborhood',
+          'cg.street',
+          'cg.address_number',
+          'cg.latitudes',
+          'cg.longitudes',
+          sql`row_number() over (partition by bg.latitude, bg.longitude order by cg.timestamp desc) as geo_rn`
+        ])
+        .where(sql`bg.latitude = ANY(cg.latitudes)`)
+        .where(sql`bg.longitude = ANY(cg.longitudes)`)
     )
     .selectFrom(['block_grouped', 'block_geocoding as geo'])
-    // @ts-expect-error ignore
     .select([
       'block_grouped.id',
       sql`start_timestamp as start_time`,	
@@ -270,7 +282,7 @@ export async function getSummaryByBot(bot_uuid: string, from: Date, to: Date): P
       'longitude',
       'distance',
       'vehicle_status',
-      'geo.label as address',
+      'geo.address',
       'geo.postal_code',
       'geo.country',
       'geo.state',
@@ -281,6 +293,9 @@ export async function getSummaryByBot(bot_uuid: string, from: Date, to: Date): P
       'geo.address_number'
     ])
     .orderBy('start_timestamp', 'asc')
+    .where('geo.geo_rn', '=', 1)
+    .where(sql`block_grouped.latitude = ANY(geo.latitudes)`)
+    .where(sql`block_grouped.longitude = ANY(geo.longitudes)`)
     .execute();
 }
 

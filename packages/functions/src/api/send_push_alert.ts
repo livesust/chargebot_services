@@ -25,8 +25,16 @@ const handler = async (event) => {
   // payload will come on body when called from API
   // but direct on event when from IoT
   const body = event.body ?? event;
+
   // bot_uuid from IoT, device_id from API
   const bot_uuid = body.bot_uuid ?? body.device_id;
+
+  const alertName = body.name;
+  const alertMessage = body.message;
+
+  if (alertName == 'battery_temperature_normalized') {
+    return createSuccessResponse({ "response": "success" });
+  }
 
   try {
     if (!bot_uuid) {
@@ -46,9 +54,8 @@ const handler = async (event) => {
     const pushTokens = appInstalls?.map(ai => ai.push_token!);
     
     // when called from API the body.message is a JSON, but when called from IoT is a string
-    body.message = typeof(body.message) === "string" ? JSON.parse(body.message) : body.message;
-    const title = i18n.__(`push_alerts.${body.name}.title`);
-    const message = i18n.__(`push_alerts.${body.name}.message`, body.message);
+    const title = i18n.__(`push_alerts.${alertName}.title`);
+    const message = i18n.__(`push_alerts.${alertName}.message`, typeof(alertMessage) === "string" ? JSON.parse(alertMessage) : alertMessage);
 
     if (pushTokens && pushTokens.length > 0) {
       ExpoPush.send_push_notifications(pushTokens, message, title,

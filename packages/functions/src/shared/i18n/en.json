@@ -29,6 +29,36 @@
       "message": "Your ChargeBot \"{{{device_id}}}\" is discharging. Battery is at {{{state_of_charge}}}%."
     }
   },
+  "scheduled_alert": {
+    "not_plugged_in": {
+      "name": "Not Plugged In",
+      "description": "You will receive a notification at the scheduled time if the ChargeBot is not plugged into grid power. This event will be triggered every day of the week at the scheduled time."
+    },
+    "battery_low": {
+      "name": "Battery Low",
+      "description": "You will receive a notification if the ChargeBot battery drops below 12%."
+    },
+    "arrive_home": {
+      "name": "Arrive Home",
+      "description": "You will receive a notification when the ChargeBot arrives at it's home location."
+    },
+    "leave_home": {
+      "name": "Leave Home",
+      "description": "You will receive a notification when the ChargeBot leaves it's home location."
+    },
+    "long_stop": {
+      "name": "Long Stop",
+      "description": "You will receive a notification when the ChargeBot remains at a location for more than 4 hours. This does not include the home location."
+    },
+    "daily_use": {
+      "name": "Daily Use",
+      "description": "You will receive a daily notification at the scheduled time about ChargeBot use for the day. This event will be triggered every day of the week at the scheduled time."
+    },
+    "nothing_charging": {
+      "name": "Nothing Charging",
+      "description": "You will receive a notification at the scheduled time if there are no devices charging on the ChargeBot. This event will be triggered every day of the week at the scheduled time."
+    }
+  },
   "errors": {
     "level": {
       "MINOR": "Low",
