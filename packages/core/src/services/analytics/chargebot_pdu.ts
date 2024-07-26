@@ -100,8 +100,10 @@ export function translatePduOutletNumber(pdu_outlet_number: number=0): PDUVariab
 
 export function translatePDUState(state: number): PDUState {
   if (state) {
-    if (state == PDUFirmwareState.LIMITED_CHARGE_MODE || state == PDUFirmwareState.PROBING_OUTLETS || state == PDUFirmwareState.SHUTDOWN || state == PDUFirmwareState.ECO_MODE) {
+    if (state == PDUFirmwareState.LIMITED_CHARGE_MODE || state == PDUFirmwareState.PROBING_OUTLETS || state == PDUFirmwareState.ECO_MODE) {
       return PDUState.LIMITED;
+    } else if (state == PDUFirmwareState.SHUTDOWN) {
+      return PDUState.SHUTDOWN;
     } else if (state == PDUFirmwareState.PRIORITY_CHARGE) {
       return PDUState.PRIORITY_CHARGE;
     } else if (state == PDUFirmwareState.HIGH_TEMP) {

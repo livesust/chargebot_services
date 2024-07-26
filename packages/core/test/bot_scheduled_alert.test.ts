@@ -1,60 +1,60 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { UserScheduledAlerts } from "../src/services/user_scheduled_alerts";
+import { BotScheduledAlert } from "../src/services/bot_scheduled_alert";
 import { getRandom } from './utils';
+import { createAndSaveBot, removeBot } from "./bot.test";
 import { createAndSaveScheduledAlert, removeScheduledAlert } from "./scheduled_alert.test";
-import { createAndSaveUser, removeUser } from "./user.test";
 
 
 // @ts-expect-error ignore any type error
 let entity_id;
 // @ts-expect-error ignore any type error
-let scheduled_alert;
+let bot;
 // @ts-expect-error ignore any type error
-let user;
+let scheduled_alert;
 
-export async function createAndSaveUserScheduledAlerts() {
+export async function createAndSaveBotScheduledAlert() {
+    bot = await createAndSaveBot();
     scheduled_alert = await createAndSaveScheduledAlert();
-    user = await createAndSaveUser();
     // @ts-expect-error ignore error
-    return UserScheduledAlerts.create(getUserScheduledAlertsInstance());
+    return BotScheduledAlert.create(getBotScheduledAlertInstance());
 }
 
-export async function removeUserScheduledAlerts(id: number) {
+export async function removeBotScheduledAlert(id: number) {
     // run delete query to clean database
-    await UserScheduledAlerts.hard_remove(id);
+    await BotScheduledAlert.hard_remove(id);
+    // @ts-expect-error ignore any type error
+    await removeBot(bot.id);
     // @ts-expect-error ignore any type error
     await removeScheduledAlert(scheduled_alert.id);
-    // @ts-expect-error ignore any type error
-    await removeUser(user.id);
 }
 
-function getUserScheduledAlertsInstance() {
+function getBotScheduledAlertInstance() {
     return {
         "alert_status": getRandom('boolean'),
         "settings": getRandom('json'),
         // @ts-expect-error ignore any type error
-        "scheduled_alert_id": scheduled_alert.id,
+        "bot_id": bot.id,
         // @ts-expect-error ignore any type error
-        "user_id": user.id,
+        "scheduled_alert_id": scheduled_alert.id,
     };
 }
 
-describe('UserScheduledAlerts Tests', () => {
+describe('BotScheduledAlert Tests', () => {
 
     afterAll(async () => {
         // @ts-expect-error ignore any type error
-        await removeUserScheduledAlerts(entity_id);
+        await removeBotScheduledAlert(entity_id);
     })
 
     it("Create", async () => {
-        const response = await createAndSaveUserScheduledAlerts();
+        const response = await createAndSaveBotScheduledAlert();
         expect(response).toBeDefined();
         expect(response!.id).toBeTruthy();
         entity_id = response!.id;
     });
 
     it("Update", async () => {
-        const response = await UserScheduledAlerts.update(
+        const response = await BotScheduledAlert.update(
             entity_id!,
             { "alert_status": getRandom('boolean') }
         );
@@ -63,20 +63,20 @@ describe('UserScheduledAlerts Tests', () => {
     });
 
     it("List", async () => {
-        const response = await UserScheduledAlerts.list();
+        const response = await BotScheduledAlert.list();
         expect(response).toBeDefined();
         expect(response.length).toBeGreaterThan(0);
     });
 
     it("Get by ID", async () => {
-        const response = await UserScheduledAlerts.get(entity_id!);
+        const response = await BotScheduledAlert.get(entity_id!);
         expect(response).toBeTruthy();
         expect(response!.id).toEqual(entity_id!);
     });
 
     it("Search", async () => {
         // @ts-expect-error ignore any type error
-        const response: [] = await UserScheduledAlerts.findByCriteria({
+        const response: [] = await BotScheduledAlert.findByCriteria({
             "id": entity_id!
         });
         expect(response).toBeTruthy();
@@ -86,9 +86,9 @@ describe('UserScheduledAlerts Tests', () => {
     });
 
     it("Delete", async () => {
-        const response = await UserScheduledAlerts.list();
-        await UserScheduledAlerts.remove(entity_id!, "unit_test");
-        const list = await UserScheduledAlerts.list();
+        const response = await BotScheduledAlert.list();
+        await BotScheduledAlert.remove(entity_id!, "unit_test");
+        const list = await BotScheduledAlert.list();
 
         expect(response).toBeTruthy();
         expect(list).toBeDefined();

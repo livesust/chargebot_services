@@ -31,9 +31,9 @@ import { AppSettingsType } from "./app_settings_type";
 import { AppInstallPermissions } from "./app_install_permissions";
 import { AppInstall } from "./app_install";
 import { AlertType } from "./alert_type";
-import { UserScheduledAlerts } from "./user_scheduled_alerts";
 import { VehicleType } from "./vehicle_type";
 import { Vehicle } from "./vehicle";
+import { BotScheduledAlert } from "./bot_scheduled_alert";
 // DO NOT REMOVE THIS LINE: PLOP SERVICE IMPORT
 
 export const loadService = async (entity_name: string) => {
@@ -70,11 +70,10 @@ export const loadService = async (entity_name: string) => {
   if ("app_install_permissions" === entity_name) { service = AppInstallPermissions; }
   if ("app_install" === entity_name) { service = AppInstall; }
   if ("alert_type" === entity_name) { service = AlertType; }
-
-  if ("user_scheduled_alerts" === entity_name) { service = UserScheduledAlerts; }
   if ("vehicle_type" === entity_name) { service = VehicleType; }
   if ("vehicle" === entity_name) { service = Vehicle; }
-  // DO NOT REMOVE THIS LINE: PLOP SERVICE IF
+  if ("bot_scheduled_alert" === entity_name) { service = BotScheduledAlert; }
+// DO NOT REMOVE THIS LINE: PLOP SERVICE IF
 
   if (!service) {
     Log.error('Entity Service Not Found', { entity_name });

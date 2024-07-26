@@ -33,9 +33,9 @@ import { AppSettingsTypeTable } from "./app_settings_type";
 import { AppInstallPermissionsTable } from "./app_install_permissions";
 import { AppInstallTable } from "./app_install";
 import { BotUserTable } from "./bot_user";
-import { UserScheduledAlertsTable } from "./user_scheduled_alerts";
 import { VehicleTypeTable } from "./vehicle_type";
 import { VehicleTable } from "./vehicle";
+import { BotScheduledAlertTable } from "./bot_scheduled_alert";
 // DO NOT REMOVE THIS LINE: PLOP ENTITY IMPORT
 
 export function json<T>(value: T): RawBuilder<T> {
@@ -73,9 +73,9 @@ export interface Database {
   app_install_permissions: AppInstallPermissionsTable,
   app_install: AppInstallTable,
   bot_user: BotUserTable,
-  user_scheduled_alerts: UserScheduledAlertsTable,
   vehicle_type: VehicleTypeTable,
   vehicle: VehicleTable,
+  bot_scheduled_alert: BotScheduledAlertTable,
 // DO NOT REMOVE THIS LINE: PLOP ENTITY LIST
 }
 

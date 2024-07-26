@@ -1,45 +1,47 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
 
-import { EntitySchema as ScheduledAlertSchema } from "./scheduled_alert.schema";
-import { EntitySchema as UserSchema } from "./user.schema";
+import { EntitySchema as BotSchema } from "./bot.schema";
 
-const UserScheduledAlertsSchemaDef = {
+import { EntitySchema as ScheduledAlertSchema } from "./scheduled_alert.schema";
+
+const BotScheduledAlertSchemaDef = {
     alert_status: Joi.boolean().allow(null),
     settings: Joi.object().allow(null),
 };
 
 export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
-    ...UserScheduledAlertsSchemaDef,
+    ...BotScheduledAlertSchemaDef,
+    bot_id: Joi.number(),
     scheduled_alert_id: Joi.number(),
-    user_id: Joi.number(),
+    
+    bot: BotSchema,
     
     scheduled_alert: ScheduledAlertSchema,
-    user: UserSchema,
 });
 
 export const CreateSchema = Joi.object({
     ...AuditedEntityCreateSchemaDef,
-    ...UserScheduledAlertsSchemaDef
+    ...BotScheduledAlertSchemaDef
 }).keys({
     // overwrite keys for required attributes
+    bot_id: Joi.number().required(),
     scheduled_alert_id: Joi.number().required(),
-    user_id: Joi.number().required(),
 });
 
 export const UpdateSchema = Joi.object({
     ...AuditedEntityUpdateSchemaDef,
-    ...UserScheduledAlertsSchemaDef,
+    ...BotScheduledAlertSchemaDef,
+    bot_id: Joi.number(),
     scheduled_alert_id: Joi.number(),
-    user_id: Joi.number(),
 });
 
 export const SearchSchema = Joi.object({
     id: Joi.number(),
+    bot_id: Joi.number(),
     scheduled_alert_id: Joi.number(),
-    user_id: Joi.number(),
-    ...UserScheduledAlertsSchemaDef
+    ...BotScheduledAlertSchemaDef
 });
 
 export const ResponseSchema = Joi.object({
