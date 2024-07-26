@@ -31,9 +31,9 @@ import * as AppSettingsType from "./app_settings_type.schema";
 import * as AppInstallPermissions from "./app_install_permissions.schema";
 import * as AppInstall from "./app_install.schema";
 import * as AlertType from "./alert_type.schema";
-import * as UserScheduledAlerts from "./user_scheduled_alerts.schema";
 import * as VehicleType from "./vehicle_type.schema";
 import * as Vehicle from "./vehicle.schema";
+import * as BotScheduledAlert from "./bot_scheduled_alert.schema";
 // DO NOT REMOVE THIS LINE: PLOP SCHEMA IMPORT
 
 export const loadSchemas = (entity_name: string) => {
@@ -70,10 +70,10 @@ export const loadSchemas = (entity_name: string) => {
   if ("app_install_permissions" === entity_name) { schema = AppInstallPermissions; }
   if ("app_install" === entity_name) { schema = AppInstall; }
   if ("alert_type" === entity_name) { schema = AlertType; }
-  if ("user_scheduled_alerts" === entity_name) { schema = UserScheduledAlerts; }
   if ("vehicle_type" === entity_name) { schema = VehicleType; }
   if ("vehicle" === entity_name) { schema = Vehicle; }
-  // DO NOT REMOVE THIS LINE: PLOP SCHEMA IF
+      if ("bot_scheduled_alert" === entity_name) { schema = BotScheduledAlert; }
+// DO NOT REMOVE THIS LINE: PLOP SCHEMA IF
 
   if (!schema) {
     Log.error('Entity Schema Not Found', { entity_name });

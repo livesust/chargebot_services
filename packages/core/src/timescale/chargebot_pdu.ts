@@ -67,5 +67,6 @@ export enum PDUState {
   LIMITED = "LIMITED",
   PRIORITY_CHARGE = "PRIORITY",
   HIGH_TEMP = "HIGH_TEMP",
+  SHUTDOWN = "SHUTDOWN",
 }
 

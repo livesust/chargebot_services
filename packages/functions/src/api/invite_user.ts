@@ -18,8 +18,6 @@ import jsonBodyParser from "@middy/http-json-body-parser";
 import { dateReviver } from "src/shared/middlewares/json-date-parser";
 import { UserInviteStatus } from "@chargebot-services/core/database/user";
 import { Cognito } from "@chargebot-services/core/services/aws/cognito";
-import { ScheduledAlert as ScheduledAlertService } from "@chargebot-services/core/services/scheduled_alert";
-import { sql } from "kysely";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
@@ -29,11 +27,11 @@ const handler = async (event) => {
   const email_address = body.email_address;
 
   try {
-    const [existentLocal, creator, existentCognito, scheduledAlerts] = await Promise.all([
+    const [existentLocal, creator, existentCognito] = await Promise.all([
       User.findByEmail(email_address),
       User.findByCognitoId(user_sub),
       Cognito.getUserByEmail(email_address),
-      ScheduledAlertService.list()
+      
     ]);
 
     if (existentLocal) {
@@ -100,27 +98,6 @@ const handler = async (event) => {
             ...audit
           })
           .execute();
-      }
-
-      // insert scheduled alerts
-      for (const alert of scheduledAlerts) {
-        const scheduled = {
-          user_id: new_user!.id!,
-          scheduled_alert_id: alert.id!,
-          alert_status: true,
-          settings: alert.config_settings ? Object.keys(alert.config_settings).reduce((acc, key) => {
-            // @ts-expect-error ignore error
-            acc[key] = alert.config_settings![key].default;
-            return acc;
-          }, {}) : undefined,
-          ...audit
-        };
-        await trx.insertInto('user_scheduled_alerts')
-          .values({
-            ...scheduled,
-            settings: scheduled.settings ? sql`CAST(${JSON.stringify(scheduled.settings)} AS JSONB)` : undefined
-          })
-          .execute()
       }
 
       return new_user;

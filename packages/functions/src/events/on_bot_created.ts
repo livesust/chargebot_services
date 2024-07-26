@@ -6,6 +6,9 @@ import { BotChargingSettings } from "@chargebot-services/core/services/bot_charg
 import { OutletType } from "@chargebot-services/core/services/outlet_type";
 import { Outlet } from "@chargebot-services/core/services/outlet";
 import { OutletSchedule } from "@chargebot-services/core/services/outlet_schedule";
+import { ScheduledAlert as ScheduledAlertService } from "@chargebot-services/core/services/scheduled_alert";
+import { BotScheduledAlert } from "@chargebot-services/core/services/bot_scheduled_alert";
+import { sql } from "kysely";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
@@ -18,14 +21,23 @@ const handler = async (event) => {
     */
 
     // create 8 outlets with all day scheduled
-    let outletType = await OutletType.findOneByCriteria({type: 'PDU Outlet'});
+    // eslint-disable-next-line prefer-const
+    let [outletType, scheduledAlerts] = await Promise.all([OutletType.findOneByCriteria({type: 'PDU Outlet'}), ScheduledAlertService
+      .list()]);
+    
+    const audit = {
+      created_by: bot.created_by,
+      created_date: new Date(),
+      modified_by: bot.created_by,
+      modified_date: new Date(),
+    };
+
     if (!outletType) {
       outletType = (await OutletType.create({
         type: 'PDU Outlet',
         "outlet_amps": 16,
         "outlet_volts": 120,
-        created_by: bot.created_by,
-        created_date: new Date()
+        ...audit
       }))?.entity;
     }
 
@@ -34,14 +46,12 @@ const handler = async (event) => {
         bot_id: bot.id,
         outlet_type_id: outletType!.id!,
         pdu_outlet_number: i,
-        created_by: bot.created_by,
-        created_date: new Date()
+        ...audit
       });
       await OutletSchedule.create({
         all_day: true,
         outlet_id: outlet!.entity!.id!,
-        created_by: bot.created_by,
-        created_date: new Date()
+        ...audit
       });
     }
       
@@ -52,9 +62,23 @@ const handler = async (event) => {
         bot_id: bot.id,
         all_day: true,
         day_of_week: day,
-        created_by: bot.created_by,
-        created_date: new Date()
+        ...audit
       })
+    }
+
+    // create scheduled alerts
+    for (const alert of scheduledAlerts) {
+      await BotScheduledAlert.create({
+        bot_id: bot.id,
+        scheduled_alert_id: alert.id!,
+        alert_status: true,
+        settings: alert.config_settings ? Object.keys(alert.config_settings).reduce((acc, key) => {
+          // @ts-expect-error ignore error
+          acc[key] = alert.config_settings![key].default;
+          return acc;
+        }, {}) : undefined,
+        ...audit
+      });
     }
 
   }

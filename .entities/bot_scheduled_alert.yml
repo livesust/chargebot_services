@@ -1,4 +1,4 @@
-name: user_scheduled_alerts
+name: bot_scheduled_alert
 attributes:
   - attribute: alert status
     type: boolean
@@ -9,8 +9,11 @@ attributes:
     tsType: object
     not_null: false
 relationships:
-  - relation_type: many-to-many
-    first_entity: scheduled_alert
-    second_entity: user
+  - entity: bot
+    relation_type: many-to-one
+    eager: true
+    not_null: true
+  - entity: scheduled_alert
+    relation_type: many-to-one
     eager: true
     not_null: true
