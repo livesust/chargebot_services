@@ -68,7 +68,9 @@ export async function update(id: number, app_install_permissions: AppInstallPerm
 } | undefined> {
     const updated = await db
         .updateTable('app_install_permissions')
-        .set(app_install_permissions)
+        .set({
+            ...app_install_permissions,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -122,6 +124,16 @@ export async function list(): Promise<AppInstallPermissions[]> {
         .selectFrom("app_install_permissions")
         .selectAll()
         .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function paginate(page: number, pageSize: number): Promise<AppInstallPermissions[]> {
+    return db
+        .selectFrom("app_install_permissions")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
         .execute();
 }
 

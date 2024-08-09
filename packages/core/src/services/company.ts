@@ -3,6 +3,7 @@ import db, { Database } from '../database';
 import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { Company, CompanyUpdate, NewCompany } from "../database/company";
+import { withStateMaster } from "./home_master";
 
 export function withCustomer(eb: ExpressionBuilder<Database, 'company'>) {
     return jsonObjectFrom(
@@ -16,6 +17,7 @@ export function withHomeMaster(eb: ExpressionBuilder<Database, 'company'>) {
     return jsonObjectFrom(
       eb.selectFrom('home_master')
         .selectAll()
+        .select((eb) => withStateMaster(eb))
         .whereRef('home_master.id', '=', 'company.home_master_id')
     ).as('home_master')
 }
@@ -51,7 +53,9 @@ export async function update(id: number, company: CompanyUpdate): Promise<{
 } | undefined> {
     const updated = await db
         .updateTable('company')
-        .set(company)
+        .set({
+            ...company,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -104,7 +108,21 @@ export async function list(): Promise<Company[]> {
     return db
         .selectFrom("company")
         .selectAll()
+        .select((eb) => withCustomer(eb))
+        .select((eb) => withHomeMaster(eb))
         .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function paginate(page: number, pageSize: number): Promise<Company[]> {
+    return db
+        .selectFrom("company")
+        .selectAll()
+        .select((eb) => withCustomer(eb))
+        .select((eb) => withHomeMaster(eb))
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
         .execute();
 }
 

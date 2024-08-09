@@ -3,7 +3,7 @@ import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEnti
 
 const StateMasterSchemaDef = {
     name: Joi.string().max(100),
-    abbreviation: Joi.string().max(45),
+    abbreviation: Joi.string().max(45).allow(null, ''),
     country: Joi.string().max(255),
 };
 
@@ -18,7 +18,6 @@ export const CreateSchema = Joi.object({
 }).keys({
     // overwrite keys for required attributes
     name: Joi.string().max(100).required(),
-    abbreviation: Joi.string().max(45).required(),
     country: Joi.string().max(255).required(),
 });
 

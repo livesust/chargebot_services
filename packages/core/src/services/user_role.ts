@@ -68,7 +68,9 @@ export async function update(id: number, user_role: UserRoleUpdate): Promise<{
 } | undefined> {
     const updated = await db
         .updateTable('user_role')
-        .set(user_role)
+        .set({
+            ...user_role,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -122,6 +124,16 @@ export async function list(): Promise<UserRole[]> {
         .selectFrom("user_role")
         .selectAll()
         .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function paginate(page: number, pageSize: number): Promise<UserRole[]> {
+    return db
+        .selectFrom("user_role")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
         .execute();
 }
 

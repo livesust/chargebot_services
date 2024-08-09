@@ -112,6 +112,16 @@ export async function list(): Promise<BotScheduledAlert[]> {
         .execute();
 }
 
+export async function paginate(page: number, pageSize: number): Promise<BotScheduledAlert[]> {
+    return db
+        .selectFrom("bot_scheduled_alert")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
+        .execute();
+}
+
 export async function lazyGet(id: number): Promise<BotScheduledAlert | undefined> {
     return db
         .selectFrom("bot_scheduled_alert")

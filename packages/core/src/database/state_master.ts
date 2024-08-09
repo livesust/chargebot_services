@@ -3,7 +3,7 @@ import { AuditedEntity } from "./audited_entity";
 
 export interface StateMasterTable extends AuditedEntity {
   name: string;
-  abbreviation: string;
+  abbreviation?: string;
   country: string;
 }
 

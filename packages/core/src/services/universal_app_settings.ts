@@ -54,7 +54,9 @@ export async function update(id: number, universal_app_settings: UniversalAppSet
 } | undefined> {
     const updated = await db
         .updateTable('universal_app_settings')
-        .set(universal_app_settings)
+        .set({
+            ...universal_app_settings,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -108,6 +110,16 @@ export async function list(): Promise<UniversalAppSettings[]> {
         .selectFrom("universal_app_settings")
         .selectAll()
         .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function paginate(page: number, pageSize: number): Promise<UniversalAppSettings[]> {
+    return db
+        .selectFrom("universal_app_settings")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
         .execute();
 }
 

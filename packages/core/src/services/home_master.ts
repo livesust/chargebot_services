@@ -43,7 +43,9 @@ export async function update(id: number, home_master: HomeMasterUpdate): Promise
 } | undefined> {
     const updated = await db
         .updateTable('home_master')
-        .set(home_master)
+        .set({
+            ...home_master,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -97,6 +99,16 @@ export async function list(): Promise<HomeMaster[]> {
         .selectFrom("home_master")
         .selectAll()
         .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function paginate(page: number, pageSize: number): Promise<HomeMaster[]> {
+    return db
+        .selectFrom("home_master")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
         .execute();
 }
 
@@ -199,6 +211,13 @@ function buildCriteriaQuery(criteria: Partial<HomeMaster>) {
       'zip_code', 
       criteria.zip_code === null ? 'is' : '=', 
       criteria.zip_code
+    );
+  }
+  if (criteria.place_id !== undefined) {
+    query = query.where(
+      'place_id', 
+      criteria.place_id === null ? 'is' : '=', 
+      criteria.place_id
     );
   }
   if (criteria.latitude) {

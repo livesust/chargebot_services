@@ -33,7 +33,9 @@ export async function update(id: number, customer: CustomerUpdate): Promise<{
 } | undefined> {
     const updated = await db
         .updateTable('customer')
-        .set(customer)
+        .set({
+            ...customer,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -87,6 +89,16 @@ export async function list(): Promise<Customer[]> {
         .selectFrom("customer")
         .selectAll()
         .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function paginate(page: number, pageSize: number): Promise<Customer[]> {
+    return db
+        .selectFrom("customer")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
         .execute();
 }
 

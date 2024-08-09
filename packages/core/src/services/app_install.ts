@@ -44,7 +44,9 @@ export async function update(id: number, app_install: AppInstallUpdate): Promise
 } | undefined> {
     const updated = await db
         .updateTable('app_install')
-        .set(app_install)
+        .set({
+            ...app_install,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -98,6 +100,16 @@ export async function list(): Promise<AppInstall[]> {
         .selectFrom("app_install")
         .selectAll()
         .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function paginate(page: number, pageSize: number): Promise<AppInstall[]> {
+    return db
+        .selectFrom("app_install")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
         .execute();
 }
 

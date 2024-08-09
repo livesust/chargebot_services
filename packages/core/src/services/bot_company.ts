@@ -68,7 +68,9 @@ export async function update(id: number, bot_company: BotCompanyUpdate): Promise
 } | undefined> {
     const updated = await db
         .updateTable('bot_company')
-        .set(bot_company)
+        .set({
+            ...bot_company,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -122,6 +124,16 @@ export async function list(): Promise<BotCompany[]> {
         .selectFrom("bot_company")
         .selectAll()
         .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function paginate(page: number, pageSize: number): Promise<BotCompany[]> {
+    return db
+        .selectFrom("bot_company")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
         .execute();
 }
 

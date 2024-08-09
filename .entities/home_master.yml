@@ -17,7 +17,7 @@ attributes:
     type: varchar
     varchar_length: '100'
     tsType: string
-    not_null: true
+    not_null: false
   - attribute: latitude
     type: float
     tsType: number
@@ -26,6 +26,10 @@ attributes:
     type: float
     tsType: number
     not_null: true
+  - attribute: place id
+    type: text
+    tsType: string
+    not_null: false
 relationships:
   - entity: state_master
     relation_type: many-to-one

@@ -122,6 +122,9 @@ const handler = async (event) => {
       const botsToAssign = body.bot_ids.filter((id: number) => !assignedBots.some(a => a.bot_id == id));
       const botsToRemove = assignedBots.filter(botUser => !body.bot_ids.some((bot_id: number) => bot_id === botUser.bot_id));
       const now = new Date();
+      console.log('Assigned', JSON.stringify(assignedBots));
+      console.log('To Assign', JSON.stringify(botsToAssign));
+      console.log('To Remove', JSON.stringify(botsToRemove));
       promises.push([
         botsToRemove.map(async (botUser) => BotUser.remove(botUser!.id!, user_sub)),
         botsToAssign.map(async (bot_id: number) =>

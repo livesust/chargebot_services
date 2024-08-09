@@ -59,7 +59,7 @@ export async function getUsageByDay(bot_uuid: string, from: Date, to: Date) {
   const [energyUsageTotals, inverterHourlyBuckets, batteryLevelSoc, batteryHourlyBuckets] = await Promise.all([
     ChargebotInverter.getTotalEnergyUsage(bot_uuid, from, to),
     ChargebotInverter.getEnergyUsageByHourBucket(bot_uuid, from, to),
-    ChargebotBattery.getAvgBatteryLevel(bot_uuid, from, to),
+    ChargebotBattery.getLastBatteryLevel(bot_uuid, from, to),
     ChargebotBattery.getBatteryLevelByHourBucket(bot_uuid, from, to),
   ]);
 

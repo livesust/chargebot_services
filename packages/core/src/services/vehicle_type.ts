@@ -33,7 +33,9 @@ export async function update(id: number, vehicle_type: VehicleTypeUpdate): Promi
 } | undefined> {
     const updated = await db
         .updateTable('vehicle_type')
-        .set(vehicle_type)
+        .set({
+            ...vehicle_type,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -87,6 +89,16 @@ export async function list(): Promise<VehicleType[]> {
         .selectFrom("vehicle_type")
         .selectAll()
         .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function paginate(page: number, pageSize: number): Promise<VehicleType[]> {
+    return db
+        .selectFrom("vehicle_type")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
         .execute();
 }
 

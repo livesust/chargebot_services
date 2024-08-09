@@ -21,6 +21,17 @@ export function withVehicle(eb: ExpressionBuilder<Database, 'bot'>) {
     ).as('vehicle')
 }
 
+export function withBotCompany(eb: ExpressionBuilder<Database, 'bot'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('company')
+        .innerJoin('bot_company', 'bot_company.bot_id', 'bot.id')
+        .selectAll('company')
+        .whereRef('company.id', '=', 'bot_company.company_id')
+        .where('bot_company.deleted_by', 'is', null)
+        .where('company.deleted_by', 'is', null)
+    ).as('company')
+}
+
 async function canAssignEquipment(bot_id: number | null, vehicle_id: number): Promise<boolean> {
   const count: { value: number; } | undefined = await db
     .selectFrom('bot')
@@ -86,7 +97,9 @@ export async function update(id: number, bot: BotUpdate): Promise<{
 
     const updated = await db
         .updateTable('bot')
-        .set(bot)
+        .set({
+            ...bot,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -139,7 +152,20 @@ export async function list(): Promise<Bot[]> {
     return db
         .selectFrom("bot")
         .selectAll()
+        .select((eb) => withBotVersion(eb))
+        .select((eb) => withVehicle(eb))
+        .select((eb) => withBotCompany(eb))
         .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function paginate(page: number, pageSize: number): Promise<Bot[]> {
+    return db
+        .selectFrom("bot")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
         .execute();
 }
 

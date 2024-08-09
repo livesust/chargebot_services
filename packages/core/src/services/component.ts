@@ -33,7 +33,9 @@ export async function update(id: number, component: ComponentUpdate): Promise<{
 } | undefined> {
     const updated = await db
         .updateTable('component')
-        .set(component)
+        .set({
+            ...component,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -87,6 +89,16 @@ export async function list(): Promise<Component[]> {
         .selectFrom("component")
         .selectAll()
         .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function paginate(page: number, pageSize: number): Promise<Component[]> {
+    return db
+        .selectFrom("component")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
         .execute();
 }
 

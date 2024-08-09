@@ -45,8 +45,8 @@ export async function update(id: number, scheduled_alert: ScheduledAlertUpdate):
     const updated = await db
         .updateTable('scheduled_alert')
         .set({
-          ...scheduled_alert,
-          config_settings: scheduled_alert.config_settings ? json(scheduled_alert.config_settings) : undefined,
+            ...scheduled_alert,
+            config_settings: scheduled_alert.config_settings ? json(scheduled_alert.config_settings) : undefined,
         })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
@@ -101,6 +101,16 @@ export async function list(): Promise<ScheduledAlert[]> {
         .selectFrom("scheduled_alert")
         .selectAll()
         .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function paginate(page: number, pageSize: number): Promise<ScheduledAlert[]> {
+    return db
+        .selectFrom("scheduled_alert")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
         .execute();
 }
 

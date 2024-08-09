@@ -41,6 +41,12 @@ export const EntityPathParamSchema = Joi.object({
     entity: Joi.string().required(),
 });
 
+export const EntityPaginatedPathParamSchema = Joi.object({
+    entity: Joi.string().required(),
+    page: Joi.number().required(),
+    pageSize: Joi.number().required()
+});
+
 export const BotUUIDPathParamSchema = Joi.object({
     bot_uuid: Joi.string().required()
 });

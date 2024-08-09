@@ -51,7 +51,9 @@ export async function update(id: number, bot_alert: BotAlertUpdate): Promise<{
 } | undefined> {
     const updated = await db
         .updateTable('bot_alert')
-        .set(bot_alert)
+        .set({
+            ...bot_alert,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -105,6 +107,16 @@ export async function list(): Promise<BotAlert[]> {
         .selectFrom("bot_alert")
         .selectAll()
         .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function paginate(page: number, pageSize: number): Promise<BotAlert[]> {
+    return db
+        .selectFrom("bot_alert")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
         .execute();
 }
 

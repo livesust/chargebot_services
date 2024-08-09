@@ -35,7 +35,7 @@ export const handler = async (event) => {
       ChargebotInverter.getInverterStatus(bot_uuid),
       ChargebotPDU.getPDUStatus(bot_uuid),
       ChargebotError.getSystemStatus(bot_uuid),
-      IoTData.getSystemStatus(bot_uuid, 'system'),
+      IoTData.getShadowStatus(bot_uuid, 'system'),
       ChargebotInverter.getTodayTotals(bot_uuid, [
         InverterVariable.BATTERY_CHARGE_DIFF,
         InverterVariable.BATTERY_DISCHARGE_DIFF,

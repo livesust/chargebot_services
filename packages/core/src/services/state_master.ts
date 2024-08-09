@@ -12,7 +12,6 @@ export async function create(state_master: NewStateMaster): Promise<{
         .select(['id'])
         .where((eb) => eb.or([
             eb('name', '=', state_master.name),
-            eb('abbreviation', '=', state_master.abbreviation),
         ]))
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
@@ -45,7 +44,9 @@ export async function update(id: number, state_master: StateMasterUpdate): Promi
 } | undefined> {
     const updated = await db
         .updateTable('state_master')
-        .set(state_master)
+        .set({
+            ...state_master,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -99,6 +100,16 @@ export async function list(): Promise<StateMaster[]> {
         .selectFrom("state_master")
         .selectAll()
         .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function paginate(page: number, pageSize: number): Promise<StateMaster[]> {
+    return db
+        .selectFrom("state_master")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
         .execute();
 }
 

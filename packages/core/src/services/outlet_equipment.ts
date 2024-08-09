@@ -61,7 +61,9 @@ export async function update(id: number, outlet_equipment: OutletEquipmentUpdate
 } | undefined> {
     const updated = await db
         .updateTable('outlet_equipment')
-        .set(outlet_equipment)
+        .set({
+            ...outlet_equipment,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -160,6 +162,16 @@ export async function list(): Promise<OutletEquipment[]> {
         .selectFrom("outlet_equipment")
         .selectAll()
         .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function paginate(page: number, pageSize: number): Promise<OutletEquipment[]> {
+    return db
+        .selectFrom("outlet_equipment")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
         .execute();
 }
 

@@ -33,7 +33,9 @@ export async function update(id: number, outlet_type: OutletTypeUpdate): Promise
 } | undefined> {
     const updated = await db
         .updateTable('outlet_type')
-        .set(outlet_type)
+        .set({
+            ...outlet_type,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -87,6 +89,16 @@ export async function list(): Promise<OutletType[]> {
         .selectFrom("outlet_type")
         .selectAll()
         .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function paginate(page: number, pageSize: number): Promise<OutletType[]> {
+    return db
+        .selectFrom("outlet_type")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
         .execute();
 }
 

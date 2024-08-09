@@ -5,6 +5,8 @@ import { EntitySchema as BotVersionSchema } from "./bot_version.schema";
 
 import { EntitySchema as VehicleSchema } from "./vehicle.schema";
 
+import { EntitySchema as CompanySchema } from "./company.schema";
+
 const BotSchemaDef = {
     bot_uuid: Joi.string(),
     initials: Joi.string().max(2),
@@ -17,10 +19,9 @@ export const EntitySchema = Joi.object({
     ...BotSchemaDef,
     bot_version_id: Joi.number(),
     vehicle_id: Joi.number().allow(null),
-    
     bot_version: BotVersionSchema,
-    
     vehicle: VehicleSchema.allow(null),
+    company: CompanySchema.allow(null),
 });
 
 export const CreateSchema = Joi.object({

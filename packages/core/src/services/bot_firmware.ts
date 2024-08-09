@@ -43,7 +43,9 @@ export async function update(id: number, bot_firmware: BotFirmwareUpdate): Promi
 } | undefined> {
     const updated = await db
         .updateTable('bot_firmware')
-        .set(bot_firmware)
+        .set({
+            ...bot_firmware,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -97,6 +99,16 @@ export async function list(): Promise<BotFirmware[]> {
         .selectFrom("bot_firmware")
         .selectAll()
         .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function paginate(page: number, pageSize: number): Promise<BotFirmware[]> {
+    return db
+        .selectFrom("bot_firmware")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
         .execute();
 }
 

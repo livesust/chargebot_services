@@ -174,6 +174,16 @@ export async function list(): Promise<{{pascalCase name}}[]> {
         .execute();
 }
 
+export async function paginate(page: number, pageSize: number): Promise<{{pascalCase name}}[]> {
+    return db
+        .selectFrom("{{snakeCase name}}")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
+        .execute();
+}
+
 export async function lazyGet(id: number): Promise<{{pascalCase name}} | undefined> {
     return db
         .selectFrom("{{snakeCase name}}")

@@ -114,6 +114,16 @@ export async function list(): Promise<User[]> {
         .execute();
 }
 
+export async function paginate(page: number, pageSize: number): Promise<User[]> {
+    return db
+        .selectFrom("user")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
+        .execute();
+}
+
 export async function lazyGet(id: number): Promise<User | undefined> {
     return db
         .selectFrom("user")
@@ -130,7 +140,7 @@ export async function get(id: number): Promise<User | undefined> {
         .select((eb) => withCompany(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
-.executeTakeFirst();
+        .executeTakeFirst();
 }
 
 export async function findByCognitoId(cognito_id: string): Promise<User | undefined> {

@@ -6,11 +6,12 @@ export interface HomeMasterTable extends AuditedEntity {
   address_line_1: string;
   address_line_2?: string;
   city: string;
-  zip_code: string;
+  zip_code?: string;
   latitude: number;
   longitude: number;
   state_master_id: number;
   state_master?: StateMaster;
+  place_id?: string;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

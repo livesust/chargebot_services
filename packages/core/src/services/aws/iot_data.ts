@@ -1,5 +1,5 @@
 export * as IoTData from "./iot_data";
-import { IoTDataPlaneClient, PublishCommand, GetThingShadowCommand } from "@aws-sdk/client-iot-data-plane";
+import { IoTDataPlaneClient, PublishCommand, GetThingShadowCommand, UpdateThingShadowCommand } from "@aws-sdk/client-iot-data-plane";
 import { Config } from "sst/node/config";
 import { IoTShadow } from "../../iot/iot_shadow";
 
@@ -24,21 +24,39 @@ export const publish = async(topic: string, payload: unknown): Promise<boolean> 
   }
 }
 
-export async function getSystemStatus(bot_uuid: string, shadow_name: string): Promise<IoTShadow | undefined> {
+export async function getShadowStatus(bot_uuid: string, shadow_name: string): Promise<IoTShadow | undefined> {
   const getThingShadowCommand = new GetThingShadowCommand({
     thingName: bot_uuid,
     shadowName: shadow_name
   })
 
   try {
-    console.time("Get Shadow from IoT: " + bot_uuid);
+    console.log("Get Shadow from IoT: " + bot_uuid);
     const response = await client.send(getThingShadowCommand);
     if (response.$metadata.httpStatusCode === 200 && response.payload) {
       const shadow: IoTShadow = JSON.parse(Buffer.from(response.payload).toString())
-      console.timeEnd("Get Shadow from IoT: " + bot_uuid);
       return shadow;
     }
   } catch (err) {
-    console.error('Error getting IoT system Shadow:', bot_uuid, err);
+    console.error('Error getting IoT Shadow:', bot_uuid, shadow_name, err);
+  }
+}
+
+export async function updateShadowStatus(bot_uuid: string, shadow_name: string, payload: unknown): Promise<IoTShadow | undefined> {
+  const getThingShadowCommand = new UpdateThingShadowCommand({
+    thingName: bot_uuid,
+    shadowName: shadow_name,
+    payload: Buffer.from(JSON.stringify(payload)),
+  });
+
+  try {
+    console.log("Update Shadow to IoT: " + bot_uuid);
+    const response = await client.send(getThingShadowCommand);
+    if (response.$metadata.httpStatusCode === 200 && response.payload) {
+      const shadow: IoTShadow = JSON.parse(Buffer.from(response.payload).toString())
+      return shadow;
+    }
+  } catch (err) {
+    console.error('Error updating IoT Shadow:', bot_uuid, shadow_name, err);
   }
 }

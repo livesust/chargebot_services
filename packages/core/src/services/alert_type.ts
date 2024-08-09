@@ -44,7 +44,9 @@ export async function update(id: number, alert_type: AlertTypeUpdate): Promise<{
 } | undefined> {
     const updated = await db
         .updateTable('alert_type')
-        .set(alert_type)
+        .set({
+            ...alert_type,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -98,6 +100,16 @@ export async function list(): Promise<AlertType[]> {
         .selectFrom("alert_type")
         .selectAll()
         .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function paginate(page: number, pageSize: number): Promise<AlertType[]> {
+    return db
+        .selectFrom("alert_type")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
         .execute();
 }
 

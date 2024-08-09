@@ -16,6 +16,7 @@ import { HomeMaster } from "@chargebot-services/core/services/home_master";
 import { Company } from "@chargebot-services/core/services/company";
 import jsonBodyParser from "@middy/http-json-body-parser";
 import { dateReviver } from "src/shared/middlewares/json-date-parser";
+import { StateMaster } from "@chargebot-services/core/services/state_master";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
@@ -27,14 +28,42 @@ const handler = async (event) => {
   try {
     const existent = await HomeMaster.findByCompany(company_id);
 
+    if (body.state_name) {
+      let state = await StateMaster.findOneByCriteria({name: body.state_name});
+      if (!state) {
+        state = (await StateMaster.create({
+          name: body.state_name,
+          country: body.country
+        }))?.entity;
+      }
+      body.state_master_id = state!.id;
+    }
     if (existent) {
-      const update = (await HomeMaster.update(existent.id!, body))?.entity;
+      const update = (await HomeMaster.update(existent.id!, {
+        address_line_1: body.address_line_1,
+        address_line_2: body.address_line_2,
+        city: body.city,
+        zip_code: body.zip_code,
+        place_id: body.place_id,
+        latitude: body.latitude,
+        longitude: body.longitude,
+        state_master_id: body.state_master_id,
+        modified_by: user_id,
+        modified_date: now
+      }))?.entity;
       return createSuccessResponse(update);
     }
 
     const [home_master, company] = await Promise.all([
       HomeMaster.create({
-        ...body,
+        address_line_1: body.address_line_1,
+        address_line_2: body.address_line_2,
+        city: body.city,
+        zip_code: body.zip_code,
+        place_id: body.place_id,
+        latitude: body.latitude,
+        longitude: body.longitude,
+        state_master_id: body.state_master_id,
         created_by: user_id,
         created_date: now,
         modified_by: user_id,

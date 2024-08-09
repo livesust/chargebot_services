@@ -51,7 +51,9 @@ export async function update(id: number, outlet: OutletUpdate): Promise<{
 } | undefined> {
     const updated = await db
         .updateTable('outlet')
-        .set(outlet)
+        .set({
+            ...outlet,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -106,6 +108,16 @@ export async function list(): Promise<Outlet[]> {
         .execute();
 }
 
+export async function paginate(page: number, pageSize: number): Promise<Outlet[]> {
+    return db
+        .selectFrom("outlet")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
+        .execute();
+}
+
 export async function lazyGet(id: number): Promise<Outlet | undefined> {
     return db
         .selectFrom("outlet")
@@ -156,7 +168,7 @@ export async function findByEquipment(equipment_id: number): Promise<Outlet | un
     .where('outlet.deleted_by', 'is', null)
     .where('outlet_equipment.deleted_by', 'is', null)
     .selectAll('outlet')
-    .executeTakeFirst();
+        .executeTakeFirst();
 }
 
 export async function findByCriteria(criteria: Partial<Outlet>): Promise<Outlet[]> {
@@ -206,6 +218,13 @@ function buildCriteriaQuery(criteria: Partial<Outlet>) {
 
   if (criteria.pdu_outlet_number) {
     query = query.where('pdu_outlet_number', '=', criteria.pdu_outlet_number);
+  }
+  if (criteria.priority_charge_state !== undefined) {
+    query = query.where(
+      'priority_charge_state', 
+      criteria.priority_charge_state === null ? 'is' : '=', 
+      criteria.priority_charge_state
+    );
   }
   if (criteria.notes !== undefined) {
     query = query.where(

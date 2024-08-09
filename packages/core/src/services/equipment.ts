@@ -51,7 +51,9 @@ export async function update(id: number, equipment: EquipmentUpdate): Promise<{
 } | undefined> {
     const updated = await db
         .updateTable('equipment')
-        .set(equipment)
+        .set({
+            ...equipment,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -106,6 +108,16 @@ export async function list(): Promise<Equipment[]> {
         .execute();
 }
 
+export async function paginate(page: number, pageSize: number): Promise<Equipment[]> {
+    return db
+        .selectFrom("equipment")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
+        .execute();
+}
+
 export async function lazyGet(id: number): Promise<Equipment | undefined> {
     return db
         .selectFrom("equipment")
@@ -135,7 +147,7 @@ export async function findByOutlet(outlet_id: number): Promise<Equipment | undef
     .where('equipment.deleted_by', 'is', null)
     .where('outlet_equipment.deleted_by', 'is', null)
     .selectAll('equipment')
-    .executeTakeFirst();
+        .executeTakeFirst();
 }
 
 export async function findByCriteria(criteria: Partial<Equipment>): Promise<Equipment[]> {

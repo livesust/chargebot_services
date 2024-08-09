@@ -7,7 +7,8 @@ const HomeMasterSchemaDef = {
     address_line_1: Joi.string(),
     address_line_2: Joi.string().allow(null, ''),
     city: Joi.string().max(100),
-    zip_code: Joi.string().max(100),
+    zip_code: Joi.string().max(100).allow(null, ''),
+    place_id: Joi.string().allow(null, ''),
     latitude: Joi.number(),
     longitude: Joi.number(),
 };
@@ -16,8 +17,9 @@ export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
     ...HomeMasterSchemaDef,
     state_master_id: Joi.number(),
-    
+    state_name: Joi.string().allow(null, ''),
     state_master: StateMasterSchema,
+    country: Joi.string().allow(null, ''),
 });
 
 export const CreateSchema = Joi.object({
@@ -27,7 +29,6 @@ export const CreateSchema = Joi.object({
     // overwrite keys for required attributes
     address_line_1: Joi.string().required(),
     city: Joi.string().max(100).required(),
-    zip_code: Joi.string().max(100).required(),
     latitude: Joi.number().required(),
     longitude: Joi.number().required(),
     state_master_id: Joi.number().required(),

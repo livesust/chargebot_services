@@ -68,7 +68,9 @@ export async function update(id: number, bot_user: BotUserUpdate): Promise<{
 } | undefined> {
     const updated = await db
         .updateTable('bot_user')
-        .set(bot_user)
+        .set({
+            ...bot_user,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -104,10 +106,10 @@ export async function removeByUser(user_id: number, deleted_by_id: string): Prom
 
   return {
     entity: deleted,
-    // event to dispatch on EventBus on creation
-    // undefined as default to not dispatch any event
-    event: undefined
-  };
+      // event to dispatch on EventBus on creation
+      // undefined as default to not dispatch any event
+      event: undefined
+    };
 }
 
 export async function remove(id: number, user_id: string): Promise<{
@@ -146,6 +148,16 @@ export async function list(): Promise<BotUser[]> {
         .selectFrom("bot_user")
         .selectAll()
         .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function paginate(page: number, pageSize: number): Promise<BotUser[]> {
+    return db
+        .selectFrom("bot_user")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
         .execute();
 }
 

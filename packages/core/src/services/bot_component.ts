@@ -68,7 +68,9 @@ export async function update(id: number, bot_component: BotComponentUpdate): Pro
 } | undefined> {
     const updated = await db
         .updateTable('bot_component')
-        .set(bot_component)
+        .set({
+            ...bot_component,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -122,6 +124,16 @@ export async function list(): Promise<BotComponent[]> {
         .selectFrom("bot_component")
         .selectAll()
         .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function paginate(page: number, pageSize: number): Promise<BotComponent[]> {
+    return db
+        .selectFrom("bot_component")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
         .execute();
 }
 

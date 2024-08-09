@@ -14,6 +14,7 @@ export function withOutlet(eb: ExpressionBuilder<Database, 'outlet_schedule'>) {
     ).as('outlet')
 }
 
+
 export async function create(outlet_schedule: NewOutletSchedule): Promise<{
   entity: OutletSchedule | undefined,
   event: unknown
@@ -39,7 +40,9 @@ export async function update(id: number, outlet_schedule: OutletScheduleUpdate):
 } | undefined> {
     const updated = await db
         .updateTable('outlet_schedule')
-        .set(outlet_schedule)
+        .set({
+            ...outlet_schedule,
+        })
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .returningAll()
@@ -102,6 +105,16 @@ export async function list(): Promise<OutletSchedule[]> {
         .selectFrom("outlet_schedule")
         .selectAll()
         .where('deleted_by', 'is', null)
+        .execute();
+}
+
+export async function paginate(page: number, pageSize: number): Promise<OutletSchedule[]> {
+    return db
+        .selectFrom("outlet_schedule")
+        .selectAll()
+        .where('deleted_by', 'is', null)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
         .execute();
 }
 
