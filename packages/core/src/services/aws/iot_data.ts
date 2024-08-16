@@ -1,5 +1,5 @@
 export * as IoTData from "./iot_data";
-import { IoTDataPlaneClient, PublishCommand, GetThingShadowCommand, UpdateThingShadowCommand } from "@aws-sdk/client-iot-data-plane";
+import { IoTDataPlaneClient, PublishCommand, GetThingShadowCommand, GetThingShadowCommandOutput, UpdateThingShadowCommand, UpdateThingShadowCommandOutput } from "@aws-sdk/client-iot-data-plane";
 import { Config } from "sst/node/config";
 import { IoTShadow } from "../../iot/iot_shadow";
 
@@ -32,7 +32,7 @@ export async function getShadowStatus(bot_uuid: string, shadow_name: string): Pr
 
   try {
     console.log("Get Shadow from IoT: " + bot_uuid);
-    const response = await client.send(getThingShadowCommand);
+    const response: GetThingShadowCommandOutput = await client.send(getThingShadowCommand);
     if (response.$metadata.httpStatusCode === 200 && response.payload) {
       const shadow: IoTShadow = JSON.parse(Buffer.from(response.payload).toString())
       return shadow;
@@ -43,15 +43,19 @@ export async function getShadowStatus(bot_uuid: string, shadow_name: string): Pr
 }
 
 export async function updateShadowStatus(bot_uuid: string, shadow_name: string, payload: unknown): Promise<IoTShadow | undefined> {
-  const getThingShadowCommand = new UpdateThingShadowCommand({
+  const updateThingShadowCommand = new UpdateThingShadowCommand({
     thingName: bot_uuid,
     shadowName: shadow_name,
-    payload: Buffer.from(JSON.stringify(payload)),
+    payload: Buffer.from(JSON.stringify({
+      state: {
+        desired: payload
+      }
+    })),
   });
 
   try {
     console.log("Update Shadow to IoT: " + bot_uuid);
-    const response = await client.send(getThingShadowCommand);
+    const response: UpdateThingShadowCommandOutput = await client.send(updateThingShadowCommand);
     if (response.$metadata.httpStatusCode === 200 && response.payload) {
       const shadow: IoTShadow = JSON.parse(Buffer.from(response.payload).toString())
       return shadow;

@@ -170,6 +170,26 @@ export async function list(): Promise<{{pascalCase name}}[]> {
     return db
         .selectFrom("{{snakeCase name}}")
         .selectAll()
+        {{#each relationships}}
+          {{#when relation_type 'eq' 'many-to-one'}}
+            {{#if eager}}
+        .select((eb) => with{{pascalCase entity}}(eb))
+            {{else}}
+        // uncoment to enable eager loading
+        //.select((eb) => with{{pascalCase entity}}(eb))
+            {{/if}}
+          {{/when}}
+          {{#when relation_type 'eq' 'many-to-many'}}
+            {{#if eager}}
+        .select((eb) => with{{pascalCase first_entity}}(eb))
+        .select((eb) => with{{pascalCase second_entity}}(eb))
+            {{else}}
+        // uncoment to enable eager loading
+        // .select((eb) => with{{pascalCase first_entity}}(eb))
+        // .select((eb) => with{{pascalCase second_entity}}(eb))
+            {{/if}}
+          {{/when}}
+        {{/each}}
         .where('deleted_by', 'is', null)
         .execute();
 }
@@ -178,6 +198,26 @@ export async function paginate(page: number, pageSize: number): Promise<{{pascal
     return db
         .selectFrom("{{snakeCase name}}")
         .selectAll()
+        {{#each relationships}}
+          {{#when relation_type 'eq' 'many-to-one'}}
+            {{#if eager}}
+        .select((eb) => with{{pascalCase entity}}(eb))
+            {{else}}
+        // uncoment to enable eager loading
+        //.select((eb) => with{{pascalCase entity}}(eb))
+            {{/if}}
+          {{/when}}
+          {{#when relation_type 'eq' 'many-to-many'}}
+            {{#if eager}}
+        .select((eb) => with{{pascalCase first_entity}}(eb))
+        .select((eb) => with{{pascalCase second_entity}}(eb))
+            {{else}}
+        // uncoment to enable eager loading
+        // .select((eb) => with{{pascalCase first_entity}}(eb))
+        // .select((eb) => with{{pascalCase second_entity}}(eb))
+            {{/if}}
+          {{/when}}
+        {{/each}}
         .where('deleted_by', 'is', null)
         .limit(pageSize)
         .offset((page - 1) * pageSize)

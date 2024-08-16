@@ -144,15 +144,6 @@ export function ApiStack({ app, stack }: StackContext) {
           bind: [IOT_ENDPOINT]
         }
       },
-      "GET /bot/{bot_uuid}/configs": { 
-        function: {
-          handler: "packages/functions/src/api/bot_get_shadow_configs.main",
-          timeout,
-          // @ts-expect-error ignore check
-          role: iotRole,
-          bind: [IOT_ENDPOINT]
-        }
-      },
       "GET /bot/{bot_uuid}/status/encrypted": {
         function: {
           handler: "packages/functions/src/api/bot_status_encrypted.main",
@@ -210,6 +201,24 @@ export function ApiStack({ app, stack }: StackContext) {
           // @ts-expect-error ignore check
           role: iotRole,
           bind: [IOT_ENDPOINT],
+        }
+      },
+      "GET /bot/{bot_uuid}/configs": { 
+        function: {
+          handler: "packages/functions/src/api/bot_get_shadow_configs.main",
+          timeout,
+          // @ts-expect-error ignore check
+          role: iotRole,
+          bind: [IOT_ENDPOINT]
+        }
+      },
+      "POST /bot/{bot_uuid}/configs": { 
+        function: {
+          handler: "packages/functions/src/api/bot_set_shadow_configs.main",
+          timeout,
+          // @ts-expect-error ignore check
+          role: iotRole,
+          bind: [IOT_ENDPOINT]
         }
       },
       "GET /user/{cognito_id}/profile": {

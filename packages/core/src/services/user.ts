@@ -110,6 +110,8 @@ export async function list(): Promise<User[]> {
     return db
         .selectFrom("user")
         .selectAll()
+        .select((eb) => withCompany(eb))
+        .select((eb) => withEmail(eb))
         .where('deleted_by', 'is', null)
         .execute();
 }
@@ -118,6 +120,7 @@ export async function paginate(page: number, pageSize: number): Promise<User[]> 
     return db
         .selectFrom("user")
         .selectAll()
+        .select((eb) => withCompany(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
         .offset((page - 1) * pageSize)

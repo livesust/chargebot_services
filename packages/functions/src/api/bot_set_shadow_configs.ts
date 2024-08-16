@@ -14,18 +14,20 @@ import { IoTData } from "@chargebot-services/core/services/aws/iot_data";
 import { BotUUIDPathParamSchema, JsonResponseSchemaDef } from "src/shared/schemas";
 import Joi from "joi";
 import { BotShadowConfigSchema } from "src/schemas/bot_shadow_config.schema";
+import jsonBodyParser from "@middy/http-json-body-parser";
 
 // @ts-expect-error ignore any type for event
 export const handler = async (event) => {
   const bot_uuid = event.pathParameters!.bot_uuid!;
+  const body = event.body;
 
   try {
     const [
         systemStatus, configStatus, inverterStatus
     ] = await Promise.all([
-      IoTData.getShadowStatus(bot_uuid, 'system'),
-      IoTData.getShadowStatus(bot_uuid, 'config'),
-      IoTData.getShadowStatus(bot_uuid, 'inverter'),
+      IoTData.updateShadowStatus(bot_uuid, 'system', body.system),
+      IoTData.updateShadowStatus(bot_uuid, 'config', body.config),
+      IoTData.updateShadowStatus(bot_uuid, 'inverter', body.inverter),
     ]);
 
     const response = {
@@ -50,7 +52,11 @@ export const main = middy(handler)
   // .use(executionTimeLogger())
   .use(httpEventNormalizer())
   // .use(logTimeout())
-  .use(validator({ pathParametersSchema: BotUUIDPathParamSchema }))
+  .use(jsonBodyParser())
+  .use(validator({
+    pathParametersSchema: BotUUIDPathParamSchema,
+    eventSchema: BotShadowConfigSchema
+  }))
   // after: inverse order execution
   .use(jsonBodySerializer(false))
   .use(httpSecurityHeaders())
