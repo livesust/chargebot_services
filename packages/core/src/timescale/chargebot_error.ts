@@ -36,7 +36,7 @@ export enum ErrorCode {
 export enum ErrorLevel {
   MINOR = "MINOR",
   MEDIUM = "MEDIUM",
-  EMERGENCY = "EMERGENCY",
+  HIGH = "HIGH",
 }
 
 export enum ErrorStatus {
