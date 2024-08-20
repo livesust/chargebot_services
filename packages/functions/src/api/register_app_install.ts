@@ -35,24 +35,25 @@ const handler = async (event) => {
     }
 
     // find existent app install
-    const [appInstall, notificationPermission] = await Promise.all([
+    const [existentAppInstall, notificationPermission] = await Promise.all([
       AppInstall.findOneByCriteria({user_id: user.id, app_platform_id: body.app_platform_id}),
       Permission.findOneByCriteria({name: PermissionName.NOTIFICATIONS})
     ]);
 
     // update
-    if (appInstall) {
+    if (existentAppInstall) {
       const [appInstallUpdated, appInstallPermission] = await Promise.all([
-        AppInstall.update(appInstall.id!, {
-          push_token: body.push_token,
+        AppInstall.update(existentAppInstall.id!, {
           app_version: body.app_version,
           platform: body.platform,
+          app_platform_id: body.app_platform_id,
           os_version: body.os_version,
+          push_token: body.push_token,
           description: body.description,
           modified_by: user_id,
           modified_date: now,
         }),
-        AppInstallPermissions.findOneByCriteria({permission_id: notificationPermission?.id, app_install_id: appInstall.id!})
+        AppInstallPermissions.findOneByCriteria({permission_id: notificationPermission?.id, app_install_id: existentAppInstall.id!})
       ]);
       if (appInstallPermission){
         // if no push token is provided, then user removed notifications access
@@ -76,12 +77,13 @@ const handler = async (event) => {
       Permission.list()
     ]);
 
+    const registeredAppInstall = response?.entity;
     await Promise.all(
       permissions.map(async (permission) => {
         AppInstallPermissions.create({
           permission_status: permission.name === PermissionName.NOTIFICATIONS && body.push_token ? true : false,
           permission_id: permission.id!,
-          app_install_id: response!.entity!.id!,
+          app_install_id: registeredAppInstall!.id!,
           created_by: user_id,
           created_date: now,
           modified_by: user_id,
@@ -90,7 +92,7 @@ const handler = async (event) => {
       })
     );
 
-    return createSuccessResponse(response!.entity);
+    return createSuccessResponse(registeredAppInstall);
 
   } catch (error) {
     Log.error("ERROR", { error });

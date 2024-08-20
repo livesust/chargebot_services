@@ -3,7 +3,7 @@ attributes:
   - attribute: phone_number
     type: text
     tsType: string
-    unique: true
+    unique: false
     not_null: true
   - attribute: send_text
     type: boolean
