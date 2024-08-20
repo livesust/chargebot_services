@@ -46,21 +46,21 @@ export function CognitoStack({ app, stack }: StackContext) {
                     emailSubject: "Your temporary Sust Pro password",
                     emailBody: app.stage === "prod"
                     ? "\
-                        Your username is {username} and temporary password is {####}\
+                        Your username is {username} and temporary password is <b>{####}</b>\
                         <br>\
-                        Click <a href='https://chargebot.auth.us-east-1.amazoncognito.com/oauth2/authorize?client_id=4gbeo5gpg3dso0m1vplllmaq0u&response_type=code&scope=email+openid&redirect_uri=https%3A%2F%2Fchargebot.sust.pro'>here</a> to log in.\
+                        Click <a href='https://chargebot-web-app.vercel.app/auth/cognito/sign-in'>here</a> to log in.\
                       "
                     : (
                       app.stage === "dev"
                       ? "\
-                          Your username is {username} and temporary password is {####}\
+                          Your username is {username} and temporary password is <b>{####}</b>\
                           <br>\
-                          Click <a href='https://chargebotdev.auth.us-east-1.amazoncognito.com/oauth2/authorize?client_id=3qebfgou0c3k77q0j5ck8pei7e&response_type=code&scope=email+openid&redirect_uri=https%3A%2F%2Fchargebotdev.sust.pro'>here</a> to log in.\
+                          Click <a href='http://localhost:3000/auth/cognito/sign-in'>here</a> to log in.\
                         "
                       : "\
-                          Your username is {username} and temporary password is {####}\
+                          Your username is {username} and temporary password is <b>{####}</b>\
                           <br>\
-                          Click <a href='https://chargebotstaging.auth.us-east-1.amazoncognito.com/oauth2/authorize?client_id=4gbeo5gpg3dso0m1vplllmaq0u&response_type=code&scope=email+openid&redirect_uri=https%3A%2F%2Fchargebotstaging.sust.pro'>here</a> to log in.\
+                          Click <a href='https://chargebot-web-a4mgjtegs-daniels-projects-f33e53d9.vercel.app/auth/cognito/sign-in'>here</a> to log in.\
                         "
                       ),
                 },
@@ -94,18 +94,18 @@ export function CognitoStack({ app, stack }: StackContext) {
                         authorizationCodeGrant: true
                     },
                     callbackUrls: app.stage === "prod"
-                      ? ["https://chargebot.sust.pro"]
+                      ? ["https://chargebot-web-app.vercel.app"]
                       : (
                         app.stage === "dev"
-                        ? ["https://chargebotdev.sust.pro"]
-                        : ["https://chargebotstaging.sust.pro"]
+                        ? ["http://localhost:3000"]
+                        : ["https://chargebot-web-a4mgjtegs-daniels-projects-f33e53d9.vercel.app/auth/cognito/sign-in"]
                         ),
                     logoutUrls: app.stage === "prod"
-                      ? ["https://chargebot.sust.pro/login"]
+                      ? ["https://chargebot-web-app.vercel.app/auth/cognito/sign-in"]
                       : (
                         app.stage === "dev"
-                        ? ["https://chargebotdev.sust.pro/login"]
-                        : ["https://chargebotstaging.sust.pro/login"]
+                        ? ["http://localhost:3000/auth/cognito/sign-in"]
+                        : ["https://chargebot-web-a4mgjtegs-daniels-projects-f33e53d9.vercel.app/auth/cognito/sign-in"]
                         ),
                     scopes: [OAuthScope.EMAIL]
                 },

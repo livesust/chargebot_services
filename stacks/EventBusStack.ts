@@ -1,10 +1,12 @@
 import { StackContext, EventBus, use } from "sst/constructs";
 import { RDSStack } from "./RDSStack";
 import { IotStack } from "./IotStack";
+import { CognitoStack } from "./CognitoStack";
 
 export function EventBusStack({ app, stack }: StackContext) {
   const { rdsCluster } = use(RDSStack);
   const { iotRole, IOT_ENDPOINT } = use(IotStack);
+  const { cognitoAdminRole, COGNITO_USER_POOL_ID } = use(CognitoStack);
 
   const timeout = app.stage === "prod" ? "10 seconds" : "30 seconds";
 
@@ -83,6 +85,23 @@ export function EventBusStack({ app, stack }: StackContext) {
               handler: "packages/functions/src/events/on_scheduled_alert_created.main",
               timeout,
               bind: [rdsCluster],
+            }
+          },
+        },
+      },
+      on_user_deleted: {
+        pattern: {
+          source: ["deleted"],
+          detailType: ["user"],
+        },
+        targets: {
+          on_bot_created: {
+            function: {
+              handler: "packages/functions/src/events/on_user_deleted.main",
+              timeout,
+              bind: [rdsCluster, COGNITO_USER_POOL_ID],
+              // @ts-expect-error ignore check
+              role: cognitoAdminRole,
             }
           },
         },

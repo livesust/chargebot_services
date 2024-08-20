@@ -24,6 +24,18 @@ export function withEmail(eb: ExpressionBuilder<Database, 'user'>) {
   ).as('user_email')
 }
 
+export function withRole(eb: ExpressionBuilder<Database, 'user'>) {
+  return jsonObjectFrom(
+    eb.selectFrom('role')
+      .selectAll('role')
+      .innerJoin('user_role', 'user_role.role_id', 'role.id')
+      .whereRef('user_role.user_id', '=', 'user.id')
+      .where('user_role.deleted_by', 'is', null)
+      .where('role.deleted_by', 'is', null)
+      .limit(1)
+  ).as('role')
+}
+
 
 export async function create(user: NewUser): Promise<{
   entity: User | undefined,
@@ -93,9 +105,7 @@ export async function remove(id: number, user_id: string): Promise<{
 
   return {
     entity: deleted,
-    // event to dispatch on EventBus on creation
-    // undefined as default to not dispatch any event
-    event: undefined
+    event: deleted
   };
 }
 
@@ -112,6 +122,7 @@ export async function list(): Promise<User[]> {
         .selectAll()
         .select((eb) => withCompany(eb))
         .select((eb) => withEmail(eb))
+        .select((eb) => withRole(eb))
         .where('deleted_by', 'is', null)
         .execute();
 }
@@ -121,6 +132,8 @@ export async function paginate(page: number, pageSize: number): Promise<User[]> 
         .selectFrom("user")
         .selectAll()
         .select((eb) => withCompany(eb))
+        .select((eb) => withEmail(eb))
+        .select((eb) => withRole(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
         .offset((page - 1) * pageSize)
@@ -141,6 +154,8 @@ export async function get(id: number): Promise<User | undefined> {
         .selectFrom("user")
         .selectAll()
         .select((eb) => withCompany(eb))
+        .select((eb) => withEmail(eb))
+        .select((eb) => withRole(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
@@ -184,6 +199,7 @@ export async function findByCriteria(criteria: Partial<User>): Promise<User[]> {
     .selectAll()
     .select((eb) => withCompany(eb))
     .select((eb) => withEmail(eb))
+    .select((eb) => withRole(eb))
     .execute();
 }
 
@@ -201,6 +217,8 @@ export async function findOneByCriteria(criteria: Partial<User>): Promise<User |
   return query
     .selectAll()
     .select((eb) => withCompany(eb))
+    .select((eb) => withEmail(eb))
+    .select((eb) => withRole(eb))
     .limit(1)
     .executeTakeFirst();
 }
