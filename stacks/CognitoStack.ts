@@ -60,7 +60,7 @@ export function CognitoStack({ app, stack }: StackContext) {
                       : "\
                           Your username is {username} and temporary password is <b>{####}</b>\
                           <br>\
-                          Click <a href='https://chargebot-web-a4mgjtegs-daniels-projects-f33e53d9.vercel.app/auth/cognito/sign-in'>here</a> to log in.\
+                          Click <a href='https://chargebot-web-app.vercel.app/auth/cognito/sign-in'>here</a> to log in.\
                         "
                       ),
                 },
@@ -98,14 +98,14 @@ export function CognitoStack({ app, stack }: StackContext) {
                       : (
                         app.stage === "dev"
                         ? ["http://localhost:3000"]
-                        : ["https://chargebot-web-a4mgjtegs-daniels-projects-f33e53d9.vercel.app/auth/cognito/sign-in"]
+                        : ["https://chargebot-web-app.vercel.app"]
                         ),
                     logoutUrls: app.stage === "prod"
                       ? ["https://chargebot-web-app.vercel.app/auth/cognito/sign-in"]
                       : (
                         app.stage === "dev"
                         ? ["http://localhost:3000/auth/cognito/sign-in"]
-                        : ["https://chargebot-web-a4mgjtegs-daniels-projects-f33e53d9.vercel.app/auth/cognito/sign-in"]
+                        : ["https://chargebot-web-app.vercel.app/cognito/sign-in"]
                         ),
                     scopes: [OAuthScope.EMAIL]
                 },

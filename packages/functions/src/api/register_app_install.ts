@@ -34,15 +34,19 @@ const handler = async (event) => {
       return createNotFoundResponse("User not found");
     }
 
+    Log.debug('User found', { cognito_id });
+
     // find existent app install
     const [existentAppInstall, notificationPermission] = await Promise.all([
       AppInstall.findOneByCriteria({user_id: user.id, app_platform_id: body.app_platform_id}),
       Permission.findOneByCriteria({name: PermissionName.NOTIFICATIONS})
     ]);
 
+    Log.debug('Existent Install?', { existentAppInstall, notificationPermission });
+
     // update
     if (existentAppInstall) {
-      const [appInstallUpdated, appInstallPermission] = await Promise.all([
+      const [appInstallUpdated, appInstallPermissions, allPermissions] = await Promise.all([
         AppInstall.update(existentAppInstall.id!, {
           app_version: body.app_version,
           platform: body.platform,
@@ -53,17 +57,43 @@ const handler = async (event) => {
           modified_by: user_id,
           modified_date: now,
         }),
-        AppInstallPermissions.findOneByCriteria({permission_id: notificationPermission?.id, app_install_id: existentAppInstall.id!})
+        AppInstallPermissions.findByCriteria({app_install_id: existentAppInstall.id!}),
+        Permission.list()
       ]);
-      if (appInstallPermission){
-        // if no push token is provided, then user removed notifications access
-        await AppInstallPermissions.update(appInstallPermission.id!, {
-          permission_status: body.push_token ? true : false,
-        });
+      Log.debug('Current Permissions', { appInstallUpdated, appInstallPermissions, allPermissions });
+      if (appInstallPermissions?.length > 0){
+        // update existent notifications permission
+        const appNotifPermissions = appInstallPermissions.filter(a => a.permission_id === notificationPermission?.id);
+        Log.debug('Update Notifications Permission', { appNotifPermissions });
+        if (appNotifPermissions?.length > 0) {
+          await AppInstallPermissions.update(appNotifPermissions[0].id!, {
+            permission_status: body.push_token ? true : false,
+          });
+        }
       }
+
+      // check for new permissions that need to be assigned to the user
+      const missingPermissions = appInstallPermissions?.length > 0 ? allPermissions.filter(p => !appInstallPermissions.some(aip => aip.permission_id === p.id)) : allPermissions;
+      Log.debug('Missing Permissions', { missingPermissions });
+      await Promise.all(
+        missingPermissions.map(async (permission) => {
+          const toCreate = {
+            permission_status: false,
+            permission_id: permission.id!,
+            app_install_id: existentAppInstall!.id!,
+            created_by: user_id,
+            created_date: now,
+            modified_by: user_id,
+            modified_date: now,
+          };
+          Log.debug('Create AppInstallPermissions', { toCreate });
+          AppInstallPermissions.create(toCreate)
+        })
+      );
       return createSuccessResponse(appInstallUpdated!.entity);
     }
 
+    Log.debug('Create New Install');
     // create
     const [response, permissions] = await Promise.all([
       AppInstall.create({
@@ -78,17 +108,20 @@ const handler = async (event) => {
     ]);
 
     const registeredAppInstall = response?.entity;
+    Log.debug('New Install Registered', {registeredAppInstall});
     await Promise.all(
       permissions.map(async (permission) => {
-        AppInstallPermissions.create({
-          permission_status: permission.name === PermissionName.NOTIFICATIONS && body.push_token ? true : false,
+        const toCreate = {
+          permission_status: false,
           permission_id: permission.id!,
           app_install_id: registeredAppInstall!.id!,
           created_by: user_id,
           created_date: now,
           modified_by: user_id,
           modified_date: now,
-        })
+        };
+        Log.debug('New Permission Registered', {toCreate});
+        AppInstallPermissions.create(toCreate)
       })
     );
 
