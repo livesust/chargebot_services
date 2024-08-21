@@ -207,6 +207,54 @@ export function LambdaStack({ app, stack }: StackContext) {
     ],
   });
 
+  /**
+   * Subscribe to chargebot echo and execute a lambda function to auto discover devices
+   */
+  const processIotEchoFunction = new Function(stack, "chargebotIotEchoProcess", {
+    handler: "packages/functions/src/api/bot_discovery.main",
+    timeout,
+    bind: [rdsCluster],
+  });
+
+  const iotEchoLogGroup = new LogGroup(stack, `ChargebotIoTEchoLogGroup_${app.stage}`, {
+    logGroupName: `ChargebotIoTEchoLogGroup_${app.stage}`,
+    retention: RetentionDays.ONE_MONTH
+  });
+
+  const iotEchoErrorLogGroup = new LogGroup(stack, `ChargebotIoTEchoErrorLogGroup_${app.stage}`, {
+    logGroupName: `ChargebotIoTEchoErrorLogGroup_${app.stage}`,
+    retention: RetentionDays.ONE_MONTH
+  });
+
+  const iotEchoToLambda: IotToLambdaProps = {
+    // @ts-expect-error ignore typing
+    existingLambdaObj: processIotEchoFunction,
+    iotTopicRuleProps: {
+      topicRulePayload: {
+        ruleDisabled: false,
+        description: "ChargeBot echo discovery to Lambda",
+        sql: "SELECT * FROM 'chargebot/+/echo'",
+        actions: [
+          {
+            cloudwatchLogs: {
+              logGroupName: iotEchoLogGroup.logGroupName,
+              roleArn: 'arn:aws:iam::881739832873:role/livesust-iot-cluster-kms-role',
+            }
+          }
+        ],
+        errorAction:
+        {
+          cloudwatchLogs: {
+            logGroupName: iotEchoErrorLogGroup.logGroupName,
+            roleArn: 'arn:aws:iam::881739832873:role/livesust-iot-cluster-kms-role'
+          }
+        }
+      }
+    }
+  };
+
+  new IotToLambda(stack, `ChargebotIoTEchoRuleToLambda_${app.stage}`, iotEchoToLambda);
+
   // const iotGpsParkedlogGroup = new LogGroup(stack, `ChargebotIoTGpsParkedLogGroup_${app.stage}`, {
   //   logGroupName: `ChargebotIoTGpsParkedLogGroup_${app.stage}`,
   //   retention: RetentionDays.ONE_MONTH
