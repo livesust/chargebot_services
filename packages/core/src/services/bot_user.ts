@@ -3,12 +3,14 @@ import db, { Database } from '../database';
 import { ExpressionBuilder } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { BotUser, BotUserUpdate, NewBotUser } from "../database/bot_user";
+import { withEmail, withRole } from "./user";
 
 export function withBot(eb: ExpressionBuilder<Database, 'bot_user'>) {
     return jsonObjectFrom(
       eb.selectFrom('bot')
         .selectAll()
         .whereRef('bot.id', '=', 'bot_user.bot_id')
+        .where('bot.deleted_by', 'is', null)
     ).as('bot')
 }
 
@@ -16,7 +18,10 @@ export function withUser(eb: ExpressionBuilder<Database, 'bot_user'>) {
     return jsonObjectFrom(
       eb.selectFrom('user')
         .selectAll()
+        .select((eb) => withEmail(eb))
+        .select((eb) => withRole(eb))
         .whereRef('user.id', '=', 'bot_user.user_id')
+        .where('user.deleted_by', 'is', null)
     ).as('user')
 }
 
