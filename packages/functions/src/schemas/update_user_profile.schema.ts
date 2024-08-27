@@ -18,6 +18,7 @@ const UserProfileSchemaDef = {
   phone_number: Joi.string().allow(null, ''),
   role_id: Joi.number(),
   role: Joi.string(),
+  super_admin: Joi.boolean().allow(null),
   onboarding: Joi.boolean().allow(null),
   invite_status: Joi.string().max(100).allow(null, ''),
   privacy_terms_last_accepted: Joi.date().allow(null),

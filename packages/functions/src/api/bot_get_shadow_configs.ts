@@ -20,6 +20,8 @@ export const handler = async (event) => {
   const bot_uuid = event.pathParameters!.bot_uuid!;
 
   try {
+    Log.debug('Get shadow configs for', {bot_uuid});
+
     const [
         systemStatus, configStatus, inverterStatus
     ] = await Promise.all([
@@ -27,6 +29,8 @@ export const handler = async (event) => {
       IoTData.getShadowStatus(bot_uuid, 'config'),
       IoTData.getShadowStatus(bot_uuid, 'inverter'),
     ]);
+
+    Log.debug('Shadow configs for', {systemStatus, configStatus, inverterStatus});
 
     const response = {
       system: systemStatus?.state?.desired ?? systemStatus?.state?.reported,

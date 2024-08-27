@@ -100,6 +100,7 @@ export async function list(): Promise<StateMaster[]> {
         .selectFrom("state_master")
         .selectAll()
         .where('deleted_by', 'is', null)
+        .orderBy('name', 'asc')
         .execute();
 }
 
@@ -110,6 +111,7 @@ export async function paginate(page: number, pageSize: number): Promise<StateMas
         .where('deleted_by', 'is', null)
         .limit(pageSize)
         .offset((page - 1) * pageSize)
+        .orderBy('name', 'asc')
         .execute();
 }
 
@@ -136,6 +138,7 @@ export async function findByCriteria(criteria: Partial<StateMaster>): Promise<St
 
   return query
     .selectAll()
+    .orderBy('name', 'asc')
     .execute();
 }
 
@@ -144,6 +147,7 @@ export async function lazyFindByCriteria(criteria: Partial<StateMaster>): Promis
 
   return query
     .selectAll()
+    .orderBy('name', 'asc')
     .execute();
 }
 

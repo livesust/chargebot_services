@@ -12,3 +12,9 @@ export interface RoleTable extends AuditedEntity {
 export type Role = Selectable<RoleTable>
 export type NewRole = Insertable<RoleTable>
 export type RoleUpdate = Updateable<RoleTable>
+
+export enum UserRoleNames {
+  ADMIN_USER = "Admin User",
+  ACCOUNT_OWNER = "Account Owner",
+  FIELD_USER= "Field User"
+}

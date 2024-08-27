@@ -53,6 +53,7 @@ const handler = async (event) => {
       phone_number: userPhone?.phone_number,
       role_id: userRole?.role_id,
       role: userRole?.role?.role,
+      super_admin: userRole?.user?.super_admin,
       onboarding: user?.onboarding ?? false,
       privacy_terms_last_accepted: user?.privacy_terms_last_accepted,
       privacy_terms_version: user?.privacy_terms_version,

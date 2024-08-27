@@ -38,7 +38,6 @@ const handler = async (event) => {
 
     if (bot) {
       Log.debug("Bot already registered");
-      return createSuccessResponse({ "response": "success, bot already discovered" });
     }
 
     let botVersion = await BotVersion.findOneByCriteria({version_number: device_version})
@@ -50,12 +49,18 @@ const handler = async (event) => {
       }))!.entity;
     }
 
-    await Bot.create({
-      bot_uuid,
-      name: bot_uuid,
-      initials: bot_uuid.substring(0, 2),
-      bot_version_id: botVersion!.id!,
-    });
+    if (!bot) {
+      await Bot.create({
+        bot_uuid,
+        name: bot_uuid,
+        initials: bot_uuid.substring(0, 2),
+        bot_version_id: botVersion!.id!,
+      });
+    } else {
+      await Bot.update(bot.id!, {
+        bot_version_id: botVersion!.id!,
+      });
+    }
 
     Log.debug("Bot registered", {bot_uuid});
 
