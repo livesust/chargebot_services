@@ -38,8 +38,8 @@ export const SearchSchema = Joi.object({
     id: Joi.number(),
     bot_id: Joi.number(),
     user_id: Joi.number(),
-    bot: BotSchema,
-    user: UserSchema,
+    bot: BotSchema.allow(null),
+    user: UserSchema.allow(null),
     ...BotUserSchemaDef
 });
 

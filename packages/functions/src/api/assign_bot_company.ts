@@ -13,6 +13,7 @@ import httpEventNormalizer from '@middy/http-event-normalizer';
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { SuccessResponseSchema } from "src/shared/schemas";
 import { BotCompany } from "@chargebot-services/core/services/bot_company";
+import { BotUser } from "@chargebot-services/core/services/bot_user";
 
 
 // @ts-expect-error ignore any type for event
@@ -22,7 +23,7 @@ const handler = async (event) => {
   const user_id = event.requestContext?.authorizer?.jwt.claims.sub;
 
   try {
-    const existentBotCompany = await BotCompany.lazyFindByCriteria({ bot_id });
+    const [existentBotCompany, existentBotUsers] = await Promise.all([BotCompany.lazyFindByCriteria({ bot_id }), BotUser.lazyFindByCriteria({ bot_id })]);
 
     if (existentBotCompany.some(bc => bc.company_id === company_id)) {
       return createSuccessResponse({ "response": "bot already assigned to company" });
@@ -32,6 +33,12 @@ const handler = async (event) => {
     if (existentBotCompany?.length > 0) {
       existentBotCompany.map(async (bc) => {
         promises.push(BotCompany.remove(bc.id!, user_id))
+      });      
+    }
+
+    if (existentBotUsers?.length > 0) {
+      existentBotUsers.map(async (bu) => {
+        promises.push(BotUser.remove(bu.id!, user_id))
       });      
     }
 
