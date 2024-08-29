@@ -1,6 +1,6 @@
 export * as BotCompany from "./bot_company";
 import db, { Database } from '../database';
-import { ExpressionBuilder } from "kysely";
+import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { BotCompany, BotCompanyUpdate, NewBotCompany } from "../database/bot_company";
 
@@ -9,6 +9,7 @@ export function withBot(eb: ExpressionBuilder<Database, 'bot_company'>) {
       eb.selectFrom('bot')
         .selectAll()
         .whereRef('bot.id', '=', 'bot_company.bot_id')
+        .where('bot.deleted_by', 'is', null)
     ).as('bot')
 }
 
@@ -17,6 +18,7 @@ export function withCompany(eb: ExpressionBuilder<Database, 'bot_company'>) {
       eb.selectFrom('company')
         .selectAll()
         .whereRef('company.id', '=', 'bot_company.company_id')
+        .where('company.deleted_by', 'is', null)
     ).as('company')
 }
 
@@ -112,6 +114,12 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
+export async function removeByCriteria(criteria: Partial<BotCompany>, user_id: string): Promise<UpdateResult[]> {
+    return buildUpdateQuery(criteria)
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .execute();
+}
+
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('bot_company')
@@ -123,6 +131,8 @@ export async function list(): Promise<BotCompany[]> {
     return db
         .selectFrom("bot_company")
         .selectAll()
+        .select((eb) => withBot(eb))
+        .select((eb) => withCompany(eb))
         .where('deleted_by', 'is', null)
         .execute();
 }
@@ -131,6 +141,8 @@ export async function paginate(page: number, pageSize: number): Promise<BotCompa
     return db
         .selectFrom("bot_company")
         .selectAll()
+        .select((eb) => withBot(eb))
+        .select((eb) => withCompany(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
         .offset((page - 1) * pageSize)
@@ -158,7 +170,7 @@ export async function get(id: number): Promise<BotCompany | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<BotCompany>): Promise<BotCompany[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -168,7 +180,7 @@ export async function findByCriteria(criteria: Partial<BotCompany>): Promise<Bot
 }
 
 export async function lazyFindByCriteria(criteria: Partial<BotCompany>): Promise<BotCompany[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -176,7 +188,7 @@ export async function lazyFindByCriteria(criteria: Partial<BotCompany>): Promise
 }
 
 export async function findOneByCriteria(criteria: Partial<BotCompany>): Promise<BotCompany | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -187,7 +199,7 @@ export async function findOneByCriteria(criteria: Partial<BotCompany>): Promise<
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<BotCompany>): Promise<BotCompany | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -195,8 +207,21 @@ export async function lazyFindOneByCriteria(criteria: Partial<BotCompany>): Prom
     .executeTakeFirst();
 }
 
-function buildCriteriaQuery(criteria: Partial<BotCompany>) {
-  let query = db.selectFrom('bot_company').where('deleted_by', 'is', null);
+function buildSelectQuery(criteria: Partial<BotCompany>) {
+  let query = db.selectFrom('bot_company');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+function buildUpdateQuery(criteria: Partial<BotCompany>) {
+  let query = db.updateTable('bot_company');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCriteriaQuery(query: any, criteria: Partial<BotCompany>): any {
+  query = query.where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);

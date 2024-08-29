@@ -10,8 +10,8 @@ attributes:
     type: varchar
     varchar_length: '45'
     tsType: string
-    unique: true
-    not_null: true
+    unique: false
+    not_null: false
   - attribute: country
     type: varchar
     varchar_length: '255'

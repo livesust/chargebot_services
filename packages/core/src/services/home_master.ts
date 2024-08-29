@@ -1,6 +1,6 @@
 export * as HomeMaster from "./home_master";
 import db, { Database } from '../database';
-import { ExpressionBuilder } from "kysely";
+import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { HomeMaster, HomeMasterUpdate, NewHomeMaster } from "../database/home_master";
 
@@ -9,6 +9,7 @@ export function withStateMaster(eb: ExpressionBuilder<Database, 'home_master'>) 
       eb.selectFrom('state_master')
         .selectAll()
         .whereRef('state_master.id', '=', 'home_master.state_master_id')
+        .where('state_master.deleted_by', 'is', null)
     ).as('state_master')
 }
 
@@ -87,6 +88,12 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
+export async function removeByCriteria(criteria: Partial<HomeMaster>, user_id: string): Promise<UpdateResult[]> {
+    return buildUpdateQuery(criteria)
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .execute();
+}
+
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('home_master')
@@ -98,6 +105,7 @@ export async function list(): Promise<HomeMaster[]> {
     return db
         .selectFrom("home_master")
         .selectAll()
+        .select((eb) => withStateMaster(eb))
         .where('deleted_by', 'is', null)
         .execute();
 }
@@ -106,6 +114,7 @@ export async function paginate(page: number, pageSize: number): Promise<HomeMast
     return db
         .selectFrom("home_master")
         .selectAll()
+        .select((eb) => withStateMaster(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
         .offset((page - 1) * pageSize)
@@ -143,7 +152,7 @@ export async function findByCompany(company_id: number): Promise<HomeMaster | un
 }
 
 export async function findByCriteria(criteria: Partial<HomeMaster>): Promise<HomeMaster[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -152,7 +161,7 @@ export async function findByCriteria(criteria: Partial<HomeMaster>): Promise<Hom
 }
 
 export async function lazyFindByCriteria(criteria: Partial<HomeMaster>): Promise<HomeMaster[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -160,7 +169,7 @@ export async function lazyFindByCriteria(criteria: Partial<HomeMaster>): Promise
 }
 
 export async function findOneByCriteria(criteria: Partial<HomeMaster>): Promise<HomeMaster | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -170,7 +179,7 @@ export async function findOneByCriteria(criteria: Partial<HomeMaster>): Promise<
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<HomeMaster>): Promise<HomeMaster | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -178,8 +187,21 @@ export async function lazyFindOneByCriteria(criteria: Partial<HomeMaster>): Prom
     .executeTakeFirst();
 }
 
-function buildCriteriaQuery(criteria: Partial<HomeMaster>) {
-  let query = db.selectFrom('home_master').where('deleted_by', 'is', null);
+function buildSelectQuery(criteria: Partial<HomeMaster>) {
+  let query = db.selectFrom('home_master');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+function buildUpdateQuery(criteria: Partial<HomeMaster>) {
+  let query = db.updateTable('home_master');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCriteriaQuery(query: any, criteria: Partial<HomeMaster>): any {
+  query = query.where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -213,18 +235,18 @@ function buildCriteriaQuery(criteria: Partial<HomeMaster>) {
       criteria.zip_code
     );
   }
+  if (criteria.latitude) {
+    query = query.where('latitude', '=', criteria.latitude);
+  }
+  if (criteria.longitude) {
+    query = query.where('longitude', '=', criteria.longitude);
+  }
   if (criteria.place_id !== undefined) {
     query = query.where(
       'place_id', 
       criteria.place_id === null ? 'is' : '=', 
       criteria.place_id
     );
-  }
-  if (criteria.latitude) {
-    query = query.where('latitude', '=', criteria.latitude);
-  }
-  if (criteria.longitude) {
-    query = query.where('longitude', '=', criteria.longitude);
   }
 
   if (criteria.state_master_id) {

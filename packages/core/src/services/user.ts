@@ -1,6 +1,6 @@
 export * as User from "./user";
 import db, { Database } from '../database';
-import { ExpressionBuilder } from "kysely";
+import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { DateTime } from "luxon";
 import { User, UserUpdate, NewUser, UserInviteStatus } from "../database/user";
@@ -10,6 +10,7 @@ export function withCompany(eb: ExpressionBuilder<Database, 'user'>) {
       eb.selectFrom('company')
         .selectAll()
         .whereRef('company.id', '=', 'user.company_id')
+        .where('company.deleted_by', 'is', null)
     ).as('company')
 }
 
@@ -109,6 +110,12 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
+export async function removeByCriteria(criteria: Partial<User>, user_id: string): Promise<UpdateResult[]> {
+    return buildUpdateQuery(criteria)
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .execute();
+}
+
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('user')
@@ -193,7 +200,7 @@ export async function findExpired(days: number): Promise<User[] | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<User>): Promise<User[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -204,7 +211,7 @@ export async function findByCriteria(criteria: Partial<User>): Promise<User[]> {
 }
 
 export async function lazyFindByCriteria(criteria: Partial<User>): Promise<User[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -212,7 +219,7 @@ export async function lazyFindByCriteria(criteria: Partial<User>): Promise<User[
 }
 
 export async function findOneByCriteria(criteria: Partial<User>): Promise<User | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -224,7 +231,7 @@ export async function findOneByCriteria(criteria: Partial<User>): Promise<User |
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<User>): Promise<User | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -232,8 +239,21 @@ export async function lazyFindOneByCriteria(criteria: Partial<User>): Promise<Us
     .executeTakeFirst();
 }
 
-function buildCriteriaQuery(criteria: Partial<User>) {
-  let query = db.selectFrom('user').where('deleted_by', 'is', null);
+function buildSelectQuery(criteria: Partial<User>) {
+  let query = db.selectFrom('user');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+function buildUpdateQuery(criteria: Partial<User>) {
+  let query = db.updateTable('user');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCriteriaQuery(query: any, criteria: Partial<User>): any {
+  query = query.where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);

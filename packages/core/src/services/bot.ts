@@ -1,6 +1,6 @@
 export * as Bot from "./bot";
 import db, { Database } from '../database';
-import { ExpressionBuilder } from "kysely";
+import { ExpressionBuilder, UpdateResult } from "kysely";
 import { BusinessError } from "../errors/business_error";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { Bot, BotUpdate, NewBot } from "../database/bot";
@@ -10,6 +10,7 @@ export function withBotVersion(eb: ExpressionBuilder<Database, 'bot'>) {
       eb.selectFrom('bot_version')
         .selectAll()
         .whereRef('bot_version.id', '=', 'bot.bot_version_id')
+        .where('bot_version.deleted_by', 'is', null)
     ).as('bot_version')
 }
 
@@ -18,6 +19,7 @@ export function withVehicle(eb: ExpressionBuilder<Database, 'bot'>) {
       eb.selectFrom('vehicle')
         .selectAll()
         .whereRef('vehicle.id', '=', 'bot.vehicle_id')
+        .where('vehicle.deleted_by', 'is', null)
     ).as('vehicle')
 }
 
@@ -139,6 +141,12 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
+export async function removeByCriteria(criteria: Partial<Bot>, user_id: string): Promise<UpdateResult[]> {
+    return buildUpdateQuery(criteria)
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .execute();
+}
+
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('bot')
@@ -152,7 +160,6 @@ export async function list(): Promise<Bot[]> {
         .selectAll()
         .select((eb) => withBotVersion(eb))
         .select((eb) => withVehicle(eb))
-        .select((eb) => withBotCompany(eb))
         .where('deleted_by', 'is', null)
         .execute();
 }
@@ -161,6 +168,8 @@ export async function paginate(page: number, pageSize: number): Promise<Bot[]> {
     return db
         .selectFrom("bot")
         .selectAll()
+        .select((eb) => withBotVersion(eb))
+        .select((eb) => withVehicle(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
         .offset((page - 1) * pageSize)
@@ -211,7 +220,7 @@ export async function findByCompany(company_id: number): Promise<Bot[]> {
 }
 
 export async function findByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -221,7 +230,7 @@ export async function findByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
 }
 
 export async function lazyFindByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -229,7 +238,7 @@ export async function lazyFindByCriteria(criteria: Partial<Bot>): Promise<Bot[]>
 }
 
 export async function findOneByCriteria(criteria: Partial<Bot>): Promise<Bot | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -240,7 +249,7 @@ export async function findOneByCriteria(criteria: Partial<Bot>): Promise<Bot | u
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<Bot>): Promise<Bot | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -248,8 +257,21 @@ export async function lazyFindOneByCriteria(criteria: Partial<Bot>): Promise<Bot
     .executeTakeFirst();
 }
 
-function buildCriteriaQuery(criteria: Partial<Bot>) {
-  let query = db.selectFrom('bot').where('deleted_by', 'is', null);
+function buildSelectQuery(criteria: Partial<Bot>) {
+  let query = db.selectFrom('bot');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+function buildUpdateQuery(criteria: Partial<Bot>) {
+  let query = db.updateTable('bot');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCriteriaQuery(query: any, criteria: Partial<Bot>): any {
+  query = query.where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -287,7 +309,6 @@ function buildCriteriaQuery(criteria: Partial<Bot>) {
   if (criteria.bot_version_id) {
     query = query.where('bot_version_id', '=', criteria.bot_version_id);
   }
-
   if (criteria.vehicle_id) {
     query = query.where('vehicle_id', '=', criteria.vehicle_id);
   }

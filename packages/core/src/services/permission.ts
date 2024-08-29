@@ -1,5 +1,6 @@
 export * as Permission from "./permission";
 import db from '../database';
+import { UpdateResult } from "kysely";
 import { Permission, PermissionUpdate, NewPermission } from "../database/permission";
 
 
@@ -84,6 +85,12 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
+export async function removeByCriteria(criteria: Partial<Permission>, user_id: string): Promise<UpdateResult[]> {
+    return buildUpdateQuery(criteria)
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .execute();
+}
+
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('permission')
@@ -128,7 +135,7 @@ export async function get(id: number): Promise<Permission | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<Permission>): Promise<Permission[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -136,7 +143,7 @@ export async function findByCriteria(criteria: Partial<Permission>): Promise<Per
 }
 
 export async function lazyFindByCriteria(criteria: Partial<Permission>): Promise<Permission[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -144,7 +151,7 @@ export async function lazyFindByCriteria(criteria: Partial<Permission>): Promise
 }
 
 export async function findOneByCriteria(criteria: Partial<Permission>): Promise<Permission | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -153,7 +160,7 @@ export async function findOneByCriteria(criteria: Partial<Permission>): Promise<
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<Permission>): Promise<Permission | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -161,8 +168,21 @@ export async function lazyFindOneByCriteria(criteria: Partial<Permission>): Prom
     .executeTakeFirst();
 }
 
-function buildCriteriaQuery(criteria: Partial<Permission>) {
-  let query = db.selectFrom('permission').where('deleted_by', 'is', null);
+function buildSelectQuery(criteria: Partial<Permission>) {
+  let query = db.selectFrom('permission');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+function buildUpdateQuery(criteria: Partial<Permission>) {
+  let query = db.updateTable('permission');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCriteriaQuery(query: any, criteria: Partial<Permission>): any {
+  query = query.where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);

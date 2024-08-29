@@ -1,6 +1,6 @@
 export * as Equipment from "./equipment";
 import db, { Database } from '../database';
-import { ExpressionBuilder } from "kysely";
+import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { Equipment, EquipmentUpdate, NewEquipment } from "../database/equipment";
 
@@ -9,6 +9,7 @@ export function withEquipmentType(eb: ExpressionBuilder<Database, 'equipment'>) 
       eb.selectFrom('equipment_type')
         .selectAll()
         .whereRef('equipment_type.id', '=', 'equipment.equipment_type_id')
+        .where('equipment_type.deleted_by', 'is', null)
     ).as('equipment_type')
 }
 
@@ -17,6 +18,7 @@ export function withCustomer(eb: ExpressionBuilder<Database, 'equipment'>) {
       eb.selectFrom('customer')
         .selectAll()
         .whereRef('customer.id', '=', 'equipment.customer_id')
+        .where('customer.deleted_by', 'is', null)
     ).as('customer')
 }
 
@@ -93,6 +95,12 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
+export async function removeByCriteria(criteria: Partial<Equipment>, user_id: string): Promise<UpdateResult[]> {
+    return buildUpdateQuery(criteria)
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .execute();
+}
+
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('equipment')
@@ -104,6 +112,8 @@ export async function list(): Promise<Equipment[]> {
     return db
         .selectFrom("equipment")
         .selectAll()
+        .select((eb) => withEquipmentType(eb))
+        .select((eb) => withCustomer(eb))
         .where('deleted_by', 'is', null)
         .execute();
 }
@@ -112,6 +122,8 @@ export async function paginate(page: number, pageSize: number): Promise<Equipmen
     return db
         .selectFrom("equipment")
         .selectAll()
+        .select((eb) => withEquipmentType(eb))
+        .select((eb) => withCustomer(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
         .offset((page - 1) * pageSize)
@@ -132,8 +144,7 @@ export async function get(id: number): Promise<Equipment | undefined> {
         .selectFrom("equipment")
         .selectAll()
         .select((eb) => withEquipmentType(eb))
-        // uncoment to enable eager loading
-        //.select((eb) => withCustomer(eb))
+        .select((eb) => withCustomer(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
@@ -151,18 +162,17 @@ export async function findByOutlet(outlet_id: number): Promise<Equipment | undef
 }
 
 export async function findByCriteria(criteria: Partial<Equipment>): Promise<Equipment[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
     .select((eb) => withEquipmentType(eb))
-    // uncoment to enable eager loading
-    //.select((eb) => withCustomer(eb))
+    .select((eb) => withCustomer(eb))
     .execute();
 }
 
 export async function lazyFindByCriteria(criteria: Partial<Equipment>): Promise<Equipment[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -170,19 +180,18 @@ export async function lazyFindByCriteria(criteria: Partial<Equipment>): Promise<
 }
 
 export async function findOneByCriteria(criteria: Partial<Equipment>): Promise<Equipment | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
     .select((eb) => withEquipmentType(eb))
-    // uncoment to enable eager loading
-    //.select((eb) => withCustomer(eb))
+    .select((eb) => withCustomer(eb))
     .limit(1)
     .executeTakeFirst();
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<Equipment>): Promise<Equipment | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -190,8 +199,21 @@ export async function lazyFindOneByCriteria(criteria: Partial<Equipment>): Promi
     .executeTakeFirst();
 }
 
-function buildCriteriaQuery(criteria: Partial<Equipment>) {
-  let query = db.selectFrom('equipment').where('deleted_by', 'is', null);
+function buildSelectQuery(criteria: Partial<Equipment>) {
+  let query = db.selectFrom('equipment');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+function buildUpdateQuery(criteria: Partial<Equipment>) {
+  let query = db.updateTable('equipment');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCriteriaQuery(query: any, criteria: Partial<Equipment>): any {
+  query = query.where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);

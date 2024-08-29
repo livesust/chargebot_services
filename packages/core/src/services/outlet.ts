@@ -1,6 +1,6 @@
 export * as Outlet from "./outlet";
 import db, { Database } from '../database';
-import { ExpressionBuilder } from "kysely";
+import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { Outlet, OutletUpdate, NewOutlet } from "../database/outlet";
 
@@ -9,6 +9,7 @@ export function withOutletType(eb: ExpressionBuilder<Database, 'outlet'>) {
       eb.selectFrom('outlet_type')
         .selectAll()
         .whereRef('outlet_type.id', '=', 'outlet.outlet_type_id')
+        .where('outlet_type.deleted_by', 'is', null)
     ).as('outlet_type')
 }
 
@@ -17,6 +18,7 @@ export function withBot(eb: ExpressionBuilder<Database, 'outlet'>) {
       eb.selectFrom('bot')
         .selectAll()
         .whereRef('bot.id', '=', 'outlet.bot_id')
+        .where('bot.deleted_by', 'is', null)
     ).as('bot')
 }
 
@@ -93,6 +95,12 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
+export async function removeByCriteria(criteria: Partial<Outlet>, user_id: string): Promise<UpdateResult[]> {
+    return buildUpdateQuery(criteria)
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .execute();
+}
+
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('outlet')
@@ -104,6 +112,8 @@ export async function list(): Promise<Outlet[]> {
     return db
         .selectFrom("outlet")
         .selectAll()
+        .select((eb) => withOutletType(eb))
+        .select((eb) => withBot(eb))
         .where('deleted_by', 'is', null)
         .execute();
 }
@@ -112,6 +122,8 @@ export async function paginate(page: number, pageSize: number): Promise<Outlet[]
     return db
         .selectFrom("outlet")
         .selectAll()
+        .select((eb) => withOutletType(eb))
+        .select((eb) => withBot(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
         .offset((page - 1) * pageSize)
@@ -172,7 +184,7 @@ export async function findByEquipment(equipment_id: number): Promise<Outlet | un
 }
 
 export async function findByCriteria(criteria: Partial<Outlet>): Promise<Outlet[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -182,7 +194,7 @@ export async function findByCriteria(criteria: Partial<Outlet>): Promise<Outlet[
 }
 
 export async function lazyFindByCriteria(criteria: Partial<Outlet>): Promise<Outlet[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -190,7 +202,7 @@ export async function lazyFindByCriteria(criteria: Partial<Outlet>): Promise<Out
 }
 
 export async function findOneByCriteria(criteria: Partial<Outlet>): Promise<Outlet | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -201,7 +213,7 @@ export async function findOneByCriteria(criteria: Partial<Outlet>): Promise<Outl
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<Outlet>): Promise<Outlet | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -209,8 +221,21 @@ export async function lazyFindOneByCriteria(criteria: Partial<Outlet>): Promise<
     .executeTakeFirst();
 }
 
-function buildCriteriaQuery(criteria: Partial<Outlet>) {
-  let query = db.selectFrom('outlet').where('deleted_by', 'is', null);
+function buildSelectQuery(criteria: Partial<Outlet>) {
+  let query = db.selectFrom('outlet');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+function buildUpdateQuery(criteria: Partial<Outlet>) {
+  let query = db.updateTable('outlet');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCriteriaQuery(query: any, criteria: Partial<Outlet>): any {
+  query = query.where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);

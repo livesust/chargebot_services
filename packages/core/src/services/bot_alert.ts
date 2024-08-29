@@ -9,6 +9,7 @@ export function withAlertType(eb: ExpressionBuilder<Database, 'bot_alert'>) {
       eb.selectFrom('alert_type')
         .selectAll()
         .whereRef('alert_type.id', '=', 'bot_alert.alert_type_id')
+        .where('alert_type.deleted_by', 'is', null)
     ).as('alert_type')
 }
 
@@ -17,6 +18,7 @@ export function withBot(eb: ExpressionBuilder<Database, 'bot_alert'>) {
       eb.selectFrom('bot')
         .selectAll()
         .whereRef('bot.id', '=', 'bot_alert.bot_id')
+        .where('bot.deleted_by', 'is', null)
     ).as('bot')
 }
 
@@ -112,6 +114,9 @@ export async function list(): Promise<BotAlert[]> {
     return db
         .selectFrom("bot_alert")
         .selectAll()
+        .select((eb) => withAlertType(eb))
+        // uncoment to enable eager loading
+        //.select((eb) => withBot(eb))
         .where('deleted_by', 'is', null)
         .execute();
 }
@@ -120,6 +125,9 @@ export async function paginate(page: number, pageSize: number): Promise<BotAlert
     return db
         .selectFrom("bot_alert")
         .selectAll()
+        .select((eb) => withAlertType(eb))
+        // uncoment to enable eager loading
+        //.select((eb) => withBot(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
         .offset((page - 1) * pageSize)

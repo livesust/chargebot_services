@@ -1,5 +1,6 @@
 export * as Role from "./role";
 import db from '../database';
+import { UpdateResult } from "kysely";
 import { Role, RoleUpdate, NewRole } from "../database/role";
 
 
@@ -88,6 +89,12 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
+export async function removeByCriteria(criteria: Partial<Role>, user_id: string): Promise<UpdateResult[]> {
+    return buildUpdateQuery(criteria)
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .execute();
+}
+
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('role')
@@ -132,7 +139,7 @@ export async function get(id: number): Promise<Role | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<Role>): Promise<Role[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -140,7 +147,7 @@ export async function findByCriteria(criteria: Partial<Role>): Promise<Role[]> {
 }
 
 export async function lazyFindByCriteria(criteria: Partial<Role>): Promise<Role[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -148,7 +155,7 @@ export async function lazyFindByCriteria(criteria: Partial<Role>): Promise<Role[
 }
 
 export async function findOneByCriteria(criteria: Partial<Role>): Promise<Role | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -157,7 +164,7 @@ export async function findOneByCriteria(criteria: Partial<Role>): Promise<Role |
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<Role>): Promise<Role | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -165,8 +172,21 @@ export async function lazyFindOneByCriteria(criteria: Partial<Role>): Promise<Ro
     .executeTakeFirst();
 }
 
-function buildCriteriaQuery(criteria: Partial<Role>) {
-  let query = db.selectFrom('role').where('deleted_by', 'is', null);
+function buildSelectQuery(criteria: Partial<Role>) {
+  let query = db.selectFrom('role');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+function buildUpdateQuery(criteria: Partial<Role>) {
+  let query = db.updateTable('role');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCriteriaQuery(query: any, criteria: Partial<Role>): any {
+  query = query.where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);

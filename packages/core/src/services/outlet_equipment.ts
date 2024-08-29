@@ -1,6 +1,6 @@
 export * as OutletEquipment from "./outlet_equipment";
 import db, { Database } from '../database';
-import { ExpressionBuilder } from "kysely";
+import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { OutletEquipment, OutletEquipmentUpdate, NewOutletEquipment } from "../database/outlet_equipment";
 import { withEquipmentType } from "./equipment";
@@ -11,6 +11,7 @@ export function withEquipment(eb: ExpressionBuilder<Database, 'outlet_equipment'
         .selectAll()
         .select((eb) => withEquipmentType(eb))
         .whereRef('equipment.id', '=', 'outlet_equipment.equipment_id')
+        .where('equipment.deleted_by', 'is', null)
     ).as('equipment')
 }
 
@@ -19,6 +20,7 @@ export function withOutlet(eb: ExpressionBuilder<Database, 'outlet_equipment'>) 
       eb.selectFrom('outlet')
         .selectAll()
         .whereRef('outlet.id', '=', 'outlet_equipment.outlet_id')
+        .where('outlet.deleted_by', 'is', null)
     ).as('outlet')
 }
 
@@ -27,6 +29,7 @@ export function withUser(eb: ExpressionBuilder<Database, 'outlet_equipment'>) {
       eb.selectFrom('user')
         .selectAll()
         .whereRef('user.id', '=', 'outlet_equipment.user_id')
+        .where('user.deleted_by', 'is', null)
     ).as('user')
 }
 
@@ -150,6 +153,12 @@ export async function unassign(equipment_id: number, outlet_id: number, user_id:
   };
 }
 
+export async function removeByCriteria(criteria: Partial<OutletEquipment>, user_id: string): Promise<UpdateResult[]> {
+    return buildUpdateQuery(criteria)
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .execute();
+}
+
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('outlet_equipment')
@@ -161,6 +170,9 @@ export async function list(): Promise<OutletEquipment[]> {
     return db
         .selectFrom("outlet_equipment")
         .selectAll()
+        .select((eb) => withEquipment(eb))
+        .select((eb) => withOutlet(eb))
+        .select((eb) => withUser(eb))
         .where('deleted_by', 'is', null)
         .execute();
 }
@@ -169,6 +181,9 @@ export async function paginate(page: number, pageSize: number): Promise<OutletEq
     return db
         .selectFrom("outlet_equipment")
         .selectAll()
+        .select((eb) => withEquipment(eb))
+        .select((eb) => withOutlet(eb))
+        .select((eb) => withUser(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
         .offset((page - 1) * pageSize)
@@ -207,7 +222,7 @@ export async function findByOutlets(outlet_ids: number[]): Promise<OutletEquipme
 }
 
 export async function findByCriteria(criteria: Partial<OutletEquipment>): Promise<OutletEquipment[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -218,7 +233,7 @@ export async function findByCriteria(criteria: Partial<OutletEquipment>): Promis
 }
 
 export async function lazyFindByCriteria(criteria: Partial<OutletEquipment>): Promise<OutletEquipment[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -226,7 +241,7 @@ export async function lazyFindByCriteria(criteria: Partial<OutletEquipment>): Pr
 }
 
 export async function findOneByCriteria(criteria: Partial<OutletEquipment>): Promise<OutletEquipment | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -238,7 +253,7 @@ export async function findOneByCriteria(criteria: Partial<OutletEquipment>): Pro
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<OutletEquipment>): Promise<OutletEquipment | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -246,8 +261,21 @@ export async function lazyFindOneByCriteria(criteria: Partial<OutletEquipment>):
     .executeTakeFirst();
 }
 
-function buildCriteriaQuery(criteria: Partial<OutletEquipment>) {
-  let query = db.selectFrom('outlet_equipment').where('deleted_by', 'is', null);
+function buildSelectQuery(criteria: Partial<OutletEquipment>) {
+  let query = db.selectFrom('outlet_equipment');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+function buildUpdateQuery(criteria: Partial<OutletEquipment>) {
+  let query = db.updateTable('outlet_equipment');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCriteriaQuery(query: any, criteria: Partial<OutletEquipment>): any {
+  query = query.where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);

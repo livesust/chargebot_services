@@ -1,6 +1,6 @@
 export * as UserPhone from "./user_phone";
 import db, { Database } from '../database';
-import { ExpressionBuilder } from "kysely";
+import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { UserPhone, UserPhoneUpdate, NewUserPhone } from "../database/user_phone";
 
@@ -9,6 +9,7 @@ export function withUser(eb: ExpressionBuilder<Database, 'user_phone'>) {
       eb.selectFrom('user')
         .selectAll()
         .whereRef('user.id', '=', 'user_phone.user_id')
+        .where('user.deleted_by', 'is', null)
     ).as('user')
 }
 
@@ -87,6 +88,12 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
+export async function removeByCriteria(criteria: Partial<UserPhone>, user_id: string): Promise<UpdateResult[]> {
+    return buildUpdateQuery(criteria)
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .execute();
+}
+
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('user_phone')
@@ -98,6 +105,8 @@ export async function list(): Promise<UserPhone[]> {
     return db
         .selectFrom("user_phone")
         .selectAll()
+        // uncoment to enable eager loading
+        //.select((eb) => withUser(eb))
         .where('deleted_by', 'is', null)
         .execute();
 }
@@ -106,6 +115,8 @@ export async function paginate(page: number, pageSize: number): Promise<UserPhon
     return db
         .selectFrom("user_phone")
         .selectAll()
+        // uncoment to enable eager loading
+        //.select((eb) => withUser(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
         .offset((page - 1) * pageSize)
@@ -133,7 +144,7 @@ export async function get(id: number): Promise<UserPhone | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<UserPhone>): Promise<UserPhone[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -143,7 +154,7 @@ export async function findByCriteria(criteria: Partial<UserPhone>): Promise<User
 }
 
 export async function lazyFindByCriteria(criteria: Partial<UserPhone>): Promise<UserPhone[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -151,7 +162,7 @@ export async function lazyFindByCriteria(criteria: Partial<UserPhone>): Promise<
 }
 
 export async function findOneByCriteria(criteria: Partial<UserPhone>): Promise<UserPhone | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -162,7 +173,7 @@ export async function findOneByCriteria(criteria: Partial<UserPhone>): Promise<U
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<UserPhone>): Promise<UserPhone | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -170,8 +181,21 @@ export async function lazyFindOneByCriteria(criteria: Partial<UserPhone>): Promi
     .executeTakeFirst();
 }
 
-function buildCriteriaQuery(criteria: Partial<UserPhone>) {
-  let query = db.selectFrom('user_phone').where('deleted_by', 'is', null);
+function buildSelectQuery(criteria: Partial<UserPhone>) {
+  let query = db.selectFrom('user_phone');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+function buildUpdateQuery(criteria: Partial<UserPhone>) {
+  let query = db.updateTable('user_phone');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCriteriaQuery(query: any, criteria: Partial<UserPhone>): any {
+  query = query.where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
