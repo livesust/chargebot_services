@@ -16,7 +16,7 @@ export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
     ...AppInstallSchemaDef,
     user_id: Joi.number().allow(null),    
-    user: UserSchema,
+    user: UserSchema.allow(null),
 });
 
 export const CreateSchema = Joi.object({

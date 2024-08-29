@@ -19,6 +19,7 @@ import jsonBodyParser from "@middy/http-json-body-parser";
 import { dateReviver } from "src/shared/middlewares/json-date-parser";
 import { ExpoPush } from "@chargebot-services/core/services/expo/expo_push";
 import i18n from '../shared/i18n/i18n';
+import { ChargebotGps } from "@chargebot-services/core/services/analytics/chargebot_gps";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
@@ -31,8 +32,10 @@ const handler = async (event) => {
 
   const alertName = body.name;
   const alertMessage = body.message;
+  Log.info("PUSH ALERT", { body });
 
   if (alertName == 'battery_temperature_normalized') {
+    Log.info("Not sending temperature normalized error");
     return createSuccessResponse({ "response": "success" });
   }
 
@@ -41,9 +44,10 @@ const handler = async (event) => {
       return createError(400, "bot uuid not provided", { expose: true });
     }
 
-    const bot = await Bot.findOneByCriteria({ bot_uuid })
+    const [bot, location] = await Promise.all([Bot.findOneByCriteria({ bot_uuid }), ChargebotGps.getLastPositionByBot(bot_uuid)]);
 
     if (!bot) {
+      Log.info("Bot not found");
       return createNotFoundResponse({ "response": "bot not found" });
     }
 
@@ -55,12 +59,19 @@ const handler = async (event) => {
     
     // when called from API the body.message is a JSON, but when called from IoT is a string
     const title = i18n.__(`push_alerts.${alertName}.title`);
-    const message = i18n.__(`push_alerts.${alertName}.message`, typeof(alertMessage) === "string" ? JSON.parse(alertMessage) : alertMessage);
+    const alertBody = {
+      ...(typeof(alertMessage) === "string" ? JSON.parse(alertMessage) : alertMessage),
+      address: location ? location.address : i18n.__('current_location')
+    };
+    const message = i18n.__(`push_alerts.${alertName}.message`, alertBody);
 
     if (pushTokens && pushTokens.length > 0) {
+      Log.info("SENT ALERT", { alertName, pushTokens, title, message });
       ExpoPush.send_push_notifications(pushTokens, message, title,
         {bot_uuid, bot_id: bot.id}
       )
+    } else {
+      Log.info("No users to be notified");
     }
 
     return createSuccessResponse({ "response": "success" });

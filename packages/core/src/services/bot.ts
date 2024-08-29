@@ -135,9 +135,7 @@ export async function remove(id: number, user_id: string): Promise<{
 
   return {
     entity: deleted,
-    // event to dispatch on EventBus on creation
-    // undefined as default to not dispatch any event
-    event: undefined
+    event: deleted
   };
 }
 
@@ -195,6 +193,7 @@ export async function findBotsByUser(user_id: string): Promise<Bot[]> {
     .innerJoin('bot_user', 'bot_user.bot_id', 'bot.id')
     .innerJoin('user', 'user.id', 'bot_user.user_id')
     .where('user.user_id', '=', user_id)
+    .where('bot.deleted_by', 'is', null)
     .where('bot_user.deleted_by', 'is', null)
     .selectAll('bot')
     .execute();

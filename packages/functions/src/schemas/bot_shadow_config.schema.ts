@@ -144,6 +144,7 @@ export const BotShadowConfigSchema = Joi.object({
     inv_split_phase: Joi.string().allow(null),
     inv_parallel_mode_setup: Joi.string().allow(null),
     inv_output_voltage: Joi.number().allow(null),
+    batt_boost_charge_return_voltage: Joi.number().allow(null),
     version: Joi.number().allow(null),
   }).allow(null),
 });

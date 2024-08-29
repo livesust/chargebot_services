@@ -8,7 +8,6 @@ import { Outlet } from "@chargebot-services/core/services/outlet";
 import { OutletSchedule } from "@chargebot-services/core/services/outlet_schedule";
 import { ScheduledAlert as ScheduledAlertService } from "@chargebot-services/core/services/scheduled_alert";
 import { BotScheduledAlert } from "@chargebot-services/core/services/bot_scheduled_alert";
-import { sql } from "kysely";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {

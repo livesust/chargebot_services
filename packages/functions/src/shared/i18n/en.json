@@ -1,4 +1,5 @@
 {
+  "current_location": "the current location",
   "push_alerts": {
     "battery_low": {
       "title": "Battery Low",
@@ -27,6 +28,22 @@
     "battery_discharging": {
       "title": "Battery Discharging",
       "message": "Your ChargeBot \"{{{device_id}}}\" is discharging. Battery is at {{{state_of_charge}}}%."
+    },
+    "gps_arrive_home": {
+      "title": "Arrived Home",
+      "message": "Your ChargeBot \"{{{device_id}}}\" has arrived home. Please make sure you plug it in to charge. "
+    },
+    "gps_leave_home": {
+      "title": "Left Home",
+      "message": "Your ChargeBot \"{{{device_id}}}\" has left home. You can track location from your App. "
+    },
+    "gps_long_stop": {
+      "title": "Long Stop",
+      "message": "Your ChargeBot \"{{{device_id}}}\" has been at {{{address}}} for more than {{{parked_time_hours}}} hours."
+    },
+    "inverter_grid_off": {
+      "title": "Not Plugged In",
+      "message": "Your ChargeBot \"{{{device_id}}}\" is not charging from utility power. It may not be plugged in or a site breaker may have tripped. Please check to ensure no issues tomorrow."
     }
   },
   "scheduled_alert": {

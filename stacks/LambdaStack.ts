@@ -60,7 +60,15 @@ export function LambdaStack({ app, stack }: StackContext) {
     nodejs: {
       install: ["expo-server-sdk", "i18n"],
     },
-    bind: [rdsCluster, EXPO_ACCESS_TOKEN],
+    bind: [
+      rdsCluster,
+      timescaleConfigs.TIMESCALE_HOST,
+      timescaleConfigs.TIMESCALE_USER,
+      timescaleConfigs.TIMESCALE_PASSWORD,
+      timescaleConfigs.TIMESCALE_PORT,
+      timescaleConfigs.TIMESCALE_DATABASE,
+      EXPO_ACCESS_TOKEN
+    ],
   });
 
   const iotAlertLogGroup = new LogGroup(stack, `ChargebotIoTAlertLogGroup_${app.stage}`, {

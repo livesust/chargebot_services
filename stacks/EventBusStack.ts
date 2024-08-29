@@ -44,6 +44,21 @@ export function EventBusStack({ app, stack }: StackContext) {
           },
         },
       },
+      bot_deleted: {
+        pattern: {
+          source: ["deleted"],
+          detailType: ["bot"],
+        },
+        targets: {
+          on_bot_created: {
+            function: {
+              handler: "packages/functions/src/events/on_bot_deleted.main",
+              timeout,
+              bind: [rdsCluster],
+            }
+          },
+        },
+      },
       outlet_equipment: {
         pattern: {
           source: ["deleted"],
