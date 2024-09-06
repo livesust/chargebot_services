@@ -160,6 +160,7 @@ export async function list(): Promise<Bot[]> {
         .selectAll()
         .select((eb) => withBotVersion(eb))
         .select((eb) => withVehicle(eb))
+        .select((eb) => withBotCompany(eb))
         .where('deleted_by', 'is', null)
         .execute();
 }
@@ -170,6 +171,7 @@ export async function paginate(page: number, pageSize: number): Promise<Bot[]> {
         .selectAll()
         .select((eb) => withBotVersion(eb))
         .select((eb) => withVehicle(eb))
+        .select((eb) => withBotCompany(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
         .offset((page - 1) * pageSize)
@@ -191,6 +193,7 @@ export async function get(id: number): Promise<Bot | undefined> {
         .selectAll()
         .select((eb) => withBotVersion(eb))
         .select((eb) => withVehicle(eb))
+        .select((eb) => withBotCompany(eb))
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
@@ -226,6 +229,7 @@ export async function findByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
     .selectAll()
     .select((eb) => withBotVersion(eb))
     .select((eb) => withVehicle(eb))
+    .select((eb) => withBotCompany(eb))
     .execute();
 }
 
@@ -244,6 +248,7 @@ export async function findOneByCriteria(criteria: Partial<Bot>): Promise<Bot | u
     .selectAll()
     .select((eb) => withBotVersion(eb))
     .select((eb) => withVehicle(eb))
+    .select((eb) => withBotCompany(eb))
     .limit(1)
     .executeTakeFirst();
 }

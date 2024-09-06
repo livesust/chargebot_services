@@ -2,8 +2,8 @@ import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
 
 import { EntitySchema as EquipmentTypeSchema } from "./equipment_type.schema";
-// uncoment to enable eager loading
-//import { EntitySchema as CustomerSchema } from "./customer.schema";
+
+import { EntitySchema as CustomerSchema } from "./customer.schema";
 
 const EquipmentSchemaDef = {
     name: Joi.string().max(255),
@@ -20,8 +20,8 @@ export const EntitySchema = Joi.object({
     customer_id: Joi.number(),
     
     equipment_type: EquipmentTypeSchema,
-    // uncoment to enable eager loading
-    //customer: CustomerSchema,
+    
+    customer: CustomerSchema,
 });
 
 export const CreateSchema = Joi.object({

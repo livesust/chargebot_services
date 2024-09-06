@@ -42,9 +42,7 @@ export async function create(bot_scheduled_alert: NewBotScheduledAlert): Promise
 
     return {
       entity: created,
-      // event to dispatch on EventBus on creation
-      // undefined as default to not dispatch any event
-      event: undefined
+      event: created
     };
 }
 
@@ -69,9 +67,7 @@ export async function update(id: number, bot_scheduled_alert: BotScheduledAlertU
 
     return {
       entity: updated,
-      // event to dispatch on EventBus on creation
-      // undefined as default to not dispatch any event
-      event: undefined
+      event: updated
     };
 }
 
@@ -152,6 +148,21 @@ export async function get(id: number): Promise<BotScheduledAlert | undefined> {
         .where('id', '=', id)
         .where('deleted_by', 'is', null)
         .executeTakeFirst();
+}
+
+export async function findByScheduledAlert(scheduledAlertName: string): Promise<BotScheduledAlert[]> {
+  const query = db.selectFrom('bot_scheduled_alert')
+    .innerJoin('scheduled_alert', 'scheduled_alert.id', 'bot_scheduled_alert.scheduled_alert_id')
+    .where('bot_scheduled_alert.deleted_by', 'is', null)
+    .where('scheduled_alert.deleted_by', 'is', null)
+    .where('scheduled_alert.name', '=', scheduledAlertName)
+    .where('bot_scheduled_alert.alert_status', '=', true);
+
+  return query
+    .selectAll('bot_scheduled_alert')
+    .select((eb) => withBot(eb))
+    .select((eb) => withScheduledAlert(eb))
+    .execute();
 }
 
 export async function findByCriteria(criteria: Partial<BotScheduledAlert>): Promise<BotScheduledAlert[]> {

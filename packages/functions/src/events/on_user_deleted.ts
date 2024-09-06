@@ -13,9 +13,8 @@ const handler = async (event) => {
   const user_id = event?.detail?.id;
   const deleted_by = event?.detail?.deleted_by;
   if (event?.source === 'deleted') {
-    console.log(`Delete user from Cognito: ${cognito_id}`);
     await Cognito.deleteUser(cognito_id);
-    console.log(`Delete related user concepts`);
+    console.log(`Delete user from Cognito: ${cognito_id}`);
     const [role, email, phone, bots] = await Promise.all([
       UserRole.lazyFindOneByCriteria({user_id}),
       UserEmail.lazyFindOneByCriteria({user_id}),
@@ -28,6 +27,7 @@ const handler = async (event) => {
       phone ? UserPhone.remove(phone.id!, deleted_by) : Promise.resolve(),
       bots?.length > 0 ? bots.map(b => BotUser.remove(b.id!, deleted_by)) : Promise.resolve([]),
     ]);
+    console.log(`Deleted user role, email, phone and bots assigned`);
   }
 };
 

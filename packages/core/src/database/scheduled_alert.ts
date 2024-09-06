@@ -13,3 +13,13 @@ export interface ScheduledAlertTable extends AuditedEntity {
 export type ScheduledAlert = Selectable<ScheduledAlertTable>
 export type NewScheduledAlert = Insertable<ScheduledAlertTable>
 export type ScheduledAlertUpdate = Updateable<ScheduledAlertTable>
+
+export enum ScheduledAlertName {
+  NOT_PLUGGED_IN = "scheduled_alert.not_plugged_in.name",
+  BATTERY_LOW = "scheduled_alert.battery_low.name",
+  ARRIVE_HOME = "scheduled_alert.arrive_home.name",
+  LEAVE_HOME = "scheduled_alert.leave_home.name",
+  LONG_STOP = "scheduled_alert.long_stop.name",
+  DAILY_USE = "scheduled_alert.daily_use.name",
+  NOTHING_CHARGING = "scheduled_alert.nothing_charging.name"
+}

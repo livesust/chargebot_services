@@ -104,6 +104,23 @@ export function EventBusStack({ app, stack }: StackContext) {
           },
         },
       },
+      scheduled_alert_modified: {
+        pattern: {
+          source: ["created", "updated"],
+          detailType: ["bot_scheduled_alert"],
+        },
+        targets: {
+          on_scheduled_alert_created: {
+            function: {
+              handler: "packages/functions/src/events/on_bot_scheduled_alert_created_updated.main",
+              timeout,
+              // @ts-expect-error ignore check
+              role: iotRole,
+              bind: [rdsCluster, IOT_ENDPOINT],
+            }
+          },
+        },
+      },
       on_user_deleted: {
         pattern: {
           source: ["deleted"],

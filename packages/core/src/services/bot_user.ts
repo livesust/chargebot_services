@@ -196,6 +196,21 @@ export async function get(id: number): Promise<BotUser | undefined> {
         .executeTakeFirst();
 }
 
+export async function getUsersToNotify(botIds: number[]): Promise<BotUser[] | undefined> {
+    return await db
+        .selectFrom("bot_user")
+        .innerJoin('user', 'user.id', 'bot_user.user_id')
+        .innerJoin('bot', 'bot.id', 'bot_user.bot_id')
+        .selectAll('bot_user')
+        .select((eb) => withBot(eb))
+        .select((eb) => withUser(eb))
+        .where('bot_user.bot_id', 'in', botIds)
+        .where('bot_user.deleted_by', 'is', null)
+        .where('user.deleted_by', 'is', null)
+        .where('bot.deleted_by', 'is', null)
+        .execute();
+}
+
 export async function findByCriteria(criteria: Partial<BotUser>): Promise<BotUser[]> {
   const query = buildSelectQuery(criteria);
 

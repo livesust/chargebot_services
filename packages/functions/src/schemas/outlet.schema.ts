@@ -7,7 +7,7 @@ import { EntitySchema as BotSchema } from "./bot.schema";
 
 const OutletSchemaDef = {
     pdu_outlet_number: Joi.number(),
-    priority_charge_state: Joi.string().allow(null, ''),
+    priority_charge_state: Joi.string().max(255).allow(null, ''),
     notes: Joi.string().allow(null, ''),
 };
 

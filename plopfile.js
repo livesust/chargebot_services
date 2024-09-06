@@ -407,6 +407,12 @@ export default function (plop) {
                 templateFile: '.plop_templates/core/service.ts.hbs',
                 force: true
             },
+            {
+                type: 'add',
+                path: 'packages/functions/src/schemas/{{snakeCase name}}.schema.ts',
+                templateFile: '.plop_templates/functions/schema.ts.hbs',
+                force: true
+            },
         ],
     });
 

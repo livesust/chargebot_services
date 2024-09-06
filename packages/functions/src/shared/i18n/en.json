@@ -41,9 +41,17 @@
       "title": "Long Stop",
       "message": "Your ChargeBot \"{{{device_id}}}\" has been at {{{address}}} for more than {{{parked_time_hours}}} hours."
     },
-    "inverter_grid_off": {
+    "not_plugged_in": {
       "title": "Not Plugged In",
       "message": "Your ChargeBot \"{{{device_id}}}\" is not charging from utility power. It may not be plugged in or a site breaker may have tripped. Please check to ensure no issues tomorrow."
+    },
+    "nothing_charging": {
+      "title": "Nothing Charging",
+      "message": "Since arriving home, the ChargeBot \"{{{device_id}}}\" has not charged any batteries. Please check and make sure your equipment is plugged in."
+    },
+    "daily_usage": {
+      "title": "Daily Usage",
+      "message": "Since 12am today, your ChargeBot \"{{{device_id}}}\" has charged {{{energy_kwh}}}Kwh worth of batteries."
     }
   },
   "scheduled_alert": {

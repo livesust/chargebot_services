@@ -218,7 +218,7 @@ export function ApiStack({ app, stack }: StackContext) {
           timeout,
           // @ts-expect-error ignore check
           role: iotRole,
-          bind: [IOT_ENDPOINT]
+          bind: [IOT_ENDPOINT],
         }
       },
       "GET /user/{cognito_id}/profile": {
@@ -286,6 +286,11 @@ export function ApiStack({ app, stack }: StackContext) {
       "POST /send-alert": {
         cdk: {
           function: functions.processIotAlertsFunction,
+        }
+      },
+      "POST /send-daily-usage-alert": {
+        cdk: {
+          function: functions.processDailyUsageAlerts,
         }
       },
       // UNCOMMENT JUST FOR TESTING IN DEV MODE

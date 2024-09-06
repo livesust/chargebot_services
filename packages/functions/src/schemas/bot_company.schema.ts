@@ -39,6 +39,8 @@ export const SearchSchema = Joi.object({
     id: Joi.number(),
     bot_id: Joi.number(),
     company_id: Joi.number(),
+    bot: BotSchema,
+    company: CompanySchema,
     ...BotCompanySchemaDef
 });
 

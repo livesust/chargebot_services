@@ -13,6 +13,7 @@ export const EntitySchema = Joi.object({
     ...BotUserSchemaDef,
     bot_id: Joi.number(),
     user_id: Joi.number(),
+    
     bot: BotSchema,
     user: UserSchema,
 });

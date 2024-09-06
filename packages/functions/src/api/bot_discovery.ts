@@ -58,7 +58,7 @@ const handler = async (event) => {
         bot_version_id: botVersion!.id!,
       });
       Log.debug("Dispatch creation event");
-      EventBus.dispatchEvent('bot', "created", created);
+      EventBus.dispatchEvent('bot', "created", created?.entity);
     } else {
       await Bot.update(bot.id!, {
         bot_version_id: botVersion!.id!,
