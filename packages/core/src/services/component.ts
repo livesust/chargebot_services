@@ -1,5 +1,6 @@
 export * as Component from "./component";
 import db from '../database';
+import { UpdateResult } from "kysely";
 import { Component, ComponentUpdate, NewComponent } from "../database/component";
 
 
@@ -77,6 +78,12 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
+export async function removeByCriteria(criteria: Partial<Component>, user_id: string): Promise<UpdateResult[]> {
+    return buildUpdateQuery(criteria)
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .execute();
+}
+
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('component')
@@ -121,7 +128,7 @@ export async function get(id: number): Promise<Component | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<Component>): Promise<Component[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -129,7 +136,7 @@ export async function findByCriteria(criteria: Partial<Component>): Promise<Comp
 }
 
 export async function lazyFindByCriteria(criteria: Partial<Component>): Promise<Component[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -137,7 +144,7 @@ export async function lazyFindByCriteria(criteria: Partial<Component>): Promise<
 }
 
 export async function findOneByCriteria(criteria: Partial<Component>): Promise<Component | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -146,7 +153,7 @@ export async function findOneByCriteria(criteria: Partial<Component>): Promise<C
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<Component>): Promise<Component | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -154,8 +161,21 @@ export async function lazyFindOneByCriteria(criteria: Partial<Component>): Promi
     .executeTakeFirst();
 }
 
-function buildCriteriaQuery(criteria: Partial<Component>) {
-  let query = db.selectFrom('component').where('deleted_by', 'is', null);
+function buildSelectQuery(criteria: Partial<Component>) {
+  let query = db.selectFrom('component');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+function buildUpdateQuery(criteria: Partial<Component>) {
+  let query = db.updateTable('component');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCriteriaQuery(query: any, criteria: Partial<Component>): any {
+  query = query.where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);

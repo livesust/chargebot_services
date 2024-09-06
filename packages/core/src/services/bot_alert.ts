@@ -1,6 +1,6 @@
 export * as BotAlert from "./bot_alert";
 import db, { Database } from '../database';
-import { ExpressionBuilder } from "kysely";
+import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { BotAlert, BotAlertUpdate, NewBotAlert } from "../database/bot_alert";
 
@@ -9,6 +9,7 @@ export function withAlertType(eb: ExpressionBuilder<Database, 'bot_alert'>) {
       eb.selectFrom('alert_type')
         .selectAll()
         .whereRef('alert_type.id', '=', 'bot_alert.alert_type_id')
+        .where('alert_type.deleted_by', 'is', null)
     ).as('alert_type')
 }
 
@@ -17,6 +18,7 @@ export function withBot(eb: ExpressionBuilder<Database, 'bot_alert'>) {
       eb.selectFrom('bot')
         .selectAll()
         .whereRef('bot.id', '=', 'bot_alert.bot_id')
+        .where('bot.deleted_by', 'is', null)
     ).as('bot')
 }
 
@@ -95,6 +97,12 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
+export async function removeByCriteria(criteria: Partial<BotAlert>, user_id: string): Promise<UpdateResult[]> {
+    return buildUpdateQuery(criteria)
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .execute();
+}
+
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('bot_alert')
@@ -106,6 +114,9 @@ export async function list(): Promise<BotAlert[]> {
     return db
         .selectFrom("bot_alert")
         .selectAll()
+        .select((eb) => withAlertType(eb))
+        // uncoment to enable eager loading
+        //.select((eb) => withBot(eb))
         .where('deleted_by', 'is', null)
         .execute();
 }
@@ -114,6 +125,9 @@ export async function paginate(page: number, pageSize: number): Promise<BotAlert
     return db
         .selectFrom("bot_alert")
         .selectAll()
+        .select((eb) => withAlertType(eb))
+        // uncoment to enable eager loading
+        //.select((eb) => withBot(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
         .offset((page - 1) * pageSize)
@@ -142,7 +156,7 @@ export async function get(id: number): Promise<BotAlert | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<BotAlert>): Promise<BotAlert[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -153,7 +167,7 @@ export async function findByCriteria(criteria: Partial<BotAlert>): Promise<BotAl
 }
 
 export async function lazyFindByCriteria(criteria: Partial<BotAlert>): Promise<BotAlert[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -161,7 +175,7 @@ export async function lazyFindByCriteria(criteria: Partial<BotAlert>): Promise<B
 }
 
 export async function findOneByCriteria(criteria: Partial<BotAlert>): Promise<BotAlert | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -173,7 +187,7 @@ export async function findOneByCriteria(criteria: Partial<BotAlert>): Promise<Bo
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<BotAlert>): Promise<BotAlert | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -181,8 +195,21 @@ export async function lazyFindOneByCriteria(criteria: Partial<BotAlert>): Promis
     .executeTakeFirst();
 }
 
-function buildCriteriaQuery(criteria: Partial<BotAlert>) {
-  let query = db.selectFrom('bot_alert').where('deleted_by', 'is', null);
+function buildSelectQuery(criteria: Partial<BotAlert>) {
+  let query = db.selectFrom('bot_alert');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+function buildUpdateQuery(criteria: Partial<BotAlert>) {
+  let query = db.updateTable('bot_alert');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCriteriaQuery(query: any, criteria: Partial<BotAlert>): any {
+  query = query.where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);

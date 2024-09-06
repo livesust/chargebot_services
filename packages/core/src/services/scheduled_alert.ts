@@ -1,5 +1,6 @@
 export * as ScheduledAlert from "./scheduled_alert";
-import db, { json } from '../database';
+import db from '../database';
+import { UpdateResult } from "kysely";
 import { ScheduledAlert, ScheduledAlertUpdate, NewScheduledAlert } from "../database/scheduled_alert";
 
 
@@ -33,7 +34,6 @@ export async function create(scheduled_alert: NewScheduledAlert): Promise<{
 
     return {
       entity: created,
-      // event to dispatch on EventBus on creation
       event: created
     };
 }
@@ -89,6 +89,12 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
+export async function removeByCriteria(criteria: Partial<ScheduledAlert>, user_id: string): Promise<UpdateResult[]> {
+    return buildUpdateQuery(criteria)
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .execute();
+}
+
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('scheduled_alert')
@@ -133,7 +139,7 @@ export async function get(id: number): Promise<ScheduledAlert | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<ScheduledAlert>): Promise<ScheduledAlert[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -141,7 +147,7 @@ export async function findByCriteria(criteria: Partial<ScheduledAlert>): Promise
 }
 
 export async function lazyFindByCriteria(criteria: Partial<ScheduledAlert>): Promise<ScheduledAlert[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -149,7 +155,7 @@ export async function lazyFindByCriteria(criteria: Partial<ScheduledAlert>): Pro
 }
 
 export async function findOneByCriteria(criteria: Partial<ScheduledAlert>): Promise<ScheduledAlert | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -158,7 +164,7 @@ export async function findOneByCriteria(criteria: Partial<ScheduledAlert>): Prom
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<ScheduledAlert>): Promise<ScheduledAlert | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -166,8 +172,21 @@ export async function lazyFindOneByCriteria(criteria: Partial<ScheduledAlert>): 
     .executeTakeFirst();
 }
 
-function buildCriteriaQuery(criteria: Partial<ScheduledAlert>) {
-  let query = db.selectFrom('scheduled_alert').where('deleted_by', 'is', null);
+function buildSelectQuery(criteria: Partial<ScheduledAlert>) {
+  let query = db.selectFrom('scheduled_alert');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+function buildUpdateQuery(criteria: Partial<ScheduledAlert>) {
+  let query = db.updateTable('scheduled_alert');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCriteriaQuery(query: any, criteria: Partial<ScheduledAlert>): any {
+  query = query.where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);

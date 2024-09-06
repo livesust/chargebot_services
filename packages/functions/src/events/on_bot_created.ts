@@ -2,17 +2,18 @@ import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import { isWarmingUp } from "../shared/rest_utils";
 import { Info } from "luxon";
+import Log from '@dazn/lambda-powertools-logger';
 import { BotChargingSettings } from "@chargebot-services/core/services/bot_charging_settings";
 import { OutletType } from "@chargebot-services/core/services/outlet_type";
 import { Outlet } from "@chargebot-services/core/services/outlet";
 import { OutletSchedule } from "@chargebot-services/core/services/outlet_schedule";
 import { ScheduledAlert as ScheduledAlertService } from "@chargebot-services/core/services/scheduled_alert";
 import { BotScheduledAlert } from "@chargebot-services/core/services/bot_scheduled_alert";
-import { sql } from "kysely";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
   const bot = event?.detail;
+  Log.info('Processing bot created', {bot});
   if(bot?.id) {
     /*
     When a bot is created, we must:

@@ -44,6 +44,21 @@ export function EventBusStack({ app, stack }: StackContext) {
           },
         },
       },
+      bot_deleted: {
+        pattern: {
+          source: ["deleted"],
+          detailType: ["bot"],
+        },
+        targets: {
+          on_bot_created: {
+            function: {
+              handler: "packages/functions/src/events/on_bot_deleted.main",
+              timeout,
+              bind: [rdsCluster],
+            }
+          },
+        },
+      },
       outlet_equipment: {
         pattern: {
           source: ["deleted"],
@@ -85,6 +100,23 @@ export function EventBusStack({ app, stack }: StackContext) {
               handler: "packages/functions/src/events/on_scheduled_alert_created.main",
               timeout,
               bind: [rdsCluster],
+            }
+          },
+        },
+      },
+      scheduled_alert_modified: {
+        pattern: {
+          source: ["created", "updated"],
+          detailType: ["bot_scheduled_alert"],
+        },
+        targets: {
+          on_scheduled_alert_created: {
+            function: {
+              handler: "packages/functions/src/events/on_bot_scheduled_alert_created_updated.main",
+              timeout,
+              // @ts-expect-error ignore check
+              role: iotRole,
+              bind: [rdsCluster, IOT_ENDPOINT],
             }
           },
         },

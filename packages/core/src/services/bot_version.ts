@@ -1,5 +1,6 @@
 export * as BotVersion from "./bot_version";
 import db from '../database';
+import { UpdateResult } from "kysely";
 import { BotVersion, BotVersionUpdate, NewBotVersion } from "../database/bot_version";
 
 
@@ -89,6 +90,12 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
+export async function removeByCriteria(criteria: Partial<BotVersion>, user_id: string): Promise<UpdateResult[]> {
+    return buildUpdateQuery(criteria)
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .execute();
+}
+
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('bot_version')
@@ -133,7 +140,7 @@ export async function get(id: number): Promise<BotVersion | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<BotVersion>): Promise<BotVersion[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -141,7 +148,7 @@ export async function findByCriteria(criteria: Partial<BotVersion>): Promise<Bot
 }
 
 export async function lazyFindByCriteria(criteria: Partial<BotVersion>): Promise<BotVersion[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -149,7 +156,7 @@ export async function lazyFindByCriteria(criteria: Partial<BotVersion>): Promise
 }
 
 export async function findOneByCriteria(criteria: Partial<BotVersion>): Promise<BotVersion | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -158,7 +165,7 @@ export async function findOneByCriteria(criteria: Partial<BotVersion>): Promise<
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<BotVersion>): Promise<BotVersion | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -166,8 +173,21 @@ export async function lazyFindOneByCriteria(criteria: Partial<BotVersion>): Prom
     .executeTakeFirst();
 }
 
-function buildCriteriaQuery(criteria: Partial<BotVersion>) {
-  let query = db.selectFrom('bot_version').where('deleted_by', 'is', null);
+function buildSelectQuery(criteria: Partial<BotVersion>) {
+  let query = db.selectFrom('bot_version');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+function buildUpdateQuery(criteria: Partial<BotVersion>) {
+  let query = db.updateTable('bot_version');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCriteriaQuery(query: any, criteria: Partial<BotVersion>): any {
+  query = query.where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);

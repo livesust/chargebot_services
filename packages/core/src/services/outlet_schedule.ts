@@ -1,6 +1,6 @@
 export * as OutletSchedule from "./outlet_schedule";
 import db, { Database } from '../database';
-import { ExpressionBuilder } from "kysely";
+import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { DateTime } from 'luxon';
 import { OutletSchedule, OutletScheduleUpdate, NewOutletSchedule } from "../database/outlet_schedule";
@@ -11,6 +11,7 @@ export function withOutlet(eb: ExpressionBuilder<Database, 'outlet_schedule'>) {
       eb.selectFrom('outlet')
         .selectAll()
         .whereRef('outlet.id', '=', 'outlet_schedule.outlet_id')
+        .where('outlet.deleted_by', 'is', null)
     ).as('outlet')
 }
 
@@ -90,7 +91,13 @@ export async function remove(id: number, user_id: string): Promise<{
         }
       }
     } : undefined
-  };;
+  };
+}
+
+export async function removeByCriteria(criteria: Partial<OutletSchedule>, user_id: string): Promise<UpdateResult[]> {
+    return buildUpdateQuery(criteria)
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .execute();
 }
 
 export async function hard_remove(id: number): Promise<void> {
@@ -104,6 +111,8 @@ export async function list(): Promise<OutletSchedule[]> {
     return db
         .selectFrom("outlet_schedule")
         .selectAll()
+        // uncoment to enable eager loading
+        //.select((eb) => withOutlet(eb))
         .where('deleted_by', 'is', null)
         .execute();
 }
@@ -112,6 +121,8 @@ export async function paginate(page: number, pageSize: number): Promise<OutletSc
     return db
         .selectFrom("outlet_schedule")
         .selectAll()
+        // uncoment to enable eager loading
+        //.select((eb) => withOutlet(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
         .offset((page - 1) * pageSize)
@@ -139,7 +150,7 @@ export async function get(id: number): Promise<OutletSchedule | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<OutletSchedule>): Promise<OutletSchedule[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -149,7 +160,7 @@ export async function findByCriteria(criteria: Partial<OutletSchedule>): Promise
 }
 
 export async function lazyFindByCriteria(criteria: Partial<OutletSchedule>): Promise<OutletSchedule[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -157,7 +168,7 @@ export async function lazyFindByCriteria(criteria: Partial<OutletSchedule>): Pro
 }
 
 export async function findOneByCriteria(criteria: Partial<OutletSchedule>): Promise<OutletSchedule | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -168,7 +179,7 @@ export async function findOneByCriteria(criteria: Partial<OutletSchedule>): Prom
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<OutletSchedule>): Promise<OutletSchedule | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -176,8 +187,21 @@ export async function lazyFindOneByCriteria(criteria: Partial<OutletSchedule>): 
     .executeTakeFirst();
 }
 
-function buildCriteriaQuery(criteria: Partial<OutletSchedule>) {
-  let query = db.selectFrom('outlet_schedule').where('deleted_by', 'is', null);
+function buildSelectQuery(criteria: Partial<OutletSchedule>) {
+  let query = db.selectFrom('outlet_schedule');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+function buildUpdateQuery(criteria: Partial<OutletSchedule>) {
+  let query = db.updateTable('outlet_schedule');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCriteriaQuery(query: any, criteria: Partial<OutletSchedule>): any {
+  query = query.where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);

@@ -1,5 +1,6 @@
 export * as StateMaster from "./state_master";
 import db from '../database';
+import { UpdateResult } from "kysely";
 import { StateMaster, StateMasterUpdate, NewStateMaster } from "../database/state_master";
 
 
@@ -88,6 +89,12 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
+export async function removeByCriteria(criteria: Partial<StateMaster>, user_id: string): Promise<UpdateResult[]> {
+    return buildUpdateQuery(criteria)
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .execute();
+}
+
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('state_master')
@@ -134,7 +141,7 @@ export async function get(id: number): Promise<StateMaster | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<StateMaster>): Promise<StateMaster[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -143,7 +150,7 @@ export async function findByCriteria(criteria: Partial<StateMaster>): Promise<St
 }
 
 export async function lazyFindByCriteria(criteria: Partial<StateMaster>): Promise<StateMaster[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -152,7 +159,7 @@ export async function lazyFindByCriteria(criteria: Partial<StateMaster>): Promis
 }
 
 export async function findOneByCriteria(criteria: Partial<StateMaster>): Promise<StateMaster | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -161,7 +168,7 @@ export async function findOneByCriteria(criteria: Partial<StateMaster>): Promise
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<StateMaster>): Promise<StateMaster | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -169,8 +176,21 @@ export async function lazyFindOneByCriteria(criteria: Partial<StateMaster>): Pro
     .executeTakeFirst();
 }
 
-function buildCriteriaQuery(criteria: Partial<StateMaster>) {
-  let query = db.selectFrom('state_master').where('deleted_by', 'is', null);
+function buildSelectQuery(criteria: Partial<StateMaster>) {
+  let query = db.selectFrom('state_master');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+function buildUpdateQuery(criteria: Partial<StateMaster>) {
+  let query = db.updateTable('state_master');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCriteriaQuery(query: any, criteria: Partial<StateMaster>): any {
+  query = query.where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);

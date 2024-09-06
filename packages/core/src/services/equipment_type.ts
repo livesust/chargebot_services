@@ -1,5 +1,6 @@
 export * as EquipmentType from "./equipment_type";
 import db from '../database';
+import { UpdateResult } from "kysely";
 import { EquipmentType, EquipmentTypeUpdate, NewEquipmentType } from "../database/equipment_type";
 
 
@@ -77,6 +78,12 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
+export async function removeByCriteria(criteria: Partial<EquipmentType>, user_id: string): Promise<UpdateResult[]> {
+    return buildUpdateQuery(criteria)
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .execute();
+}
+
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('equipment_type')
@@ -121,7 +128,7 @@ export async function get(id: number): Promise<EquipmentType | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<EquipmentType>): Promise<EquipmentType[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -129,7 +136,7 @@ export async function findByCriteria(criteria: Partial<EquipmentType>): Promise<
 }
 
 export async function lazyFindByCriteria(criteria: Partial<EquipmentType>): Promise<EquipmentType[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -137,7 +144,7 @@ export async function lazyFindByCriteria(criteria: Partial<EquipmentType>): Prom
 }
 
 export async function findOneByCriteria(criteria: Partial<EquipmentType>): Promise<EquipmentType | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -146,7 +153,7 @@ export async function findOneByCriteria(criteria: Partial<EquipmentType>): Promi
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<EquipmentType>): Promise<EquipmentType | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -154,8 +161,21 @@ export async function lazyFindOneByCriteria(criteria: Partial<EquipmentType>): P
     .executeTakeFirst();
 }
 
-function buildCriteriaQuery(criteria: Partial<EquipmentType>) {
-  let query = db.selectFrom('equipment_type').where('deleted_by', 'is', null);
+function buildSelectQuery(criteria: Partial<EquipmentType>) {
+  let query = db.selectFrom('equipment_type');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+function buildUpdateQuery(criteria: Partial<EquipmentType>) {
+  let query = db.updateTable('equipment_type');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCriteriaQuery(query: any, criteria: Partial<EquipmentType>): any {
+  query = query.where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);

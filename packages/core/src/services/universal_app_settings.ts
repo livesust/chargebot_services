@@ -1,6 +1,6 @@
 export * as UniversalAppSettings from "./universal_app_settings";
 import db, { Database } from '../database';
-import { ExpressionBuilder } from "kysely";
+import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { UniversalAppSettings, UniversalAppSettingsUpdate, NewUniversalAppSettings } from "../database/universal_app_settings";
 
@@ -9,6 +9,7 @@ export function withAppSettingsType(eb: ExpressionBuilder<Database, 'universal_a
       eb.selectFrom('app_settings_type')
         .selectAll()
         .whereRef('app_settings_type.id', '=', 'universal_app_settings.app_settings_type_id')
+        .where('app_settings_type.deleted_by', 'is', null)
     ).as('app_settings_type')
 }
 
@@ -98,6 +99,12 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
+export async function removeByCriteria(criteria: Partial<UniversalAppSettings>, user_id: string): Promise<UpdateResult[]> {
+    return buildUpdateQuery(criteria)
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .execute();
+}
+
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('universal_app_settings')
@@ -109,6 +116,7 @@ export async function list(): Promise<UniversalAppSettings[]> {
     return db
         .selectFrom("universal_app_settings")
         .selectAll()
+        .select((eb) => withAppSettingsType(eb))
         .where('deleted_by', 'is', null)
         .execute();
 }
@@ -117,6 +125,7 @@ export async function paginate(page: number, pageSize: number): Promise<Universa
     return db
         .selectFrom("universal_app_settings")
         .selectAll()
+        .select((eb) => withAppSettingsType(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
         .offset((page - 1) * pageSize)
@@ -143,7 +152,7 @@ export async function get(id: number): Promise<UniversalAppSettings | undefined>
 }
 
 export async function findByCriteria(criteria: Partial<UniversalAppSettings>): Promise<UniversalAppSettings[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -152,7 +161,7 @@ export async function findByCriteria(criteria: Partial<UniversalAppSettings>): P
 }
 
 export async function lazyFindByCriteria(criteria: Partial<UniversalAppSettings>): Promise<UniversalAppSettings[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -160,7 +169,7 @@ export async function lazyFindByCriteria(criteria: Partial<UniversalAppSettings>
 }
 
 export async function findOneByCriteria(criteria: Partial<UniversalAppSettings>): Promise<UniversalAppSettings | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -170,7 +179,7 @@ export async function findOneByCriteria(criteria: Partial<UniversalAppSettings>)
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<UniversalAppSettings>): Promise<UniversalAppSettings | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -178,8 +187,21 @@ export async function lazyFindOneByCriteria(criteria: Partial<UniversalAppSettin
     .executeTakeFirst();
 }
 
-function buildCriteriaQuery(criteria: Partial<UniversalAppSettings>) {
-  let query = db.selectFrom('universal_app_settings').where('deleted_by', 'is', null);
+function buildSelectQuery(criteria: Partial<UniversalAppSettings>) {
+  let query = db.selectFrom('universal_app_settings');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+function buildUpdateQuery(criteria: Partial<UniversalAppSettings>) {
+  let query = db.updateTable('universal_app_settings');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCriteriaQuery(query: any, criteria: Partial<UniversalAppSettings>): any {
+  query = query.where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);

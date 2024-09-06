@@ -37,69 +37,30 @@ const handler = async (event) => {
     Log.debug('User found', { cognito_id });
 
     // find existent app install
-    const [existentAppInstall, notificationPermission] = await Promise.all([
+    const [existentAppInstall, notifificationPermission, locationPermission] = await Promise.all([
       AppInstall.findOneByCriteria({user_id: user.id, app_platform_id: body.app_platform_id}),
-      Permission.findOneByCriteria({name: PermissionName.NOTIFICATIONS})
+      Permission.findOneByCriteria({name: PermissionName.NOTIFICATIONS}),
+      Permission.findOneByCriteria({name: PermissionName.LOCATION}),
     ]);
 
-    Log.debug('Existent Install?', { existentAppInstall, notificationPermission });
-
-    // update
     if (existentAppInstall) {
-      const [appInstallUpdated, appInstallPermissions, allPermissions] = await Promise.all([
-        AppInstall.update(existentAppInstall.id!, {
-          app_version: body.app_version,
-          platform: body.platform,
-          app_platform_id: body.app_platform_id,
-          os_version: body.os_version,
-          push_token: body.push_token,
-          description: body.description,
-          modified_by: user_id,
-          modified_date: now,
-        }),
-        AppInstallPermissions.findByCriteria({app_install_id: existentAppInstall.id!}),
-        Permission.list()
-      ]);
-      Log.debug('Current Permissions', { appInstallUpdated, appInstallPermissions, allPermissions });
-      if (appInstallPermissions?.length > 0) {
-        // update existent notifications permission
-        const appNotifPermissions = appInstallPermissions.filter(a => a.permission_id === notificationPermission?.id);
-        Log.debug('Update Notifications Permission', { appNotifPermissions });
-        if (appNotifPermissions?.length > 0) {
-          await AppInstallPermissions.update(appNotifPermissions[0].id!, {
-            permission_status: body.push_token ? true : false,
-          });
-        }
-      }
-
-      // check for new permissions that need to be assigned to the user
-      const missingPermissions = appInstallPermissions?.length > 0 ? allPermissions.filter(p => !appInstallPermissions.some(aip => aip.permission_id === p.id)) : allPermissions;
-      Log.debug('Missing Permissions', { missingPermissions });
-      await Promise.all(
-        missingPermissions.map(async (permission) => {
-          const toCreate = {
-            permission_status: false,
-            permission_id: permission.id!,
-            app_install_id: existentAppInstall!.id!,
-            created_by: user_id,
-            created_date: now,
-            modified_by: user_id,
-            modified_date: now,
-          };
-          Log.debug('Create AppInstallPermissions', { toCreate });
-          await AppInstallPermissions.create(toCreate)
-        })
-      ).catch(e => {
-        Log.error('Error saving app install permissions', e);
-        throw e;
-      });
-      return createSuccessResponse(appInstallUpdated!.entity);
+      Log.debug('Existent Install, update');
+    } else {
+      Log.debug('New Install, create');
     }
 
-    Log.debug('Create New Install');
-    // create
-    const [response, permissions] = await Promise.all([
-      AppInstall.create({
+    const [appInstall, appInstallPermissions] = await Promise.all([
+      // update or create install
+      existentAppInstall ? AppInstall.update(existentAppInstall.id!, {
+        app_version: body.app_version,
+        platform: body.platform,
+        app_platform_id: body.app_platform_id,
+        os_version: body.os_version,
+        push_token: body.push_token,
+        description: body.description,
+        modified_by: user_id,
+        modified_date: now,
+      }) : AppInstall.create({
         ...body,
         user_id: user.id,
         created_by: user_id,
@@ -107,32 +68,52 @@ const handler = async (event) => {
         modified_by: user_id,
         modified_date: now,
       }),
-      Permission.list()
+      // get app install permissions, or empty array if need to create them
+      existentAppInstall ? AppInstallPermissions.findByCriteria({app_install_id: existentAppInstall.id!}) : Promise.resolve([]),
     ]);
 
-    const registeredAppInstall = response?.entity;
-    Log.debug('New Install Registered', {registeredAppInstall});
-    await Promise.all(
-      permissions.map(async (permission) => {
-        const toCreate = {
+    // search existent permissions, array will be empty if they do not exists
+    const appNotificationPermission = appInstallPermissions?.filter(a => a.permission?.name === PermissionName.NOTIFICATIONS) ?? [];
+    const appLocationsPermission = appInstallPermissions?.filter(a => a.permission?.name === PermissionName.LOCATION) ?? [];
+
+    if (appNotificationPermission?.length > 0) {
+      Log.debug('Update notification permission');
+    } else {
+      Log.debug('Create notification permission');
+    }
+
+    if (appLocationsPermission?.length > 0) {
+      Log.debug('Update location permission');
+    } else {
+      Log.debug('Create location permission');
+    }
+
+    await Promise.all([
+      // update/create app install permission for notifications
+      appNotificationPermission?.length > 0 ? AppInstallPermissions.update(appNotificationPermission[0].id!, { permission_status: body.push_token ? true : false })
+        : AppInstallPermissions.create({
           permission_status: false,
-          permission_id: permission.id!,
-          app_install_id: registeredAppInstall!.id!,
+          permission_id: notifificationPermission!.id!,
+          app_install_id: appInstall!.entity!.id!,
           created_by: user_id,
           created_date: now,
           modified_by: user_id,
           modified_date: now,
-        };
-        Log.debug('New Permission Registered', {toCreate});
-        await AppInstallPermissions.create(toCreate)
-      })
-    ).catch(e => {
-      Log.error('Error saving app install permissions', e);
-      throw e;
-    });
+        }),
+        // update/create app install permission for locations
+        appLocationsPermission?.length > 0 ? Promise.resolve()
+          : AppInstallPermissions.create({
+            permission_status: false,
+            permission_id: locationPermission!.id!,
+            app_install_id: appInstall!.entity!.id!,
+            created_by: user_id,
+            created_date: now,
+            modified_by: user_id,
+            modified_date: now,
+          })
+    ]);
 
-    return createSuccessResponse(registeredAppInstall);
-
+    return createSuccessResponse(appInstall!.entity);
   } catch (error) {
     Log.error("ERROR", { error });
     if (error instanceof HttpError) {

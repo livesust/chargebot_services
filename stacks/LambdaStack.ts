@@ -1,4 +1,4 @@
-import { Config, StackContext, Function , use} from "sst/constructs";
+import { Config, StackContext, Function , use, Cron} from "sst/constructs";
 import { RDSStack } from "./RDSStack";
 import { TimescaleStack } from "./TimescaleStack";
 import { LayerVersion, Code, Alias } from "aws-cdk-lib/aws-lambda";
@@ -7,10 +7,12 @@ import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { IotToLambda, IotToLambdaProps } from "@aws-solutions-constructs/aws-iot-lambda";
 import { Effect, IRole, Policy, PolicyStatement, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { CfnPlaceIndex } from 'aws-cdk-lib/aws-location';
+import { EventBusStack } from "./EventBusStack";
 
 export function LambdaStack({ app, stack }: StackContext) {
   const { rdsCluster } = use(RDSStack);
   const { timescaleConfigs } = use(TimescaleStack);
+  const { eventBus } = use(EventBusStack);
 
   // Lambda layers
   // axios layer: to make http requests
@@ -49,6 +51,34 @@ export function LambdaStack({ app, stack }: StackContext) {
   // Expo Server Access Token for Push
   const EXPO_ACCESS_TOKEN = new Config.Secret(stack, "EXPO_ACCESS_TOKEN");
 
+  // Cron function to send daily usage notifications, runs every 15min
+  
+  const processDailyUsageAlerts = new Function(stack, "chargebotDailyUsageAlerts", {
+    handler: "packages/functions/src/api/send_daily_usage_notifications.main",
+    timeout: "180 seconds",
+    // @ts-expect-error ignore type errors
+    layers: [expoServerSdkLayer, i18nLayer, luxonLayer],
+    nodejs: {
+      install: ["expo-server-sdk", "i18n", "luxon"],
+    },
+    bind: [
+      rdsCluster,
+      timescaleConfigs.TIMESCALE_HOST,
+      timescaleConfigs.TIMESCALE_USER,
+      timescaleConfigs.TIMESCALE_PASSWORD,
+      timescaleConfigs.TIMESCALE_PORT,
+      timescaleConfigs.TIMESCALE_DATABASE,
+      EXPO_ACCESS_TOKEN
+    ],
+  });
+
+  new Cron(stack, "DailyUsageNotificationCron", {
+    schedule: "rate(15 minutes)",
+    job: {
+      function: processDailyUsageAlerts,
+    }
+  });
+
   /**
    * Subscribe to chargebot alerts and execute a lambda function
    */
@@ -60,7 +90,15 @@ export function LambdaStack({ app, stack }: StackContext) {
     nodejs: {
       install: ["expo-server-sdk", "i18n"],
     },
-    bind: [rdsCluster, EXPO_ACCESS_TOKEN],
+    bind: [
+      rdsCluster,
+      timescaleConfigs.TIMESCALE_HOST,
+      timescaleConfigs.TIMESCALE_USER,
+      timescaleConfigs.TIMESCALE_PASSWORD,
+      timescaleConfigs.TIMESCALE_PORT,
+      timescaleConfigs.TIMESCALE_DATABASE,
+      EXPO_ACCESS_TOKEN
+    ],
   });
 
   const iotAlertLogGroup = new LogGroup(stack, `ChargebotIoTAlertLogGroup_${app.stage}`, {
@@ -213,7 +251,7 @@ export function LambdaStack({ app, stack }: StackContext) {
   const processIotEchoFunction = new Function(stack, "chargebotIotEchoProcess", {
     handler: "packages/functions/src/api/bot_discovery.main",
     timeout,
-    bind: [rdsCluster],
+    bind: [rdsCluster, eventBus],
   });
 
   const iotEchoLogGroup = new LogGroup(stack, `ChargebotIoTEchoLogGroup_${app.stage}`, {
@@ -304,6 +342,7 @@ export function LambdaStack({ app, stack }: StackContext) {
     },
     functions: {
       processIotAlertsFunction,
+      processDailyUsageAlerts,
       processIotGpsParkedFunction
     },
     setupProvisionedConcurrency,

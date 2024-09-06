@@ -22,173 +22,175 @@ Plop Built-In Helpers:
 export default function (plop) {
     plop.setPrompt('recursive', recursive);
 
+    const prompts = [
+        {
+            type: 'input',
+            name: 'name',
+            message: 'Entity name:',
+            validate: function(value) {
+                if (value) {
+                  return true;
+                }
+                return 'Please enter a valid entity name';
+            }
+        },
+        {
+            type: 'recursive',
+            name: 'attributes',
+            message: 'Add new attribute?',
+            prompts: [
+                {
+                    type: 'input',
+                    name: 'attribute',
+                    message: 'Attribute name:',
+                    validate: function(value) {
+                        if (value) {
+                          return true;
+                        }
+                        return 'Please enter a valid attribute name';
+                    }
+                },
+                {
+                    type: 'list',
+                    name: 'type',
+                    message: 'Database type:',
+                    choices: ['text', 'varchar', 'timestamp', 'timestamptz', 'boolean', 'integer', 'bigint', 'float', 'decimal', 'json'],
+                    default: 'text'
+                },
+                {
+                    type: 'input',
+                    name: 'varchar_length',
+                    message: 'Varchar length (1-255):',
+                    default: '255',
+                    validate: function(value) {
+                        if (1 <= value <= 255) {
+                          return true;
+                        }
+                        return 'Please enter a valid length (1-255)';
+                    },
+                    when(answers) {
+                        return answers['type'] === 'varchar';
+                    },
+                },
+                {
+                    type: 'list',
+                    name: 'tsType',
+                    message: 'Typescript type:',
+                    choices: ['string', 'number', 'Date', 'boolean', 'object'],
+                    default: 'string',
+                },
+                {
+                    type: 'confirm',
+                    name: 'unique',
+                    message: 'Only allow unique values on insert/update?',
+                    default: false
+                },
+                {
+                    type: 'confirm',
+                    name: 'not_null',
+                    message: 'Is it required?',
+                    default: false
+                }
+            ]
+        },
+        {
+            type: 'recursive',
+            name: 'relationships',
+            message: 'Add new relationship?',
+            default: false,
+            prompts: [
+                {
+                    type: 'list',
+                    name: 'relation_type',
+                    message: 'Relationship type:',
+                    choices: ['many-to-one', 'many-to-many'],
+                    default: 'string',
+                },
+                {
+                    type: 'input',
+                    name: 'entity',
+                    message: 'Entity that represents the "1" side:',
+                    validate: function(value) {
+                        if (value) {
+                          return true;
+                        }
+                        return 'Please enter a valid entity name';
+                    },
+                    when(answers) {
+                        return answers['relation_type'] === 'many-to-one';
+                    },
+                },
+                {
+                    type: 'input',
+                    name: 'first_entity',
+                    message: 'First entity:',
+                    validate: function(value) {
+                        if (value) {
+                          return true;
+                        }
+                        return 'Please enter a valid entity name';
+                    },
+                    when(answers) {
+                        return answers['relation_type'] === 'many-to-many';
+                    },
+                },
+                {
+                    type: 'input',
+                    name: 'second_entity',
+                    message: 'Second entity:',
+                    validate: function(value) {
+                        if (value) {
+                          return true;
+                        }
+                        return 'Please enter a valid entity name';
+                    },
+                    when(answers) {
+                        return answers['relation_type'] === 'many-to-many';
+                    },
+                },
+                {
+                    type: 'confirm',
+                    name: 'not_null',
+                    message: 'Is it required?',
+                    default: false,
+                    when(answers) {
+                        return answers['relation_type'] === 'many-to-one';
+                    },
+                },
+                {
+                    type: 'confirm',
+                    name: 'eager',
+                    message: 'Eager loading?',
+                    default: false,
+                    when(answers) {
+                        return answers['relation_type'] === 'many-to-one';
+                    },
+                },
+                {
+                    type: 'confirm',
+                    name: 'not_null',
+                    message: 'Is it required?',
+                    default: true,
+                    when(answers) {
+                        return answers['relation_type'] === 'many-to-many';
+                    },
+                },
+                {
+                    type: 'confirm',
+                    name: 'eager',
+                    message: 'Eager loading?',
+                    default: true,
+                    when(answers) {
+                        return answers['relation_type'] === 'many-to-many';
+                    },
+                }
+            ]
+        }
+    ];
+
     plop.setGenerator('crud', {
         description: 'A generator for Serverless API CRUD services',
-        prompts: [
-            {
-                type: 'input',
-                name: 'name',
-                message: 'Entity name:',
-                validate: function(value) {
-                    if (value) {
-                      return true;
-                    }
-                    return 'Please enter a valid entity name';
-                }
-            },
-            {
-                type: 'recursive',
-                name: 'attributes',
-                message: 'Add new attribute?',
-                prompts: [
-                    {
-                        type: 'input',
-                        name: 'attribute',
-                        message: 'Attribute name:',
-                        validate: function(value) {
-                            if (value) {
-                              return true;
-                            }
-                            return 'Please enter a valid attribute name';
-                        }
-                    },
-                    {
-                        type: 'list',
-                        name: 'type',
-                        message: 'Database type:',
-                        choices: ['text', 'varchar', 'timestamp', 'timestamptz', 'boolean', 'integer', 'bigint', 'float', 'decimal', 'json'],
-                        default: 'text'
-                    },
-                    {
-                        type: 'input',
-                        name: 'varchar_length',
-                        message: 'Varchar length (1-255):',
-                        default: '255',
-                        validate: function(value) {
-                            if (1 <= value <= 255) {
-                              return true;
-                            }
-                            return 'Please enter a valid length (1-255)';
-                        },
-                        when(answers) {
-                            return answers['type'] === 'varchar';
-                        },
-                    },
-                    {
-                        type: 'list',
-                        name: 'tsType',
-                        message: 'Typescript type:',
-                        choices: ['string', 'number', 'Date', 'boolean', 'object'],
-                        default: 'string',
-                    },
-                    {
-                        type: 'confirm',
-                        name: 'unique',
-                        message: 'Only allow unique values on insert/update?',
-                        default: false
-                    },
-                    {
-                        type: 'confirm',
-                        name: 'not_null',
-                        message: 'Is it required?',
-                        default: false
-                    }
-                ]
-            },
-            {
-                type: 'recursive',
-                name: 'relationships',
-                message: 'Add new relationship?',
-                default: false,
-                prompts: [
-                    {
-                        type: 'list',
-                        name: 'relation_type',
-                        message: 'Relationship type:',
-                        choices: ['many-to-one', 'many-to-many'],
-                        default: 'string',
-                    },
-                    {
-                        type: 'input',
-                        name: 'entity',
-                        message: 'Entity that represents the "1" side:',
-                        validate: function(value) {
-                            if (value) {
-                              return true;
-                            }
-                            return 'Please enter a valid entity name';
-                        },
-                        when(answers) {
-                            return answers['relation_type'] === 'many-to-one';
-                        },
-                    },
-                    {
-                        type: 'input',
-                        name: 'first_entity',
-                        message: 'First entity:',
-                        validate: function(value) {
-                            if (value) {
-                              return true;
-                            }
-                            return 'Please enter a valid entity name';
-                        },
-                        when(answers) {
-                            return answers['relation_type'] === 'many-to-many';
-                        },
-                    },
-                    {
-                        type: 'input',
-                        name: 'second_entity',
-                        message: 'Second entity:',
-                        validate: function(value) {
-                            if (value) {
-                              return true;
-                            }
-                            return 'Please enter a valid entity name';
-                        },
-                        when(answers) {
-                            return answers['relation_type'] === 'many-to-many';
-                        },
-                    },
-                    {
-                        type: 'confirm',
-                        name: 'not_null',
-                        message: 'Is it required?',
-                        default: false,
-                        when(answers) {
-                            return answers['relation_type'] === 'many-to-one';
-                        },
-                    },
-                    {
-                        type: 'confirm',
-                        name: 'eager',
-                        message: 'Eager loading?',
-                        default: false,
-                        when(answers) {
-                            return answers['relation_type'] === 'many-to-one';
-                        },
-                    },
-                    {
-                        type: 'confirm',
-                        name: 'not_null',
-                        message: 'Is it required?',
-                        default: true,
-                        when(answers) {
-                            return answers['relation_type'] === 'many-to-many';
-                        },
-                    },
-                    {
-                        type: 'confirm',
-                        name: 'eager',
-                        message: 'Eager loading?',
-                        default: true,
-                        when(answers) {
-                            return answers['relation_type'] === 'many-to-many';
-                        },
-                    }
-                ]
-            }
-        ],
+        prompts,
         actions: [
             function dumpEntityDefinition(answers) {
               // first all, save current answers into a yml file in case any of next actions fail
@@ -391,6 +393,25 @@ export default function (plop) {
               } catch (err) {
                 console.log(err);
               }
+            },
+        ],
+    });
+
+    plop.setGenerator('service', {
+        description: 'A generator for Serverless API services',
+        prompts,
+        actions: [
+            {
+                type: 'add',
+                path: 'packages/core/src/services/{{snakeCase name}}.ts',
+                templateFile: '.plop_templates/core/service.ts.hbs',
+                force: true
+            },
+            {
+                type: 'add',
+                path: 'packages/functions/src/schemas/{{snakeCase name}}.schema.ts',
+                templateFile: '.plop_templates/functions/schema.ts.hbs',
+                force: true
             },
         ],
     });

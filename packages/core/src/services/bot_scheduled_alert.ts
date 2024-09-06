@@ -1,6 +1,6 @@
 export * as BotScheduledAlert from "./bot_scheduled_alert";
 import db, { Database, json } from '../database';
-import { ExpressionBuilder } from "kysely";
+import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { BotScheduledAlert, BotScheduledAlertUpdate, NewBotScheduledAlert } from "../database/bot_scheduled_alert";
 
@@ -9,6 +9,7 @@ export function withBot(eb: ExpressionBuilder<Database, 'bot_scheduled_alert'>) 
       eb.selectFrom('bot')
         .selectAll()
         .whereRef('bot.id', '=', 'bot_scheduled_alert.bot_id')
+        .where('bot.deleted_by', 'is', null)
     ).as('bot')
 }
 
@@ -17,6 +18,7 @@ export function withScheduledAlert(eb: ExpressionBuilder<Database, 'bot_schedule
       eb.selectFrom('scheduled_alert')
         .selectAll()
         .whereRef('scheduled_alert.id', '=', 'bot_scheduled_alert.scheduled_alert_id')
+        .where('scheduled_alert.deleted_by', 'is', null)
     ).as('scheduled_alert')
 }
 
@@ -40,9 +42,7 @@ export async function create(bot_scheduled_alert: NewBotScheduledAlert): Promise
 
     return {
       entity: created,
-      // event to dispatch on EventBus on creation
-      // undefined as default to not dispatch any event
-      event: undefined
+      event: created
     };
 }
 
@@ -67,9 +67,7 @@ export async function update(id: number, bot_scheduled_alert: BotScheduledAlertU
 
     return {
       entity: updated,
-      // event to dispatch on EventBus on creation
-      // undefined as default to not dispatch any event
-      event: undefined
+      event: updated
     };
 }
 
@@ -97,6 +95,12 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
+export async function removeByCriteria(criteria: Partial<BotScheduledAlert>, user_id: string): Promise<UpdateResult[]> {
+    return buildUpdateQuery(criteria)
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .execute();
+}
+
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('bot_scheduled_alert')
@@ -108,6 +112,8 @@ export async function list(): Promise<BotScheduledAlert[]> {
     return db
         .selectFrom("bot_scheduled_alert")
         .selectAll()
+        .select((eb) => withBot(eb))
+        .select((eb) => withScheduledAlert(eb))
         .where('deleted_by', 'is', null)
         .execute();
 }
@@ -116,6 +122,8 @@ export async function paginate(page: number, pageSize: number): Promise<BotSched
     return db
         .selectFrom("bot_scheduled_alert")
         .selectAll()
+        .select((eb) => withBot(eb))
+        .select((eb) => withScheduledAlert(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
         .offset((page - 1) * pageSize)
@@ -142,8 +150,23 @@ export async function get(id: number): Promise<BotScheduledAlert | undefined> {
         .executeTakeFirst();
 }
 
+export async function findByScheduledAlert(scheduledAlertName: string): Promise<BotScheduledAlert[]> {
+  const query = db.selectFrom('bot_scheduled_alert')
+    .innerJoin('scheduled_alert', 'scheduled_alert.id', 'bot_scheduled_alert.scheduled_alert_id')
+    .where('bot_scheduled_alert.deleted_by', 'is', null)
+    .where('scheduled_alert.deleted_by', 'is', null)
+    .where('scheduled_alert.name', '=', scheduledAlertName)
+    .where('bot_scheduled_alert.alert_status', '=', true);
+
+  return query
+    .selectAll('bot_scheduled_alert')
+    .select((eb) => withBot(eb))
+    .select((eb) => withScheduledAlert(eb))
+    .execute();
+}
+
 export async function findByCriteria(criteria: Partial<BotScheduledAlert>): Promise<BotScheduledAlert[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -153,7 +176,7 @@ export async function findByCriteria(criteria: Partial<BotScheduledAlert>): Prom
 }
 
 export async function lazyFindByCriteria(criteria: Partial<BotScheduledAlert>): Promise<BotScheduledAlert[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -161,7 +184,7 @@ export async function lazyFindByCriteria(criteria: Partial<BotScheduledAlert>): 
 }
 
 export async function findOneByCriteria(criteria: Partial<BotScheduledAlert>): Promise<BotScheduledAlert | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -172,7 +195,7 @@ export async function findOneByCriteria(criteria: Partial<BotScheduledAlert>): P
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<BotScheduledAlert>): Promise<BotScheduledAlert | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -180,8 +203,21 @@ export async function lazyFindOneByCriteria(criteria: Partial<BotScheduledAlert>
     .executeTakeFirst();
 }
 
-function buildCriteriaQuery(criteria: Partial<BotScheduledAlert>) {
-  let query = db.selectFrom('bot_scheduled_alert').where('deleted_by', 'is', null);
+function buildSelectQuery(criteria: Partial<BotScheduledAlert>) {
+  let query = db.selectFrom('bot_scheduled_alert');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+function buildUpdateQuery(criteria: Partial<BotScheduledAlert>) {
+  let query = db.updateTable('bot_scheduled_alert');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCriteriaQuery(query: any, criteria: Partial<BotScheduledAlert>): any {
+  query = query.where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);

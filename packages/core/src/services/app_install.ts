@@ -1,6 +1,6 @@
 export * as AppInstall from "./app_install";
 import db, { Database } from '../database';
-import { ExpressionBuilder } from "kysely";
+import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { AppInstall, AppInstallUpdate, NewAppInstall } from "../database/app_install";
 import { PermissionName } from "../database/permission";
@@ -10,6 +10,7 @@ export function withUser(eb: ExpressionBuilder<Database, 'app_install'>) {
       eb.selectFrom('user')
         .selectAll()
         .whereRef('user.id', '=', 'app_install.user_id')
+        .where('user.deleted_by', 'is', null)
     ).as('user')
 }
 
@@ -88,6 +89,12 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
+export async function removeByCriteria(criteria: Partial<AppInstall>, user_id: string): Promise<UpdateResult[]> {
+    return buildUpdateQuery(criteria)
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .execute();
+}
+
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('app_install')
@@ -99,6 +106,7 @@ export async function list(): Promise<AppInstall[]> {
     return db
         .selectFrom("app_install")
         .selectAll()
+        .select((eb) => withUser(eb))
         .where('deleted_by', 'is', null)
         .execute();
 }
@@ -107,6 +115,7 @@ export async function paginate(page: number, pageSize: number): Promise<AppInsta
     return db
         .selectFrom("app_install")
         .selectAll()
+        .select((eb) => withUser(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
         .offset((page - 1) * pageSize)
@@ -149,7 +158,7 @@ export async function getAppsToNotify(user_ids: number[]): Promise<AppInstall[] 
 }
 
 export async function findByCriteria(criteria: Partial<AppInstall>): Promise<AppInstall[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -158,7 +167,7 @@ export async function findByCriteria(criteria: Partial<AppInstall>): Promise<App
 }
 
 export async function lazyFindByCriteria(criteria: Partial<AppInstall>): Promise<AppInstall[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -166,7 +175,7 @@ export async function lazyFindByCriteria(criteria: Partial<AppInstall>): Promise
 }
 
 export async function findOneByCriteria(criteria: Partial<AppInstall>): Promise<AppInstall | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -176,7 +185,7 @@ export async function findOneByCriteria(criteria: Partial<AppInstall>): Promise<
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<AppInstall>): Promise<AppInstall | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -184,8 +193,21 @@ export async function lazyFindOneByCriteria(criteria: Partial<AppInstall>): Prom
     .executeTakeFirst();
 }
 
-function buildCriteriaQuery(criteria: Partial<AppInstall>) {
-  let query = db.selectFrom('app_install').where('deleted_by', 'is', null);
+function buildSelectQuery(criteria: Partial<AppInstall>) {
+  let query = db.selectFrom('app_install');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+function buildUpdateQuery(criteria: Partial<AppInstall>) {
+  let query = db.updateTable('app_install');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCriteriaQuery(query: any, criteria: Partial<AppInstall>): any {
+  query = query.where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);

@@ -80,6 +80,9 @@ export const BotShadowConfigSchema = Joi.object({
       inverter: Joi.object({
         enabled: Joi.boolean().allow(null),
         model: Joi.string().allow(null),
+        start_battery_charge_set_point: Joi.number().allow(null),
+        stop_battery_charge_set_point: Joi.number().allow(null),
+        slow_charge_max_ac_charger_current: Joi.number().allow(null),
         default_max_ac_charger_current: Joi.number().allow(null),
         grid_charging_balancing: Joi.array().items(Joi.object({
           load_amps_higher_equal_than: Joi.number().allow(null),
@@ -112,6 +115,17 @@ export const BotShadowConfigSchema = Joi.object({
       not_plugged_in: Joi.object({
         enabled: Joi.boolean().allow(null),
         time_to_send: Joi.string().allow(null),
+        timezone: Joi.string().allow(null),
+      }).allow(null),
+      daily_use: Joi.object({
+        enabled: Joi.boolean().allow(null),
+        time_to_send: Joi.string().allow(null),
+        timezone: Joi.string().allow(null),
+      }).allow(null),
+      nothing_charging: Joi.object({
+        enabled: Joi.boolean().allow(null),
+        time_to_send: Joi.string().allow(null),
+        timezone: Joi.string().allow(null),
       }).allow(null),
       battery: Joi.object({
         soc_low: Joi.boolean().allow(null),
@@ -144,6 +158,7 @@ export const BotShadowConfigSchema = Joi.object({
     inv_split_phase: Joi.string().allow(null),
     inv_parallel_mode_setup: Joi.string().allow(null),
     inv_output_voltage: Joi.number().allow(null),
+    batt_boost_charge_return_voltage: Joi.number().allow(null),
     version: Joi.number().allow(null),
   }).allow(null),
 });

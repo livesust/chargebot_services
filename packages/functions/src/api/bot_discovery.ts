@@ -16,6 +16,7 @@ import { SuccessResponseSchema } from "src/shared/schemas";
 import jsonBodyParser from "@middy/http-json-body-parser";
 import { dateReviver } from "src/shared/middlewares/json-date-parser";
 import { BotVersion } from "@chargebot-services/core/services/bot_version";
+import { EventBus } from "@chargebot-services/core/services/aws/event_bus";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
@@ -50,12 +51,14 @@ const handler = async (event) => {
     }
 
     if (!bot) {
-      await Bot.create({
+      const created = await Bot.create({
         bot_uuid,
         name: bot_uuid,
         initials: bot_uuid.substring(0, 2),
         bot_version_id: botVersion!.id!,
       });
+      Log.debug("Dispatch creation event");
+      EventBus.dispatchEvent('bot', "created", created?.entity);
     } else {
       await Bot.update(bot.id!, {
         bot_version_id: botVersion!.id!,

@@ -1,6 +1,6 @@
 export * as Company from "./company";
 import db, { Database } from '../database';
-import { ExpressionBuilder } from "kysely";
+import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { Company, CompanyUpdate, NewCompany } from "../database/company";
 import { withStateMaster } from "./home_master";
@@ -10,6 +10,7 @@ export function withCustomer(eb: ExpressionBuilder<Database, 'company'>) {
       eb.selectFrom('customer')
         .selectAll()
         .whereRef('customer.id', '=', 'company.customer_id')
+        .where('customer.deleted_by', 'is', null)
     ).as('customer')
 }
 
@@ -19,6 +20,7 @@ export function withHomeMaster(eb: ExpressionBuilder<Database, 'company'>) {
         .selectAll()
         .select((eb) => withStateMaster(eb))
         .whereRef('home_master.id', '=', 'company.home_master_id')
+        .where('home_master.deleted_by', 'is', null)
     ).as('home_master')
 }
 
@@ -97,6 +99,12 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
+export async function removeByCriteria(criteria: Partial<Company>, user_id: string): Promise<UpdateResult[]> {
+    return buildUpdateQuery(criteria)
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .execute();
+}
+
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('company')
@@ -147,7 +155,7 @@ export async function get(id: number): Promise<Company | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<Company>): Promise<Company[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -157,7 +165,7 @@ export async function findByCriteria(criteria: Partial<Company>): Promise<Compan
 }
 
 export async function lazyFindByCriteria(criteria: Partial<Company>): Promise<Company[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -165,7 +173,7 @@ export async function lazyFindByCriteria(criteria: Partial<Company>): Promise<Co
 }
 
 export async function findOneByCriteria(criteria: Partial<Company>): Promise<Company | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -176,7 +184,7 @@ export async function findOneByCriteria(criteria: Partial<Company>): Promise<Com
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<Company>): Promise<Company | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -184,8 +192,21 @@ export async function lazyFindOneByCriteria(criteria: Partial<Company>): Promise
     .executeTakeFirst();
 }
 
-function buildCriteriaQuery(criteria: Partial<Company>) {
-  let query = db.selectFrom('company').where('deleted_by', 'is', null);
+function buildSelectQuery(criteria: Partial<Company>) {
+  let query = db.selectFrom('company');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+function buildUpdateQuery(criteria: Partial<Company>) {
+  let query = db.updateTable('company');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCriteriaQuery(query: any, criteria: Partial<Company>): any {
+  query = query.where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);

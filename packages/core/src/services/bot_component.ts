@@ -1,6 +1,6 @@
 export * as BotComponent from "./bot_component";
 import db, { Database } from '../database';
-import { ExpressionBuilder } from "kysely";
+import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { BotComponent, BotComponentUpdate, NewBotComponent } from "../database/bot_component";
 
@@ -9,6 +9,7 @@ export function withBot(eb: ExpressionBuilder<Database, 'bot_component'>) {
       eb.selectFrom('bot')
         .selectAll()
         .whereRef('bot.id', '=', 'bot_component.bot_id')
+        .where('bot.deleted_by', 'is', null)
     ).as('bot')
 }
 
@@ -17,6 +18,7 @@ export function withComponent(eb: ExpressionBuilder<Database, 'bot_component'>) 
       eb.selectFrom('component')
         .selectAll()
         .whereRef('component.id', '=', 'bot_component.component_id')
+        .where('component.deleted_by', 'is', null)
     ).as('component')
 }
 
@@ -112,6 +114,12 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
+export async function removeByCriteria(criteria: Partial<BotComponent>, user_id: string): Promise<UpdateResult[]> {
+    return buildUpdateQuery(criteria)
+        .set({ deleted_date: new Date(), deleted_by: user_id })
+        .execute();
+}
+
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('bot_component')
@@ -123,6 +131,8 @@ export async function list(): Promise<BotComponent[]> {
     return db
         .selectFrom("bot_component")
         .selectAll()
+        .select((eb) => withBot(eb))
+        .select((eb) => withComponent(eb))
         .where('deleted_by', 'is', null)
         .execute();
 }
@@ -131,6 +141,8 @@ export async function paginate(page: number, pageSize: number): Promise<BotCompo
     return db
         .selectFrom("bot_component")
         .selectAll()
+        .select((eb) => withBot(eb))
+        .select((eb) => withComponent(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
         .offset((page - 1) * pageSize)
@@ -158,7 +170,7 @@ export async function get(id: number): Promise<BotComponent | undefined> {
 }
 
 export async function findByCriteria(criteria: Partial<BotComponent>): Promise<BotComponent[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -168,7 +180,7 @@ export async function findByCriteria(criteria: Partial<BotComponent>): Promise<B
 }
 
 export async function lazyFindByCriteria(criteria: Partial<BotComponent>): Promise<BotComponent[]> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -176,7 +188,7 @@ export async function lazyFindByCriteria(criteria: Partial<BotComponent>): Promi
 }
 
 export async function findOneByCriteria(criteria: Partial<BotComponent>): Promise<BotComponent | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -187,7 +199,7 @@ export async function findOneByCriteria(criteria: Partial<BotComponent>): Promis
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<BotComponent>): Promise<BotComponent | undefined> {
-  const query = buildCriteriaQuery(criteria);
+  const query = buildSelectQuery(criteria);
 
   return query
     .selectAll()
@@ -195,8 +207,21 @@ export async function lazyFindOneByCriteria(criteria: Partial<BotComponent>): Pr
     .executeTakeFirst();
 }
 
-function buildCriteriaQuery(criteria: Partial<BotComponent>) {
-  let query = db.selectFrom('bot_component').where('deleted_by', 'is', null);
+function buildSelectQuery(criteria: Partial<BotComponent>) {
+  let query = db.selectFrom('bot_component');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+function buildUpdateQuery(criteria: Partial<BotComponent>) {
+  let query = db.updateTable('bot_component');
+  query = getCriteriaQuery(query, criteria);
+  return query;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCriteriaQuery(query: any, criteria: Partial<BotComponent>): any {
+  query = query.where('deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);

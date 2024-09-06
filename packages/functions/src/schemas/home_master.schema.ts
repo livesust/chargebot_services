@@ -8,9 +8,9 @@ const HomeMasterSchemaDef = {
     address_line_2: Joi.string().allow(null, ''),
     city: Joi.string().max(100),
     zip_code: Joi.string().max(100).allow(null, ''),
-    place_id: Joi.string().allow(null, ''),
     latitude: Joi.number(),
     longitude: Joi.number(),
+    place_id: Joi.string().allow(null, ''),
 };
 
 export const EntitySchema = Joi.object({
