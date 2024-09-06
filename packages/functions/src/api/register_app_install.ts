@@ -61,7 +61,7 @@ const handler = async (event) => {
         Permission.list()
       ]);
       Log.debug('Current Permissions', { appInstallUpdated, appInstallPermissions, allPermissions });
-      if (appInstallPermissions?.length > 0){
+      if (appInstallPermissions?.length > 0) {
         // update existent notifications permission
         const appNotifPermissions = appInstallPermissions.filter(a => a.permission_id === notificationPermission?.id);
         Log.debug('Update Notifications Permission', { appNotifPermissions });
@@ -87,9 +87,12 @@ const handler = async (event) => {
             modified_date: now,
           };
           Log.debug('Create AppInstallPermissions', { toCreate });
-          AppInstallPermissions.create(toCreate)
+          await AppInstallPermissions.create(toCreate)
         })
-      );
+      ).catch(e => {
+        Log.error('Error saving app install permissions', e);
+        throw e;
+      });
       return createSuccessResponse(appInstallUpdated!.entity);
     }
 
@@ -121,9 +124,12 @@ const handler = async (event) => {
           modified_date: now,
         };
         Log.debug('New Permission Registered', {toCreate});
-        AppInstallPermissions.create(toCreate)
+        await AppInstallPermissions.create(toCreate)
       })
-    );
+    ).catch(e => {
+      Log.error('Error saving app install permissions', e);
+      throw e;
+    });
 
     return createSuccessResponse(registeredAppInstall);
 
@@ -133,7 +139,7 @@ const handler = async (event) => {
       // re-throw when is a http error generated above
       throw error;
     }
-    const httpError = createError(406, "cannot get user profile", { expose: true });
+    const httpError = createError(406, "cannot register app install", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;
   }
