@@ -17,18 +17,21 @@ import { BotShadowConfigSchema } from "src/schemas/bot_shadow_config.schema";
 
 // @ts-expect-error ignore any type for event
 export const handler = async (event) => {
+  Log.info('Get shadow configs', {bot_uuid: event.pathParameters!.bot_uuid!});
   const bot_uuid = event.pathParameters!.bot_uuid!;
 
   try {
-    Log.debug('Get shadow configs for', {bot_uuid});
+    Log.info('Get shadow configs for', {bot_uuid});
 
     const [
         systemStatus, configStatus, inverterStatus
     ] = await Promise.all([
-      IoTData.getShadowStatus(bot_uuid, 'system'),
-      IoTData.getShadowStatus(bot_uuid, 'config'),
-      IoTData.getShadowStatus(bot_uuid, 'inverter'),
+      IoTData.getShadowStatus(bot_uuid, 'system').catch(error => Log.error('Error Getting System Shadow Info', error)),
+      IoTData.getShadowStatus(bot_uuid, 'config').catch(error => Log.error('Error Getting Config Shadow Info', error)),
+      IoTData.getShadowStatus(bot_uuid, 'inverter').catch(error => Log.error('Error Getting Inverter Shadow Info', error)),
     ]);
+
+    Log.info('Shadow Response OK');
 
     const response = {
       system: systemStatus?.state?.desired ?? systemStatus?.state?.reported,

@@ -125,7 +125,7 @@ export const handler = async (event) => {
       IoTData.updateShadowStatus(bot_uuid, 'inverter', body.inverter),
     ]);
 
-    Log.debug('Shadow configs set');
+    Log.debug('Shadow configs SET');
 
     const response = {
       system: systemStatus?.state?.desired ?? systemStatus?.state?.reported,

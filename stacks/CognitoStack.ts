@@ -11,6 +11,9 @@ export function CognitoStack({ app, stack }: StackContext) {
     // Cognito admin role
     const cognitoAdminRole: IRole = new Role(stack, "CognitoAdminRole", {
       assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
+      managedPolicies: [
+        { managedPolicyArn: "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole" },
+      ],
     });
     const policy: Policy = new Policy(stack, "CognitoAdminRolePolicy", {
       policyName: 'lambda_iot_policy',

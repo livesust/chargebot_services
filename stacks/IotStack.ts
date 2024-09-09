@@ -8,6 +8,9 @@ export function IotStack({ stack }: StackContext) {
   // lambda function to publish events into iot
   const iotRole: IRole = new Role(stack, "IoTRole", {
     assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
+    managedPolicies: [
+      { managedPolicyArn: "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole" },
+    ],
   });
   const iotPolicy: Policy = new Policy(stack, "IoTPolicy", {
     policyName: 'lambda_iot_policy',
@@ -18,6 +21,10 @@ export function IotStack({ stack }: StackContext) {
         "iot:Publish",
         "iot:Subscribe",
         "iot:Receive",
+        "iot:ListNamedShadowsForThing",
+        "iot:GetThingShadow",
+        "iot:UpdateThingShadow",
+        "iot:DeleteThingShadow"
       ],
       resources: ["*"]
     })]
