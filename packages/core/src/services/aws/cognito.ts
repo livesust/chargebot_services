@@ -45,7 +45,17 @@ export const createUser = async (username: string): Promise<UserType | undefined
   try {
     const command = new AdminCreateUserCommand({
       UserPoolId: userPoolId,
-      Username: username
+      Username: username,
+      UserAttributes: [
+        {
+          Name: 'email',
+          Value: username,
+        },
+        {
+          Name: 'email_verified',
+          Value: "true",
+        }
+      ]
     });
   
     const response: AdminCreateUserCommandOutput = await cognitoClient.send(command);

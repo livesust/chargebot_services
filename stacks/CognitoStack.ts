@@ -1,24 +1,29 @@
-import { StackContext, Config, Cognito, toCdkDuration, use, Cron } from "sst/constructs";
-import { AccountRecovery, NumberAttribute, OAuthScope } from "aws-cdk-lib/aws-cognito";
-import { Effect, IRole, Policy, PolicyStatement, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
+import { StackContext, Config, Cognito, toCdkDuration, use, Cron, Function } from "sst/constructs";
 import { RDSStack } from "./RDSStack";
+import * as cognito from "aws-cdk-lib/aws-cognito";
+import * as iam from "aws-cdk-lib/aws-iam";
+import * as lambda from "aws-cdk-lib/aws-lambda";
+// import * as ses from "aws-cdk-lib/aws-ses";
 
 export function CognitoStack({ app, stack }: StackContext) {
 
     // Secret Keys
     const COGNITO_USER_POOL_ID = new Config.Secret(stack, "COGNITO_USER_POOL_ID");
 
+    // // SES Verified Domain ARN (replace with your domain)
+    // const sesVerifiedDomainArn = `arn:aws:ses:${app.region}:${app.account}:identity/no-reply@sust.pro`;
+
     // Cognito admin role
-    const cognitoAdminRole: IRole = new Role(stack, "CognitoAdminRole", {
-      assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
+    const cognitoAdminRole: iam.IRole = new iam.Role(stack, "CognitoAdminRole", {
+      assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
       managedPolicies: [
         { managedPolicyArn: "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole" },
       ],
     });
-    const policy: Policy = new Policy(stack, "CognitoAdminRolePolicy", {
+    const policy: iam.Policy = new iam.Policy(stack, "CognitoAdminRolePolicy", {
       policyName: 'lambda_iot_policy',
-      statements: [new PolicyStatement({
-        effect: Effect.ALLOW,
+      statements: [new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
         actions: [
           "cognito-idp:AdminCreateUser",
           "cognito-idp:AdminDeleteUser",
@@ -33,39 +38,39 @@ export function CognitoStack({ app, stack }: StackContext) {
     policy.attachToRole(cognitoAdminRole);
 
     // Cognito user pool authentication
-    const cognito = new Cognito(stack, "Auth", {
+    // @ts-expect-error ignore type errors
+    const fsExtraLayer = new lambda.LayerVersion(stack, "fsExtra-layer", {
+      code: lambda.Code.fromAsset("layers/fs-extra"),
+    });
+
+    const cognitoCustomMessageFunction = new Function(stack, "cognitoCustomMessageFunction", {
+      handler: "packages/functions/src/api/cognito_custom_message_handler.main",
+      timeout: app.stage === "prod" ? "10 seconds" : "30 seconds",
+      copyFiles: [{ from: 'packages/functions/src/shared/templates', to: 'templates'}],
+      // @ts-expect-error ignore type errors
+      layers: [fsExtraLayer],
+      nodejs: {
+        install: ["fs-extra"],
+      },
+      environment: {
+        AUTH_SIGN_IN_URL: app.stage === "dev" ? "http://localhost:3000/auth/cognito/sign-in" : "https://chargebot-web-app.vercel.app/auth/cognito/sign-in"
+      }
+    });
+
+    const cognitoConfig = new Cognito(stack, "Auth", {
         login: ["email"],
+        triggers: {
+          customMessage: cognitoCustomMessageFunction
+        },
         cdk: {
             userPool: {
                 selfSignUpEnabled: app.stage !== "prod",
                 autoVerify: {
                     email: true
                 },
-                accountRecovery: AccountRecovery.PHONE_WITHOUT_MFA_AND_EMAIL,
+                accountRecovery: cognito.AccountRecovery.PHONE_WITHOUT_MFA_AND_EMAIL,
                 userVerification: {
                     emailSubject: "Verify your new Sust Pro account"
-                },
-                userInvitation: {
-                    emailSubject: "Your temporary Sust Pro password",
-                    emailBody: app.stage === "prod"
-                    ? "\
-                        Your username is {username} and temporary password is <b>{####}</b>\
-                        <br>\
-                        Click <a href='https://chargebot-web-app.vercel.app/auth/cognito/sign-in'>here</a> to log in.\
-                      "
-                    : (
-                      app.stage === "dev"
-                      ? "\
-                          Your username is {username} and temporary password is <b>{####}</b>\
-                          <br>\
-                          Click <a href='http://localhost:3000/auth/cognito/sign-in'>here</a> to log in.\
-                        "
-                      : "\
-                          Your username is {username} and temporary password is <b>{####}</b>\
-                          <br>\
-                          Click <a href='https://chargebot-web-app.vercel.app/auth/cognito/sign-in'>here</a> to log in.\
-                        "
-                      ),
                 },
                 standardAttributes: {
                     locale: { required: false, mutable: true },
@@ -74,7 +79,7 @@ export function CognitoStack({ app, stack }: StackContext) {
                     profilePicture: { required: false, mutable: true }
                 },
                 customAttributes: {
-                    customerId: new NumberAttribute({ mutable: false })
+                    customerId: new cognito.NumberAttribute({ mutable: false })
                 },
                 passwordPolicy: {
                   minLength: 8,
@@ -110,7 +115,7 @@ export function CognitoStack({ app, stack }: StackContext) {
                         ? ["http://localhost:3000/auth/cognito/sign-in"]
                         : ["https://chargebot-web-app.vercel.app/cognito/sign-in"]
                         ),
-                    scopes: [OAuthScope.EMAIL]
+                    scopes: [cognito.OAuthScope.EMAIL]
                 },
                 preventUserExistenceErrors: true,
                 enableTokenRevocation: true,
@@ -120,14 +125,14 @@ export function CognitoStack({ app, stack }: StackContext) {
     });
 
     if (app.stage === "prod") {
-      cognito.cdk.userPool.addDomain("chargebot", { cognitoDomain: { domainPrefix: "chargebot" } })
+      cognitoConfig.cdk.userPool.addDomain("chargebot", { cognitoDomain: { domainPrefix: "chargebot" } })
     } else if (app.stage === "staging") {
-      cognito.cdk.userPool.addDomain("chargebotstaging", { cognitoDomain: { domainPrefix: "chargebotstaging" } })
+      cognitoConfig.cdk.userPool.addDomain("chargebotstaging", { cognitoDomain: { domainPrefix: "chargebotstaging" } })
     } else if (app.stage === "dev") {
-      cognito.cdk.userPool.addDomain("chargebotdev", { cognitoDomain: { domainPrefix: "chargebotdev" } })
+      cognitoConfig.cdk.userPool.addDomain("chargebotdev", { cognitoDomain: { domainPrefix: "chargebotdev" } })
     }
 
-    cognito.attachPermissionsForAuthUsers(stack, ["ssm"])
+    cognitoConfig.attachPermissionsForAuthUsers(stack, ["ssm"])
 
     // Cron function to expire user invitations
     const { rdsCluster } = use(RDSStack);
@@ -145,13 +150,13 @@ export function CognitoStack({ app, stack }: StackContext) {
     });
 
     stack.addOutputs({
-        CognitoUserPoolId: cognito.userPoolId,
-        CognitoIdentityPoolId: cognito.cognitoIdentityPoolId,
-        CognitoUserPoolClientId: cognito.userPoolClientId,
+        CognitoUserPoolId: cognitoConfig.userPoolId,
+        CognitoIdentityPoolId: cognitoConfig.cognitoIdentityPoolId,
+        CognitoUserPoolClientId: cognitoConfig.userPoolClientId,
     });
 
     return {
-        cognito,
+        cognito: cognitoConfig,
         cognitoAdminRole,
         COGNITO_USER_POOL_ID
     };

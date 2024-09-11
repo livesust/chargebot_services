@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to Sust Pro!</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #FFF;
+      }
+      table {
+        max-width: 600px;
+        width: 100%;
+        margin: 0 auto;
+        border-collapse: collapse;
+      }
+      td {
+        padding: 20px;
+        text-align: center;
+      }
+      .header {
+        background-color: #ec7326;
+      }
+      .header svg {
+        display: block;
+        margin: 0 auto;
+      }
+      .body-text {
+        background-color: #303030; /* Light gray */
+        color: #fefefe;
+        text-align: left;
+        padding: 30px 20px;
+      }
+      .body-text p {
+        margin: 10px 0;
+        font-size: 16px;
+      }
+      .body-text strong {
+        font-size: 18px;
+      }
+      .body-text em {
+        color: #ec7326;
+        font-style: italic;
+      }
+      .body-text .username {
+        color: #fefefe;
+      }
+      .body-text .button {
+        display: inline-block;
+        margin-top: 20px;
+      	margin-bottom: 20px;
+        padding: 10px 20px;
+        background-color: #ec7326;
+        color: #fefefe;
+        text-decoration: none;
+        border-radius: 5px;
+        font-size: 16px;
+        font-weight: bold;
+      }
+      .body-text .link {
+        display: inline-block;
+        padding: 10px 20px;
+        color: #ec7326;
+        text-decoration: none;
+        border-radius: 5px;
+        font-size: 16px;
+        font-weight: bold;
+      }
+      .footer {
+        background-color: #ec7326; /* Dark gray */
+        color: #333;
+        font-size: 14px;
+        padding: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <table>
+      <!-- Row 1: SVG Header -->
+      <tr class="header">
+        <td>
+          <img src="https://sust-public-bucket.s3.amazonaws.com/logo_chargebot_dark.png" width="140"/>
+        </td>
+      </tr>
+
+      <!-- Row 3: Main Body Content -->
+      <tr class="body-text">
+        <td>
+          <p><strong><em>Hey there!</em></strong></p>
+          <p>We're excited to have you on board. Your account has been created, and you're all set to dive in.</p>
+          <p>Username: <strong><a rel="nofollow" class="username">{username}</a></strong></p>
+          <p>Password: <strong>{####}</strong></p>
+          <p>Once you log in, you'll be prompted to change your password to something more personal.</p>
+          <a class="button" href="{{signInUrl}}">Click here to log in</a>
+          <p>Get the latest ChargeBot App for your phone.</p>
+          <p>
+            <img src="https://sust-public-bucket.s3.amazonaws.com/ios-store.png" height="50"/>
+            <img src="https://sust-public-bucket.s3.amazonaws.com/android-store.png" height="50"/>
+          </p>
+          <p>If you have any questions or need help, feel free to reach out. We're here to assist you!</p>
+          <p><a class="link" href="mailto:{{contactEmail}}">{{contactEmail}}</a></p>
+          <p><strong>Cheers,</strong></p>
+          <p><strong>The Sust Pro Team</strong></p>
+        </td>
+      </tr>
+
+      <!-- Row 4: Footer -->
+      <tr class="footer">
+        <td>@2024 Copyrights. All rights reserved by Sust Pro</td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -72,7 +72,7 @@ export const loadSchemas = (entity_name: string) => {
   if ("alert_type" === entity_name) { schema = AlertType; }
   if ("vehicle_type" === entity_name) { schema = VehicleType; }
   if ("vehicle" === entity_name) { schema = Vehicle; }
-      if ("bot_scheduled_alert" === entity_name) { schema = BotScheduledAlert; }
+  if ("bot_scheduled_alert" === entity_name) { schema = BotScheduledAlert; }
 // DO NOT REMOVE THIS LINE: PLOP SCHEMA IF
 
   if (!schema) {

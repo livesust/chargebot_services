@@ -3,7 +3,6 @@ import warmup from "@middy/warmup";
 import Log from '@dazn/lambda-powertools-logger';
 import { createError, HttpError } from '@middy/util';
 import httpErrorHandler from "@middy/http-error-handler";
-import { EntitySchema } from "../schemas/disable_user.schema";
 import { ResponseSchema } from "../schemas/user.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
