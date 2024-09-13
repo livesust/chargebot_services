@@ -239,6 +239,7 @@ export function ApiStack({ app, stack }: StackContext) {
         },
       },
       "POST /user/{cognito_id}/register_app_install": "packages/functions/src/api/register_app_install.main",
+      "PATCH /user/logout/{app_install_id}": "packages/functions/src/api/logout_user.main",
       "GET /company/{company_id}/home_master": "packages/functions/src/api/get_company_home_master.main",
       "POST /company/{company_id}/home_master": "packages/functions/src/api/post_company_home_master.main",
       "GET /company/{company_id}/bots": "packages/functions/src/api/get_company_bots.main",

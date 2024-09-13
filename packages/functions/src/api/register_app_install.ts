@@ -37,7 +37,8 @@ const handler = async (event) => {
     Log.debug('User found', { cognito_id });
 
     // find existent app install
-    const [existentAppInstall, notifificationPermission, locationPermission] = await Promise.all([
+    const [samePhoneAppInstalls, existentAppInstall, notifificationPermission, locationPermission] = await Promise.all([
+      AppInstall.findByCriteria({app_platform_id: body.app_platform_id}),
       AppInstall.findOneByCriteria({user_id: user.id, app_platform_id: body.app_platform_id}),
       Permission.findOneByCriteria({name: PermissionName.NOTIFICATIONS}),
       Permission.findOneByCriteria({name: PermissionName.LOCATION}),
@@ -49,8 +50,18 @@ const handler = async (event) => {
       Log.debug('New Install, create');
     }
 
+    if (samePhoneAppInstalls?.length > 0) {
+      // mark all existent app installs for the same phone as inactive
+      await Promise.all(samePhoneAppInstalls.map(ai => AppInstall.update(ai.id!, {
+        active: false,
+        modified_by: user_id,
+        modified_date: now,
+      })));
+    }
+
     const [appInstall, appInstallPermissions] = await Promise.all([
       // update or create install
+      // mark install as active
       existentAppInstall ? AppInstall.update(existentAppInstall.id!, {
         app_version: body.app_version,
         platform: body.platform,
@@ -60,8 +71,10 @@ const handler = async (event) => {
         description: body.description,
         modified_by: user_id,
         modified_date: now,
+        active: true
       }) : AppInstall.create({
         ...body,
+        active: true,
         user_id: user.id,
         created_by: user_id,
         created_date: now,

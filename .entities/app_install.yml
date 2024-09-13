@@ -27,6 +27,10 @@ attributes:
     type: text
     tsType: string
     not_null: false
+  - attribute: active
+    type: boolean
+    tsType: boolean
+    not_null: false
 relationships:
   - entity: user
     relation_type: many-to-one

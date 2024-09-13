@@ -9,6 +9,7 @@ export interface AppInstallTable extends AuditedEntity {
   os_version: string;
   push_token?: string;
   description?: string;
+  active?: boolean;
   user_id: number;
   user?: User;
 }
