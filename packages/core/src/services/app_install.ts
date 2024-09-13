@@ -151,6 +151,7 @@ export async function getAppsToNotify(user_ids: number[]): Promise<AppInstall[] 
         .select((eb) => withUser(eb))
         .where('app_install.user_id', 'in', user_ids)
         .where('app_install.push_token', 'is not', null)
+        .where('app_install.active', 'is', true)
         .where('permission.name', '=', PermissionName.NOTIFICATIONS)
         .where('app_install_permissions.permission_status', 'is', true)
         .where('app_install.deleted_by', 'is', null)
@@ -254,6 +255,9 @@ function getCriteriaQuery(query: any, criteria: Partial<AppInstall>): any {
       criteria.description === null ? 'is' : '=', 
       criteria.description
     );
+  }
+  if (criteria.active) {
+    query = query.where('active', '=', criteria.active);
   }
 
   if (criteria.user_id) {

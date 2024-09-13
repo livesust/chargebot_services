@@ -30,6 +30,7 @@ function getAppInstallInstance() {
         "os_version": getRandom('varchar', 100),
         "push_token": getRandom('text'),
         "description": getRandom('text'),
+        "active": getRandom('boolean'),
         // @ts-expect-error ignore any type error
         "user_id": user.id,
     };
