@@ -110,6 +110,17 @@ export async function list(): Promise<HomeMaster[]> {
         .execute();
 }
 
+export async function count(): Promise<number> {
+  const count: { value: number; } | undefined = await db
+        .selectFrom("home_master")
+        .select(({ fn }) => [
+          fn.count<number>('id').as('value'),
+        ])
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+  return count?.value ?? 0;
+}
+
 export async function paginate(page: number, pageSize: number): Promise<HomeMaster[]> {
     return db
         .selectFrom("home_master")
@@ -117,7 +128,7 @@ export async function paginate(page: number, pageSize: number): Promise<HomeMast
         .select((eb) => withStateMaster(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
-        .offset((page - 1) * pageSize)
+        .offset(page * pageSize)
         .execute();
 }
 

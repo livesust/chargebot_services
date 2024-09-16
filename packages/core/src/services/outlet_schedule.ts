@@ -117,6 +117,17 @@ export async function list(): Promise<OutletSchedule[]> {
         .execute();
 }
 
+export async function count(): Promise<number> {
+  const count: { value: number; } | undefined = await db
+        .selectFrom("outlet_schedule")
+        .select(({ fn }) => [
+          fn.count<number>('id').as('value'),
+        ])
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+  return count?.value ?? 0;
+}
+
 export async function paginate(page: number, pageSize: number): Promise<OutletSchedule[]> {
     return db
         .selectFrom("outlet_schedule")
@@ -125,7 +136,7 @@ export async function paginate(page: number, pageSize: number): Promise<OutletSc
         //.select((eb) => withOutlet(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
-        .offset((page - 1) * pageSize)
+        .offset(page * pageSize)
         .execute();
 }
 

@@ -99,13 +99,24 @@ export async function list(): Promise<OutletType[]> {
         .execute();
 }
 
+export async function count(): Promise<number> {
+  const count: { value: number; } | undefined = await db
+        .selectFrom("outlet_type")
+        .select(({ fn }) => [
+          fn.count<number>('id').as('value'),
+        ])
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+  return count?.value ?? 0;
+}
+
 export async function paginate(page: number, pageSize: number): Promise<OutletType[]> {
     return db
         .selectFrom("outlet_type")
         .selectAll()
         .where('deleted_by', 'is', null)
         .limit(pageSize)
-        .offset((page - 1) * pageSize)
+        .offset(page * pageSize)
         .execute();
 }
 

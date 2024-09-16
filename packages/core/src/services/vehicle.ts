@@ -121,6 +121,17 @@ export async function list(): Promise<Vehicle[]> {
         .execute();
 }
 
+export async function count(): Promise<number> {
+  const count: { value: number; } | undefined = await db
+        .selectFrom("vehicle")
+        .select(({ fn }) => [
+          fn.count<number>('id').as('value'),
+        ])
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+  return count?.value ?? 0;
+}
+
 export async function paginate(page: number, pageSize: number): Promise<Vehicle[]> {
     return db
         .selectFrom("vehicle")
@@ -128,7 +139,7 @@ export async function paginate(page: number, pageSize: number): Promise<Vehicle[
         .select((eb) => withVehicleType(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
-        .offset((page - 1) * pageSize)
+        .offset(page * pageSize)
         .execute();
 }
 
