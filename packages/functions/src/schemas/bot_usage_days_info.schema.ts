@@ -20,6 +20,14 @@ export const ArrayResponseSchema = Joi.object({
     body: Joi.array().items(EntitySchema)
 });
 
+export const PaginateResponseSchema = Joi.object({
+    ...JsonResponseSchemaDef,
+    body: Joi.object({
+      records: Joi.array().items(EntitySchema),
+      count: Joi.number()
+    })
+});
+
 export const PathParamSchema = Joi.object({
   bot_uuid: Joi.string().required(),
   from: Joi.date().required(),

@@ -137,6 +137,17 @@ export async function list(): Promise<BotComponent[]> {
         .execute();
 }
 
+export async function count(): Promise<number> {
+  const count: { value: number; } | undefined = await db
+        .selectFrom("bot_component")
+        .select(({ fn }) => [
+          fn.count<number>('id').as('value'),
+        ])
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+  return count?.value ?? 0;
+}
+
 export async function paginate(page: number, pageSize: number): Promise<BotComponent[]> {
     return db
         .selectFrom("bot_component")
@@ -145,7 +156,7 @@ export async function paginate(page: number, pageSize: number): Promise<BotCompo
         .select((eb) => withComponent(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
-        .offset((page - 1) * pageSize)
+        .offset(page * pageSize)
         .execute();
 }
 

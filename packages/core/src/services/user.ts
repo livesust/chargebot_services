@@ -134,6 +134,17 @@ export async function list(): Promise<User[]> {
         .execute();
 }
 
+export async function count(): Promise<number> {
+  const count: { value: number; } | undefined = await db
+        .selectFrom("user")
+        .select(({ fn }) => [
+          fn.count<number>('id').as('value'),
+        ])
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+  return count?.value ?? 0;
+}
+
 export async function paginate(page: number, pageSize: number): Promise<User[]> {
     return db
         .selectFrom("user")
@@ -143,7 +154,7 @@ export async function paginate(page: number, pageSize: number): Promise<User[]> 
         .select((eb) => withRole(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
-        .offset((page - 1) * pageSize)
+        .offset(page * pageSize)
         .execute();
 }
 

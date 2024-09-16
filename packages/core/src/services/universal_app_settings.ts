@@ -121,6 +121,17 @@ export async function list(): Promise<UniversalAppSettings[]> {
         .execute();
 }
 
+export async function count(): Promise<number> {
+  const count: { value: number; } | undefined = await db
+        .selectFrom("universal_app_settings")
+        .select(({ fn }) => [
+          fn.count<number>('id').as('value'),
+        ])
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+  return count?.value ?? 0;
+}
+
 export async function paginate(page: number, pageSize: number): Promise<UniversalAppSettings[]> {
     return db
         .selectFrom("universal_app_settings")
@@ -128,7 +139,7 @@ export async function paginate(page: number, pageSize: number): Promise<Universa
         .select((eb) => withAppSettingsType(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
-        .offset((page - 1) * pageSize)
+        .offset(page * pageSize)
         .execute();
 }
 

@@ -10,13 +10,13 @@ import httpSecurityHeaders from '@middy/http-security-headers';
 import httpEventNormalizer from '@middy/http-event-normalizer';
 // import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
-import { createSuccessResponse, validateArrayResponse, isWarmingUp } from "../shared/rest_utils";
+import { createSuccessResponse, validatePaginateResponse, isWarmingUp } from "../shared/rest_utils";
 import { loadService } from "@chargebot-services/core/services";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
   const entity_name = event.pathParameters!.entity!;
-  const page = event.pathParameters?.page ?? 1;
+  const page = event.pathParameters?.page ?? 0;
   const pageSize = event.pathParameters?.pageSize ?? 10;
 
   console.log("Call to Paginate", entity_name, page, pageSize);
@@ -24,9 +24,11 @@ const handler = async (event) => {
   const service = await loadService(entity_name);
 
   let records;
+  let count = 0;
 
   try {
     records = await service.paginate(+page, +pageSize);
+    count = await service.count();
   } catch (error) {
     Log.error("Cannot paginate entity", { entity_name, error });
     const httpError = createError(406, "cannot paginate " + entity_name, { expose: true });
@@ -34,9 +36,12 @@ const handler = async (event) => {
     throw httpError;
   }
 
-  const response = createSuccessResponse(records);
+  const response = createSuccessResponse({
+    records,
+    count
+  });
 
-  await validateArrayResponse(response, entity_name);
+  await validatePaginateResponse(response, entity_name);
 
   return response;
 };

@@ -111,6 +111,17 @@ export async function list(): Promise<UserPhone[]> {
         .execute();
 }
 
+export async function count(): Promise<number> {
+  const count: { value: number; } | undefined = await db
+        .selectFrom("user_phone")
+        .select(({ fn }) => [
+          fn.count<number>('id').as('value'),
+        ])
+        .where('deleted_by', 'is', null)
+        .executeTakeFirst();
+  return count?.value ?? 0;
+}
+
 export async function paginate(page: number, pageSize: number): Promise<UserPhone[]> {
     return db
         .selectFrom("user_phone")
@@ -119,7 +130,7 @@ export async function paginate(page: number, pageSize: number): Promise<UserPhon
         //.select((eb) => withUser(eb))
         .where('deleted_by', 'is', null)
         .limit(pageSize)
-        .offset((page - 1) * pageSize)
+        .offset(page * pageSize)
         .execute();
 }
 

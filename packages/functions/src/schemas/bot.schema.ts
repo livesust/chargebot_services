@@ -21,7 +21,6 @@ export const EntitySchema = Joi.object({
     vehicle_id: Joi.number().allow(null),
     
     bot_version: BotVersionSchema,
-    
     vehicle: VehicleSchema.allow(null),
     company: CompanySchema.allow(null),
 });
@@ -60,4 +59,12 @@ export const ResponseSchema = Joi.object({
 export const ArrayResponseSchema = Joi.object({
     ...JsonResponseSchemaDef,
     body: Joi.array().items(EntitySchema)
+});
+
+export const PaginateResponseSchema = Joi.object({
+    ...JsonResponseSchemaDef,
+    body: Joi.object({
+      records: Joi.array().items(EntitySchema),
+      count: Joi.number()
+    })
 });
