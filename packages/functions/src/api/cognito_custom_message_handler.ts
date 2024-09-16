@@ -2,6 +2,7 @@ import Log from '@dazn/lambda-powertools-logger';
 // import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import fs from "fs-extra";
+import i18n from '../shared/i18n/i18n';
 
 // Function to load and customize the HTML template
 const loadEmailTemplate = async (templateName: string, replacements?: object) => {
@@ -24,31 +25,45 @@ export const main = async (event) => {
   const { email } = event.request.userAttributes;
 
   try {
-    // Handle sign-up and forgot password custom messages
     if (event.triggerSource === "CustomMessage_AdminCreateUser") {
+      // Handle sign-up custom messages
       const emailHtml = await loadEmailTemplate("admin-create-user-email", {
+        i18n_text: i18n.__("email.admin_create_user.text"),
+        i18n_username: i18n.__("email.admin_create_user.username"),
+        i18n_password: i18n.__("email.admin_create_user.password"),
+        i18n_button: i18n.__("email.admin_create_user.button"),
+        i18n_get_app: i18n.__("email.admin_create_user.get_app"),
+        i18n_need_help: i18n.__("email.admin_create_user.need_help"),
+        i18n_sign: i18n.__("email.admin_create_user.sign"),
+        i18n_footer: i18n.__("email.admin_create_user.footer"),
         signInUrl: process.env.AUTH_SIGN_IN_URL,
-        contactEmail: "hello@sust.pro"
       });
       
-      // Set the email message in HTML format
       event.response.emailMessage = emailHtml;
-      event.response.emailSubject = "Welcome to Sust Pro!";
+      event.response.emailSubject = i18n.__("email.admin_create_user.subject");
     } else if (event.triggerSource === "CustomMessage_ForgotPassword") {
+      // Handle forgot password custom messages
       const emailHtml = await loadEmailTemplate("forgot-password-email", {
-        signInUrl: process.env.AUTH_SIGN_IN_URL,
-        contactEmail: "hello@sust.pro",
+        i18n_text: i18n.__("email.forgot_password.text"),
+        i18n_username: i18n.__("email.forgot_password.username"),
+        i18n_code: i18n.__("email.forgot_password.code"),
+        i18n_button: i18n.__("email.forgot_password.button"),
+        i18n_disregard: i18n.__("email.forgot_password.disregard"),
+        i18n_get_app: i18n.__("email.forgot_password.get_app"),
+        i18n_need_help: i18n.__("email.forgot_password.need_help"),
+        i18n_sign: i18n.__("email.forgot_password.sign"),
+        i18n_footer: i18n.__("email.forgot_password.footer"),
+        resetPasswordUrl: `${process.env.FORGOT_PASSWORD_URL}?email=${email}`,
         username: email,
       });
       
       event.response.emailMessage = emailHtml;
-      event.response.emailSubject = "Sust Pro, reset your password";
+      event.response.emailSubject = i18n.__("email.forgot_password.subject");
     }
 
-    Log.info("Response Cognito Event: ", {event});
     return event;
   } catch (error) {
-    console.error("Error generating custom cognito message:", error);
+    Log.error("Error generating custom cognito message:", {error});
     throw error;
   }
 };

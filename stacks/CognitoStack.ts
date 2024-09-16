@@ -3,15 +3,12 @@ import { RDSStack } from "./RDSStack";
 import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";
-// import * as ses from "aws-cdk-lib/aws-ses";
+import * as ses from "aws-cdk-lib/aws-ses";
 
 export function CognitoStack({ app, stack }: StackContext) {
 
     // Secret Keys
     const COGNITO_USER_POOL_ID = new Config.Secret(stack, "COGNITO_USER_POOL_ID");
-
-    // // SES Verified Domain ARN (replace with your domain)
-    // const sesVerifiedDomainArn = `arn:aws:ses:${app.region}:${app.account}:identity/no-reply@sust.pro`;
 
     // Cognito admin role
     const cognitoAdminRole: iam.IRole = new iam.Role(stack, "CognitoAdminRole", {
@@ -53,7 +50,8 @@ export function CognitoStack({ app, stack }: StackContext) {
         install: ["fs-extra"],
       },
       environment: {
-        AUTH_SIGN_IN_URL: app.stage === "dev" ? "http://localhost:3000/auth/cognito/sign-in" : "https://chargebot-web-app.vercel.app/auth/cognito/sign-in"
+        AUTH_SIGN_IN_URL: app.stage === "dev" ? "http://localhost:3000/auth/cognito/sign-in" : "https://chargebot-web-app.vercel.app/auth/cognito/sign-in",
+        FORGOT_PASSWORD_URL: app.stage === "dev" ? "http://localhost:3000/auth/cognito/update-password" : "https://chargebot-web-app.vercel.app/auth/cognito/update-password"
       }
     });
 
@@ -73,10 +71,10 @@ export function CognitoStack({ app, stack }: StackContext) {
                     emailSubject: "Verify your new Sust Pro account"
                 },
                 standardAttributes: {
-                    locale: { required: false, mutable: true },
-                    givenName: { required: false, mutable: true },
-                    familyName: { required: false, mutable: true },
-                    profilePicture: { required: false, mutable: true }
+                  locale: { required: false, mutable: true },
+                  givenName: { required: false, mutable: true },
+                  familyName: { required: false, mutable: true },
+                  profilePicture: { required: false, mutable: true }
                 },
                 customAttributes: {
                     customerId: new cognito.NumberAttribute({ mutable: false })
@@ -134,6 +132,28 @@ export function CognitoStack({ app, stack }: StackContext) {
 
     cognitoConfig.attachPermissionsForAuthUsers(stack, ["ssm"])
 
+    // SES Verified Domain ARN
+    // const domainName = "sust.pro";
+
+    // // Create SES domain identity and enable DKIM
+    // const sesDomainIdentity = new ses.EmailIdentity(stack, 'SESIdentity', {
+    //   identity: ses.Identity.domain(domainName),
+    //   dkimSigning: true, // Enables DKIM signing
+    // });
+
+    // const sesVerifiedDomainArn = `arn:aws:ses:${app.region}:${app.account}:identity/no-reply@${domainName}`;
+
+    // // // Set up the SES Email Configuration in Cognito
+    // const emailConfiguration: cognito.CfnUserPool.EmailConfigurationProperty = {
+    //   emailSendingAccount: 'DEVELOPER', // Use "DEVELOPER" to send from SES
+    //   sourceArn: sesVerifiedDomainArn, // SES domain ARN
+    //   from: `no-reply@${domainName}`, // Custom email address
+    // };
+
+    // // @ts-expect-error ignore check
+    // const cfnUserPool = cognitoConfig.cdk.userPool.node.defaultChild as cognito.CfnUserPool;
+    // cfnUserPool.emailConfiguration = emailConfiguration;
+
     // Cron function to expire user invitations
     const { rdsCluster } = use(RDSStack);
     new Cron(stack, "ExpireUserInvitationsCron", {
@@ -153,6 +173,12 @@ export function CognitoStack({ app, stack }: StackContext) {
         CognitoUserPoolId: cognitoConfig.userPoolId,
         CognitoIdentityPoolId: cognitoConfig.cognitoIdentityPoolId,
         CognitoUserPoolClientId: cognitoConfig.userPoolClientId,
+        // SESDnsCname1: sesDomainIdentity.dkimDnsTokenName1,
+        // SESDnsCnameValue1: sesDomainIdentity.dkimDnsTokenValue1,
+        // SESDnsCname2: sesDomainIdentity.dkimDnsTokenName2,
+        // SESDnsCnameValue2: sesDomainIdentity.dkimDnsTokenValue2,
+        // SESDnsCname3: sesDomainIdentity.dkimDnsTokenName3,
+        // SESDnsCnameValue3: sesDomainIdentity.dkimDnsTokenValue3
     });
 
     return {

@@ -1,4 +1,29 @@
 {
+  "email": {
+    "admin_create_user": {
+      "subject": "Welcome! Get started with ChargeBot by Sust Pro.",
+      "text": "Welcome to Sust Pro. To get started using the ChargeBot app, click the button below to set your new password.",
+      "username": "Your username:",
+      "password": "Your temporary password is:",
+      "button": "Activate Account",
+      "get_app": "Get the ChargeBot app",
+      "need_help": "Need help? Reach out any time at <a class=\"link\" href=\"mailto:hello@sust.pro\">hello@sust.pro</a> for assistance.",
+      "sign": "The Sust Pro Team",
+      "footer": "@2024 Copyrights. All rights reserved by Sust Pro"
+    },
+    "forgot_password": {
+      "subject": "Reset your ChargeBot password",
+      "text": "Hi! We received a request to reset your password. Click the button below to set your new password. You’ll be prompted to provide the code below in order to set a new password.",
+      "username": "Your username:",
+      "code": "Your code:",
+      "button": "Reset Password",
+      "disregard": "If you did not request to change your password, you can disregard this email.",
+      "get_app": "Get the ChargeBot app",
+      "need_help": "Need help? Reach out any time at <a class=\"link\" href=\"mailto:hello@sust.pro\">hello@sust.pro</a> for assistance.",
+      "sign": "The Sust Pro Team",
+      "footer": "@2024 Copyrights. All rights reserved by Sust Pro"
+    }
+  },
   "current_location": "the current location",
   "push_alerts": {
     "battery_low": {

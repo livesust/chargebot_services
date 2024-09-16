@@ -43,7 +43,6 @@
       }
       .body-text em {
         color: #ec7326;
-        font-style: italic;
       }
       .body-text .username {
         color: #fefefe;
@@ -62,7 +61,7 @@
       }
       .body-text .link {
         display: inline-block;
-        padding: 10px 20px;
+        padding: 0;
         color: #ec7326;
         text-decoration: none;
         border-radius: 5px;
@@ -89,27 +88,24 @@
       <!-- Row 3: Main Body Content -->
       <tr class="body-text">
         <td>
-          <p><strong><em>Hey there!</em></strong></p>
-          <p>We're excited to have you on board. Your account has been created, and you're all set to dive in.</p>
-          <p>Username: <strong><a rel="nofollow" class="username">{username}</a></strong></p>
-          <p>Password: <strong>{####}</strong></p>
-          <p>Once you log in, you'll be prompted to change your password to something more personal.</p>
-          <a class="button" href="{{signInUrl}}">Click here to log in</a>
-          <p>Get the latest ChargeBot App for your phone.</p>
+          <p>{{i18n_text}}</p>
+          <p>&nbsp;</p>
+          <p>{{i18n_username}} <strong><a rel="nofollow" class="username">{username}</a></strong></p>
+          <p>{{i18n_password}} <strong>{####}</strong></p>
+          <a class="button" href="{{signInUrl}}">{{i18n_button}}</a>
+          <p>{{i18n_get_app}}</p>
           <p>
             <img src="https://sust-public-bucket.s3.amazonaws.com/ios-store.png" height="50"/>
             <img src="https://sust-public-bucket.s3.amazonaws.com/android-store.png" height="50"/>
           </p>
-          <p>If you have any questions or need help, feel free to reach out. We're here to assist you!</p>
-          <p><a class="link" href="mailto:{{contactEmail}}">{{contactEmail}}</a></p>
-          <p><strong>Cheers,</strong></p>
-          <p><strong>The Sust Pro Team</strong></p>
+          <p>{{i18n_need_help}}</p>
+          <p><strong>{{i18n_sign}}</strong></p>
         </td>
       </tr>
 
       <!-- Row 4: Footer -->
       <tr class="footer">
-        <td>@2024 Copyrights. All rights reserved by Sust Pro</td>
+        <td>{{i18n_footer}}</td>
       </tr>
     </table>
   </body>
