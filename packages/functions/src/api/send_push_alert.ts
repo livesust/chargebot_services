@@ -20,6 +20,9 @@ import { dateReviver } from "src/shared/middlewares/json-date-parser";
 import { ExpoPush } from "@chargebot-services/core/services/expo/expo_push";
 import i18n from '../shared/i18n/i18n';
 import { ChargebotGps } from "@chargebot-services/core/services/analytics/chargebot_gps";
+import { AlertName } from "@chargebot-services/core/timescale/chargebot_alert";
+
+const filteredAlerts = [AlertName.BATTERY_CHARGING, AlertName.BATTERY_DISCHARGING, AlertName.BATTERY_TEMPERATURE_NORMALIZED];
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
@@ -32,10 +35,9 @@ const handler = async (event) => {
 
   const alertName = body.name;
   const alertMessage = body.message;
-  Log.info("PUSH ALERT", { body });
 
-  if (alertName == 'battery_temperature_normalized') {
-    Log.info("Not sending temperature normalized error");
+  if (filteredAlerts.some(a => alertName === a.toString())) {
+    Log.info("Alert filtered, not sending push:", alertName);
     return createSuccessResponse({ "response": "success" });
   }
 
@@ -66,7 +68,7 @@ const handler = async (event) => {
     const message = i18n.__(`push_alerts.${alertName}.message`, alertBody);
 
     if (pushTokens && pushTokens.length > 0) {
-      Log.info("SENT ALERT", { alertName, pushTokens, title, message });
+      Log.info("SENT ALERT", { alertName, pushTokens });
       ExpoPush.send_push_notifications(pushTokens, message, title,
         {bot_uuid, bot_id: bot.id}
       )

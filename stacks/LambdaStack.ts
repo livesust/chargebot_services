@@ -46,7 +46,7 @@ export function LambdaStack({ app, stack }: StackContext) {
   });
 
   // lambda functions timeout
-  const timeout = app.stage === "prod" ? "10 seconds" : "30 seconds";
+  const timeout = app.stage === "prod" ? "30 seconds" : "60 seconds";
 
   // Expo Server Access Token for Push
   const EXPO_ACCESS_TOKEN = new Config.Secret(stack, "EXPO_ACCESS_TOKEN");
@@ -296,44 +296,60 @@ export function LambdaStack({ app, stack }: StackContext) {
 
   new IotToLambda(stack, `ChargebotIoTEchoRuleToLambda_${app.stage}`, iotEchoToLambda);
 
-  // const iotGpsParkedlogGroup = new LogGroup(stack, `ChargebotIoTGpsParkedLogGroup_${app.stage}`, {
-  //   logGroupName: `ChargebotIoTGpsParkedLogGroup_${app.stage}`,
-  //   retention: RetentionDays.ONE_MONTH
-  // });
+  /**
+   * Subscribe to chargebot system shadow and execute a lambda function to update connection status
+   */
+  const processIotSystemShadowConnectedFunction = new Function(stack, "chargebotIotSystemShadowConnectedProcess", {
+    handler: "packages/functions/src/api/bot_system_shadow_connected.main",
+    timeout,
+    bind: [
+      rdsCluster,
+      timescaleConfigs.TIMESCALE_HOST,
+      timescaleConfigs.TIMESCALE_USER,
+      timescaleConfigs.TIMESCALE_PASSWORD,
+      timescaleConfigs.TIMESCALE_PORT,
+      timescaleConfigs.TIMESCALE_DATABASE,
+    ],
+  });
 
-  // const iotGpsParkedErrorLogGroup = new LogGroup(stack, `ChargebotIoTGpsParkedErrorLogGroup_${app.stage}`, {
-  //   logGroupName: `ChargebotIoTGpsParkedErrorLogGroup_${app.stage}`,
-  //   retention: RetentionDays.ONE_MONTH
-  // });
+  const iotSystemShadowConnectedLogGroup = new LogGroup(stack, `ChargebotIoTShadowConnectedLogGroup_${app.stage}`, {
+    logGroupName: `ChargebotIoTShadowConnectedLogGroup_${app.stage}`,
+    retention: RetentionDays.ONE_MONTH
+  });
 
-  // const iotGpsParkedToLambda: IotToLambdaProps = {
-  //   // @ts-expect-error ignore typing
-  //   existingLambdaObj: processIotGpsParkedFunction,
-  //   iotTopicRuleProps: {
-  //     topicRulePayload: {
-  //       ruleDisabled: false,
-  //       description: "ChargeBot Gps Parked to Lambda",
-  //       sql: "SELECT * FROM 'chargebot/status/gps'",
-  //       actions: [
-  //         {
-  //           cloudwatchLogs: {
-  //             logGroupName: iotGpsParkedlogGroup.logGroupName,
-  //             roleArn: 'arn:aws:iam::881739832873:role/livesust-iot-cluster-kms-role',
-  //           }
-  //         }
-  //       ],
-  //       errorAction:
-  //       {
-  //         cloudwatchLogs: {
-  //           logGroupName: iotGpsParkedErrorLogGroup.logGroupName,
-  //           roleArn: 'arn:aws:iam::881739832873:role/livesust-iot-cluster-kms-role'
-  //         }
-  //       }
-  //     }
-  //   }
-  // };
+  const iotSystemShadowConnectedErrorLogGroup = new LogGroup(stack, `ChargebotIoTShadowConnectedErrorLogGroup_${app.stage}`, {
+    logGroupName: `ChargebotIoTShadowConnectedErrorLogGroup_${app.stage}`,
+    retention: RetentionDays.ONE_MONTH
+  });
 
-  // new IotToLambda(stack, `ChargebotIoTGpsParkedRuleToLambda_${app.stage}`, iotGpsParkedToLambda);
+  const iotSystemShadowConnectedToLambda: IotToLambdaProps = {
+    // @ts-expect-error ignore typing
+    existingLambdaObj: processIotSystemShadowConnectedFunction,
+    iotTopicRuleProps: {
+      topicRulePayload: {
+        ruleDisabled: false,
+        description: "ChargeBot system shadow connected to Lambda",
+        sql: "SELECT state.reported as state, thingName() as thingName FROM '$aws/things/+/shadow/name/system/update'",
+        actions: [
+          {
+            cloudwatchLogs: {
+              logGroupName: iotSystemShadowConnectedLogGroup.logGroupName,
+              roleArn: 'arn:aws:iam::881739832873:role/livesust-iot-cluster-kms-role',
+            }
+          }
+        ],
+        errorAction:
+        {
+          cloudwatchLogs: {
+            logGroupName: iotSystemShadowConnectedErrorLogGroup.logGroupName,
+            roleArn: 'arn:aws:iam::881739832873:role/livesust-iot-cluster-kms-role'
+          }
+        }
+      }
+    }
+  };
+
+  new IotToLambda(stack, `ChargebotIoTSystemShadowConnectedRuleToLambda_${app.stage}`, iotSystemShadowConnectedToLambda);
 
   return {
     lambdaLayers: {

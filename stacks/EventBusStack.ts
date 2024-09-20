@@ -8,7 +8,7 @@ export function EventBusStack({ app, stack }: StackContext) {
   const { iotRole, IOT_ENDPOINT } = use(IotStack);
   const { cognitoAdminRole, COGNITO_USER_POOL_ID } = use(CognitoStack);
 
-  const timeout = app.stage === "prod" ? "10 seconds" : "30 seconds";
+  const timeout = app.stage === "prod" ? "30 seconds" : "60 seconds";
 
   const eventBus = new EventBus(stack, "api", {
     rules: {

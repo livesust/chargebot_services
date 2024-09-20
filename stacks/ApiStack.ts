@@ -21,7 +21,7 @@ export function ApiStack({ app, stack }: StackContext) {
   const SECRET_KEY = new Config.Secret(stack, "SECRET_KEY");
 
   // lambda functions timeout
-  const timeout = app.stage === "prod" ? "10 seconds" : "30 seconds";
+  const timeout = app.stage === "prod" ? "30 seconds" : "60 seconds";
 
   // S3 Bucket
   const bucket = new Bucket(stack, "userProfile");
@@ -135,9 +135,27 @@ export function ApiStack({ app, stack }: StackContext) {
       },
       "GET /bot/assigned": "packages/functions/src/api/bots_assigned.main",
       "GET /bot/{bot_uuid}/location": "packages/functions/src/api/bot_location.main",
+      "GET /bot/status/summary": { 
+        function: {
+          handler: "packages/functions/src/api/bot_status_summary.main",
+          timeout,
+          // @ts-expect-error ignore check
+          role: iotRole,
+          bind: [IOT_ENDPOINT]
+        }
+      },
       "GET /bot/{bot_uuid}/status": { 
         function: {
           handler: "packages/functions/src/api/bot_status.main",
+          timeout,
+          // @ts-expect-error ignore check
+          role: iotRole,
+          bind: [IOT_ENDPOINT]
+        }
+      },
+      "GET /bot/{bot_uuid}/status/connection": { 
+        function: {
+          handler: "packages/functions/src/api/bot_connection_status.main",
           timeout,
           // @ts-expect-error ignore check
           role: iotRole,
@@ -206,6 +224,15 @@ export function ApiStack({ app, stack }: StackContext) {
       "GET /bot/{bot_uuid}/configs": { 
         function: {
           handler: "packages/functions/src/api/bot_get_shadow_configs.main",
+          timeout,
+          // @ts-expect-error ignore check
+          role: iotRole,
+          bind: [IOT_ENDPOINT]
+        }
+      },
+      "GET /bot/{bot_uuid}/shadow/{shadow}": { 
+        function: {
+          handler: "packages/functions/src/api/bot_get_shadow.main",
           timeout,
           // @ts-expect-error ignore check
           role: iotRole,

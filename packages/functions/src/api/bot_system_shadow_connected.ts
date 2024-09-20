@@ -6,11 +6,10 @@ import httpEventNormalizer from '@middy/http-event-normalizer';
 // import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import { createSuccessResponse } from "../shared/rest_utils";
-import { Bot } from "@chargebot-services/core/services/bot";
 import jsonBodyParser from "@middy/http-json-body-parser";
 import { dateReviver } from "src/shared/middlewares/json-date-parser";
-import { BotVersion } from "@chargebot-services/core/services/bot_version";
-import { EventBus } from "@chargebot-services/core/services/aws/event_bus";
+import { ChargebotSystem } from "@chargebot-services/core/services/analytics/chargebot_system";
+import { SystemVariables } from "@chargebot-services/core/timescale/chargebot_system";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
@@ -18,48 +17,28 @@ const handler = async (event) => {
   // but direct on event when from IoT
   const body = event.body ?? event;
 
-  Log.debug("Echo from bot", { body });
+  Log.debug("System Shadow Connection Status from bot", { body });
 
   // bot_uuid from IoT, device_id from API
-  const bot_uuid: string = body.bot_uuid ?? body.device_id;
-  const device_version = body.device_version;
+  const data = event.state;
+  const device_id = data.device_id ?? event.thingName;
 
   try {
-    if (!bot_uuid) {
+    if (!device_id) {
       return createError(400, "bot uuid not provided", { expose: true });
     }
 
-    const bot = await Bot.findOneByCriteria({ bot_uuid })
+    const connectedStatus = await ChargebotSystem.updateConnectionStatus({
+      device_id: device_id,
+      device_version: data.device_version ?? "unknown",
+      timestamp: new Date(),
+      timezone: "Etc/UTC",
+      variable: SystemVariables.CONNECTED,
+      value_boolean: data.connected === "true",
+      data_type: "boolean"
+    });
 
-    if (bot) {
-      Log.debug("Bot already registered");
-    }
-
-    let botVersion = await BotVersion.findOneByCriteria({version_number: device_version})
-    if (!botVersion){
-      botVersion = (await BotVersion.create({
-        version_number: device_version,
-        version_name: `v${device_version}`,
-        active_date: new Date(),
-      }))!.entity;
-    }
-
-    if (!bot) {
-      const created = await Bot.create({
-        bot_uuid,
-        name: bot_uuid,
-        initials: bot_uuid.substring(0, 2),
-        bot_version_id: botVersion!.id!,
-      });
-      Log.debug("Dispatch creation event");
-      EventBus.dispatchEvent('bot', "created", created?.entity);
-    } else {
-      await Bot.update(bot.id!, {
-        bot_version_id: botVersion!.id!,
-      });
-    }
-
-    Log.debug("Bot registered", {bot_uuid});
+    Log.debug("Status registered", {connectedStatus});
 
     return createSuccessResponse({ "response": "success" });
 

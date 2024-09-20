@@ -42,7 +42,7 @@ export function CognitoStack({ app, stack }: StackContext) {
 
     const cognitoCustomMessageFunction = new Function(stack, "cognitoCustomMessageFunction", {
       handler: "packages/functions/src/api/cognito_custom_message_handler.main",
-      timeout: app.stage === "prod" ? "10 seconds" : "30 seconds",
+      timeout: app.stage === "prod" ? "30 seconds" : "60 seconds",
       copyFiles: [{ from: 'packages/functions/src/shared/templates', to: 'templates'}],
       // @ts-expect-error ignore type errors
       layers: [fsExtraLayer],
@@ -135,15 +135,15 @@ export function CognitoStack({ app, stack }: StackContext) {
     // SES Verified Domain ARN
     // const domainName = "sust.pro";
 
-    // // Create SES domain identity and enable DKIM
-    // const sesDomainIdentity = new ses.EmailIdentity(stack, 'SESIdentity', {
+    // Create SES domain identity and enable DKIM
+    // const sesDomainIdentity = new ses.EmailIdentity(stack, `SESIdentity_${app.stage}`, {
     //   identity: ses.Identity.domain(domainName),
     //   dkimSigning: true, // Enables DKIM signing
     // });
 
     // const sesVerifiedDomainArn = `arn:aws:ses:${app.region}:${app.account}:identity/no-reply@${domainName}`;
 
-    // // // Set up the SES Email Configuration in Cognito
+    // // Set up the SES Email Configuration in Cognito
     // const emailConfiguration: cognito.CfnUserPool.EmailConfigurationProperty = {
     //   emailSendingAccount: 'DEVELOPER', // Use "DEVELOPER" to send from SES
     //   sourceArn: sesVerifiedDomainArn, // SES domain ARN
@@ -161,7 +161,7 @@ export function CognitoStack({ app, stack }: StackContext) {
       job: {
         function: {
           handler: "packages/functions/src/api/expire_user_invitation.main",
-          timeout: app.stage === "prod" ? "10 seconds" : "30 seconds",
+          timeout: app.stage === "prod" ? "30 seconds" : "60 seconds",
           bind: [rdsCluster, COGNITO_USER_POOL_ID],
           // @ts-expect-error ignore check
           role: cognitoAdminRole,
@@ -173,12 +173,9 @@ export function CognitoStack({ app, stack }: StackContext) {
         CognitoUserPoolId: cognitoConfig.userPoolId,
         CognitoIdentityPoolId: cognitoConfig.cognitoIdentityPoolId,
         CognitoUserPoolClientId: cognitoConfig.userPoolClientId,
-        // SESDnsCname1: sesDomainIdentity.dkimDnsTokenName1,
-        // SESDnsCnameValue1: sesDomainIdentity.dkimDnsTokenValue1,
-        // SESDnsCname2: sesDomainIdentity.dkimDnsTokenName2,
-        // SESDnsCnameValue2: sesDomainIdentity.dkimDnsTokenValue2,
-        // SESDnsCname3: sesDomainIdentity.dkimDnsTokenName3,
-        // SESDnsCnameValue3: sesDomainIdentity.dkimDnsTokenValue3
+        // SESCNAMEDnsRecord1: JSON.stringify({"name": sesDomainIdentity.dkimDnsTokenName1, "value": sesDomainIdentity.dkimDnsTokenValue1}),
+        // SESCNAMEDnsRecord2: JSON.stringify({"name": sesDomainIdentity.dkimDnsTokenName2, "value": sesDomainIdentity.dkimDnsTokenValue2}),
+        // SESCNAMEDnsRecord3: JSON.stringify({"name": sesDomainIdentity.dkimDnsTokenName3, "value": sesDomainIdentity.dkimDnsTokenValue3}),
     });
 
     return {

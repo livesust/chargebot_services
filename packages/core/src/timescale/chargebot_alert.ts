@@ -25,4 +25,25 @@ export enum AlertCode {
   BATTERY_TEMPERATURE_LOW = "A104",
   BATTERY_TEMPERATURE_CRITICAL = "A105",
   BATTERY_TEMPERATURE_NORMALIZED = "A106",
+  GPS_ARRIVE_HOME = "A200",
+  GPS_LEAVE_HOME = "A201",
+  GPS_LONG_STOP = "A203",
+  NOT_PLUGGED_IN = "A300",
+  NOTHING_CHARGING = "A301",
+}
+
+export enum AlertName {
+  GENERAL = "general",
+  BATTERY_CHARGING = "battery_charging",
+  BATTERY_DISCHARGING = "battery_discharging",
+  BATTERY_LOW = "battery_low",
+  BATTERY_CRITICAL = "battery_critical",
+  BATTERY_TEMPERATURE_LOW = "battery_temperature_low",
+  BATTERY_TEMPERATURE_CRITICAL = "battery_temperature_critical",
+  BATTERY_TEMPERATURE_NORMALIZED = "battery_temperature_normalized",
+  GPS_ARRIVE_HOME = "gps_arrive_home",
+  GPS_LEAVE_HOME = "gps_leave_home",
+  GPS_LONG_STOP = "gps_long_stop",
+  NOT_PLUGGED_IN = "not_plugged_in",
+  NOTHING_CHARGING = "nothing_charging",
 }

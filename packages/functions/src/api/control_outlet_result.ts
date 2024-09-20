@@ -18,7 +18,6 @@ const handler = async (event) => {
       ? OutletPriorityChargeState.INACTIVE
       : (event.command == 'start_priority_charge' ? OutletPriorityChargeState.ACTIVE : OutletPriorityChargeState.INACTIVE)
   })
-  
 };
 
 export const main = middy(handler)
