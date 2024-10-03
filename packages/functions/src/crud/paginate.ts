@@ -10,16 +10,23 @@ import httpSecurityHeaders from '@middy/http-security-headers';
 import httpEventNormalizer from '@middy/http-event-normalizer';
 // import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
-import { createSuccessResponse, validatePaginateResponse, isWarmingUp } from "../shared/rest_utils";
+import { dateReviver } from "../shared/middlewares/json-date-parser";
+import { createSuccessResponse, validatePaginateResponse, validateSearchBody, isWarmingUp } from "../shared/rest_utils";
 import { loadService } from "@chargebot-services/core/services";
+import jsonBodyParser from "@middy/http-json-body-parser";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
   const entity_name = event.pathParameters!.entity!;
   const page = event.pathParameters?.page ?? 0;
   const pageSize = event.pathParameters?.pageSize ?? 10;
+  const filters = event.body ?? {};
 
-  console.log("Call to Paginate", entity_name, page, pageSize);
+  console.log("Call to Paginate", entity_name, page, pageSize, filters);
+
+  if (filters) {
+    await validateSearchBody(filters, entity_name);
+  }
 
   const service = await loadService(entity_name);
 
@@ -27,8 +34,8 @@ const handler = async (event) => {
   let count = 0;
 
   try {
-    records = await service.paginate(+page, +pageSize);
-    count = await service.count();
+    records = await service.paginate(+page, +pageSize, filters);
+    count = await service.count(filters);
   } catch (error) {
     Log.error("Cannot paginate entity", { entity_name, error });
     const httpError = createError(406, "cannot paginate " + entity_name, { expose: true });
@@ -53,6 +60,7 @@ export const main = middy(handler)
   .use(httpEventNormalizer())
   // .use(logTimeout())
   .use(validator({ pathParametersSchema: EntityPaginatedPathParamSchema }))
+  .use(jsonBodyParser({ reviver: dateReviver }))
   // after: inverse order execution
   .use(jsonBodySerializer())
   .use(httpSecurityHeaders())

@@ -97,7 +97,7 @@ export function ApiStack({ app, stack }: StackContext) {
           bind: [eventBus]
         }
       },
-      "GET /{entity}/page/{page}/pageSize/{pageSize}": {
+      "POST /{entity}/page/{page}/pageSize/{pageSize}": {
         function: {
           handler: "packages/functions/src/crud/paginate.main",
           bind: [eventBus]

@@ -3,11 +3,17 @@ import Log from '@dazn/lambda-powertools-logger';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import fs from "fs-extra";
 import i18n from '../shared/i18n/i18n';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Function to load and customize the HTML template
 const loadEmailTemplate = async (templateName: string, replacements?: object) => {
-  const templatePath = `./packages/functions/src/shared/templates/${templateName}.html`;
-  let template = await fs.readFile(templatePath, "utf-8");
+  const templatePath = `../shared/templates/${templateName}.html`;
+  Log.info('Loading template', {templatePath, __filename, __dirname, templateFile: resolve(__dirname, templatePath)});
+  let template = await fs.readFile(resolve(__dirname, templatePath), "utf-8");
 
   // Replace placeholders in the template with actual values
   if (replacements) {

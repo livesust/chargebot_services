@@ -43,7 +43,7 @@ export function CognitoStack({ app, stack }: StackContext) {
     const cognitoCustomMessageFunction = new Function(stack, "cognitoCustomMessageFunction", {
       handler: "packages/functions/src/api/cognito_custom_message_handler.main",
       timeout: app.stage === "prod" ? "30 seconds" : "60 seconds",
-      copyFiles: [{ from: 'packages/functions/src/shared/templates', to: 'templates'}],
+      copyFiles: [{ from: 'packages/functions/src/shared/templates', to: 'packages/functions/src/shared/templates'}],
       // @ts-expect-error ignore type errors
       layers: [fsExtraLayer],
       nodejs: {
@@ -132,27 +132,35 @@ export function CognitoStack({ app, stack }: StackContext) {
 
     cognitoConfig.attachPermissionsForAuthUsers(stack, ["ssm"])
 
-    // SES Verified Domain ARN
-    // const domainName = "sust.pro";
+    if (app.stage !== "dev") {
+      // SES Verified Domain ARN
+      const domainName = "sust.pro";
 
-    // Create SES domain identity and enable DKIM
-    // const sesDomainIdentity = new ses.EmailIdentity(stack, `SESIdentity_${app.stage}`, {
-    //   identity: ses.Identity.domain(domainName),
-    //   dkimSigning: true, // Enables DKIM signing
-    // });
+      // Create SES domain identity and enable DKIM
+      const sesDomainIdentity = new ses.EmailIdentity(stack, `SESIdentity_${app.stage}`, {
+        identity: ses.Identity.domain(domainName),
+        dkimSigning: true, // Enables DKIM signing
+      });
 
-    // const sesVerifiedDomainArn = `arn:aws:ses:${app.region}:${app.account}:identity/no-reply@${domainName}`;
+      // const sesVerifiedDomainArn = `arn:aws:ses:${app.region}:${app.account}:identity/no-reply@${domainName}`;
 
-    // // Set up the SES Email Configuration in Cognito
-    // const emailConfiguration: cognito.CfnUserPool.EmailConfigurationProperty = {
-    //   emailSendingAccount: 'DEVELOPER', // Use "DEVELOPER" to send from SES
-    //   sourceArn: sesVerifiedDomainArn, // SES domain ARN
-    //   from: `no-reply@${domainName}`, // Custom email address
-    // };
+      // // Set up the SES Email Configuration in Cognito
+      // const emailConfiguration: cognito.CfnUserPool.EmailConfigurationProperty = {
+      //   emailSendingAccount: 'DEVELOPER', // Use "DEVELOPER" to send from SES
+      //   sourceArn: sesVerifiedDomainArn, // SES domain ARN
+      //   from: `no-reply@${domainName}`, // Custom email address
+      // };
 
-    // // @ts-expect-error ignore check
-    // const cfnUserPool = cognitoConfig.cdk.userPool.node.defaultChild as cognito.CfnUserPool;
-    // cfnUserPool.emailConfiguration = emailConfiguration;
+      // // @ts-expect-error ignore check
+      // const cfnUserPool = cognitoConfig.cdk.userPool.node.defaultChild as cognito.CfnUserPool;
+      // cfnUserPool.emailConfiguration = emailConfiguration;
+
+      stack.addOutputs({
+          SESCNAMEDnsRecord1: JSON.stringify({"name": sesDomainIdentity.dkimDnsTokenName1, "value": sesDomainIdentity.dkimDnsTokenValue1}),
+          SESCNAMEDnsRecord2: JSON.stringify({"name": sesDomainIdentity.dkimDnsTokenName2, "value": sesDomainIdentity.dkimDnsTokenValue2}),
+          SESCNAMEDnsRecord3: JSON.stringify({"name": sesDomainIdentity.dkimDnsTokenName3, "value": sesDomainIdentity.dkimDnsTokenValue3}),
+      });
+    }
 
     // Cron function to expire user invitations
     const { rdsCluster } = use(RDSStack);
@@ -173,9 +181,6 @@ export function CognitoStack({ app, stack }: StackContext) {
         CognitoUserPoolId: cognitoConfig.userPoolId,
         CognitoIdentityPoolId: cognitoConfig.cognitoIdentityPoolId,
         CognitoUserPoolClientId: cognitoConfig.userPoolClientId,
-        // SESCNAMEDnsRecord1: JSON.stringify({"name": sesDomainIdentity.dkimDnsTokenName1, "value": sesDomainIdentity.dkimDnsTokenValue1}),
-        // SESCNAMEDnsRecord2: JSON.stringify({"name": sesDomainIdentity.dkimDnsTokenName2, "value": sesDomainIdentity.dkimDnsTokenValue2}),
-        // SESCNAMEDnsRecord3: JSON.stringify({"name": sesDomainIdentity.dkimDnsTokenName3, "value": sesDomainIdentity.dkimDnsTokenValue3}),
     });
 
     return {
