@@ -1,10 +1,10 @@
 export * as Bot from "./bot";
+import { OrderByDirection } from "kysely/dist/cjs/parser/order-by-parser";
 import db, { Database } from '../database';
 import { ExpressionBuilder, UpdateResult } from "kysely";
 import { BusinessError } from "../errors/business_error";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { Bot, BotUpdate, NewBot } from "../database/bot";
-import { OrderByDirection } from "kysely/dist/cjs/parser/order-by-parser";
 
 export function withBotVersion(eb: ExpressionBuilder<Database, 'bot'>) {
     return jsonObjectFrom(
@@ -61,7 +61,6 @@ export async function create(bot: NewBot): Promise<{
         ]))
         .where('bot.deleted_by', 'is', null)
         .executeTakeFirst();
-
     if (exists) {
         throw Error('Entity already exists with unique values');
     }
@@ -158,7 +157,7 @@ export async function hard_remove(id: number): Promise<void> {
 export async function list(): Promise<Bot[]> {
     return db
         .selectFrom("bot")
-        .selectAll()
+        .selectAll("bot")
         .select((eb) => withBotVersion(eb))
         .select((eb) => withVehicle(eb))
         .select((eb) => withBotCompany(eb))
@@ -192,7 +191,7 @@ export async function paginate(page: number, pageSize: number, sort: OrderByDire
 export async function lazyGet(id: number): Promise<Bot | undefined> {
     return db
         .selectFrom("bot")
-        .selectAll()
+        .selectAll("bot")
         .where('bot.id', '=', id)
         .where('bot.deleted_by', 'is', null)
         .executeTakeFirst();
@@ -201,7 +200,7 @@ export async function lazyGet(id: number): Promise<Bot | undefined> {
 export async function get(id: number): Promise<Bot | undefined> {
     return db
         .selectFrom("bot")
-        .selectAll()
+        .selectAll("bot")
         .select((eb) => withBotVersion(eb))
         .select((eb) => withVehicle(eb))
         .select((eb) => withBotCompany(eb))
@@ -234,10 +233,8 @@ export async function findByCompany(company_id: number): Promise<Bot[]> {
 }
 
 export async function findByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("bot")
     .select((eb) => withBotVersion(eb))
     .select((eb) => withVehicle(eb))
     .select((eb) => withBotCompany(eb))
@@ -245,18 +242,14 @@ export async function findByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
 }
 
 export async function lazyFindByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("bot")
     .execute();
 }
 
 export async function findOneByCriteria(criteria: Partial<Bot>): Promise<Bot | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("bot")
     .select((eb) => withBotVersion(eb))
     .select((eb) => withVehicle(eb))
     .select((eb) => withBotCompany(eb))
@@ -265,10 +258,8 @@ export async function findOneByCriteria(criteria: Partial<Bot>): Promise<Bot | u
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<Bot>): Promise<Bot | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("bot")
     .limit(1)
     .executeTakeFirst();
 }
@@ -328,35 +319,34 @@ function getCriteriaQuery(query: any, criteria: Partial<Bot>): any {
     query = query.where(
       'bot.bot_uuid', 
       criteria.bot_uuid === null ? 'is' : 'like', 
-      criteria.bot_uuid === null ? null : `%${criteria.bot_uuid}%`
+      criteria.bot_uuid === null ? null : `%${ criteria.bot_uuid }%`
     );
   }
   if (criteria.initials !== undefined) {
     query = query.where(
       'bot.initials', 
       criteria.initials === null ? 'is' : 'like', 
-      criteria.initials === null ? null : `%${criteria.initials}%`
+      criteria.initials === null ? null : `%${ criteria.initials }%`
     );
   }
   if (criteria.name !== undefined) {
     query = query.where(
       'bot.name', 
       criteria.name === null ? 'is' : 'like', 
-      criteria.name === null ? null : `%${criteria.name}%`
+      criteria.name === null ? null : `%${ criteria.name }%`
     );
   }
   if (criteria.pin_color !== undefined) {
     query = query.where(
       'bot.pin_color', 
-      criteria.pin_color === null ? 'is' : 'like',
-      criteria.pin_color === null ? null : `%${criteria.pin_color}%`
+      criteria.pin_color === null ? 'is' : 'like', 
+      criteria.pin_color === null ? null : `%${ criteria.pin_color }%`
     );
   }
 
   if (criteria.bot_version_id) {
     query = query.where('bot.bot_version_id', '=', criteria.bot_version_id);
   }
-
   if (criteria.vehicle_id) {
     query = query.where('bot.vehicle_id', '=', criteria.vehicle_id);
   }

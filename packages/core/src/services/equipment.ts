@@ -1,4 +1,5 @@
 export * as Equipment from "./equipment";
+import { OrderByDirection } from "kysely/dist/cjs/parser/order-by-parser";
 import db, { Database } from '../database';
 import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
@@ -56,8 +57,8 @@ export async function update(id: number, equipment: EquipmentUpdate): Promise<{
         .set({
             ...equipment,
         })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('equipment.id', '=', id)
+        .where('equipment.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -80,8 +81,8 @@ export async function remove(id: number, user_id: string): Promise<{
     const deleted = await db
         .updateTable('equipment')
         .set({ deleted_date: new Date(), deleted_by: user_id })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('equipment.id', '=', id)
+        .where('equipment.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -104,7 +105,7 @@ export async function removeByCriteria(criteria: Partial<Equipment>, user_id: st
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('equipment')
-        .where('id', '=', id)
+        .where('equipment.id', '=', id)
         .executeTakeFirst();
 }
 
@@ -114,39 +115,38 @@ export async function list(): Promise<Equipment[]> {
         .selectAll()
         .select((eb) => withEquipmentType(eb))
         .select((eb) => withCustomer(eb))
-        .where('deleted_by', 'is', null)
+        .where('equipment.deleted_by', 'is', null)
         .execute();
 }
 
-export async function count(): Promise<number> {
-  const count: { value: number; } | undefined = await db
-        .selectFrom("equipment")
+export async function count(criteria?: Partial<Equipment>): Promise<number> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("equipment").where('equipment.deleted_by', 'is', null);
+  const count: { value: number; } | undefined = await query
         .select(({ fn }) => [
-          fn.count<number>('id').as('value'),
+          fn.count<number>('equipment.id').as('value'),
         ])
-        .where('deleted_by', 'is', null)
         .executeTakeFirst();
   return count?.value ?? 0;
 }
 
-export async function paginate(page: number, pageSize: number): Promise<Equipment[]> {
-    return db
-        .selectFrom("equipment")
-        .selectAll()
-        .select((eb) => withEquipmentType(eb))
-        .select((eb) => withCustomer(eb))
-        .where('deleted_by', 'is', null)
-        .limit(pageSize)
-        .offset(page * pageSize)
-        .execute();
+export async function paginate(page: number, pageSize: number, sort: OrderByDirection, criteria?: Partial<Equipment>): Promise<Equipment[]> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("equipment").where('equipment.deleted_by', 'is', null);
+  return query
+      .selectAll("equipment")
+      .select((eb) => withEquipmentType(eb))
+      .select((eb) => withCustomer(eb))
+      .limit(pageSize)
+      .offset(page * pageSize)
+      .orderBy('created_date', sort)
+      .execute();
 }
 
 export async function lazyGet(id: number): Promise<Equipment | undefined> {
     return db
         .selectFrom("equipment")
         .selectAll()
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('equipment.id', '=', id)
+        .where('equipment.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
@@ -169,32 +169,26 @@ export async function findByOutlet(outlet_id: number): Promise<Equipment | undef
     .where('equipment.deleted_by', 'is', null)
     .where('outlet_equipment.deleted_by', 'is', null)
     .selectAll('equipment')
-        .executeTakeFirst();
+    .executeTakeFirst();
 }
 
 export async function findByCriteria(criteria: Partial<Equipment>): Promise<Equipment[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll('equipment')
     .select((eb) => withEquipmentType(eb))
     .select((eb) => withCustomer(eb))
     .execute();
 }
 
 export async function lazyFindByCriteria(criteria: Partial<Equipment>): Promise<Equipment[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll('equipment')
     .execute();
 }
 
 export async function findOneByCriteria(criteria: Partial<Equipment>): Promise<Equipment | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll('equipment')
     .select((eb) => withEquipmentType(eb))
     .select((eb) => withCustomer(eb))
     .limit(1)
@@ -202,10 +196,8 @@ export async function findOneByCriteria(criteria: Partial<Equipment>): Promise<E
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<Equipment>): Promise<Equipment | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll('equipment')
     .limit(1)
     .executeTakeFirst();
 }
@@ -224,7 +216,7 @@ function buildUpdateQuery(criteria: Partial<Equipment>) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCriteriaQuery(query: any, criteria: Partial<Equipment>): any {
-  query = query.where('deleted_by', 'is', null);
+  query = query.where('equipment.deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -232,46 +224,46 @@ function getCriteriaQuery(query: any, criteria: Partial<Equipment>): any {
 
   if (criteria.name !== undefined) {
     query = query.where(
-      'name', 
-      criteria.name === null ? 'is' : '=', 
-      criteria.name
+      'equipment.name', 
+      criteria.name === null ? 'is' : 'like', 
+      criteria.name === null ? null : `%${ criteria.name }%`
     );
   }
   if (criteria.brand !== undefined) {
     query = query.where(
-      'brand', 
-      criteria.brand === null ? 'is' : '=', 
-      criteria.brand
+      'equipment.brand', 
+      criteria.brand === null ? 'is' : 'like', 
+      criteria.brand === null ? null : `%${ criteria.brand }%`
     );
   }
   if (criteria.description !== undefined) {
     query = query.where(
-      'description', 
-      criteria.description === null ? 'is' : '=', 
-      criteria.description
+      'equipment.description', 
+      criteria.description === null ? 'is' : 'like', 
+      criteria.description === null ? null : `%${ criteria.description }%`
     );
   }
   if (criteria.voltage) {
-    query = query.where('voltage', '=', criteria.voltage);
+    query = query.where('equipment.voltage', '=', criteria.voltage);
   }
   if (criteria.max_charging_amps) {
-    query = query.where('max_charging_amps', '=', criteria.max_charging_amps);
+    query = query.where('equipment.max_charging_amps', '=', criteria.max_charging_amps);
   }
 
   if (criteria.equipment_type_id) {
-    query = query.where('equipment_type_id', '=', criteria.equipment_type_id);
+    query = query.where('equipment.equipment_type_id', '=', criteria.equipment_type_id);
   }
   if (criteria.customer_id) {
-    query = query.where('customer_id', '=', criteria.customer_id);
+    query = query.where('equipment.customer_id', '=', criteria.customer_id);
   }
 
   if (criteria.created_by) {
-    query = query.where('created_by', '=', criteria.created_by);
+    query = query.where('equipment.created_by', '=', criteria.created_by);
   }
 
   if (criteria.modified_by !== undefined) {
     query = query.where(
-      'modified_by', 
+      'equipment.modified_by', 
       criteria.modified_by === null ? 'is' : '=', 
       criteria.modified_by
     );

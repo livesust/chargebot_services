@@ -1,4 +1,5 @@
 export * as Component from "./component";
+import { OrderByDirection } from "kysely/dist/cjs/parser/order-by-parser";
 import db from '../database';
 import { UpdateResult } from "kysely";
 import { Component, ComponentUpdate, NewComponent } from "../database/component";
@@ -37,8 +38,8 @@ export async function update(id: number, component: ComponentUpdate): Promise<{
         .set({
             ...component,
         })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('component.id', '=', id)
+        .where('component.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -61,8 +62,8 @@ export async function remove(id: number, user_id: string): Promise<{
     const deleted = await db
         .updateTable('component')
         .set({ deleted_date: new Date(), deleted_by: user_id })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('component.id', '=', id)
+        .where('component.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -87,7 +88,7 @@ export async function removeByCriteria(criteria: Partial<Component>, user_id: st
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('component')
-        .where('id', '=', id)
+        .where('component.id', '=', id)
         .executeTakeFirst();
 }
 
@@ -95,37 +96,36 @@ export async function list(): Promise<Component[]> {
     return db
         .selectFrom("component")
         .selectAll()
-        .where('deleted_by', 'is', null)
+        .where('component.deleted_by', 'is', null)
         .execute();
 }
 
-export async function count(): Promise<number> {
-  const count: { value: number; } | undefined = await db
-        .selectFrom("component")
+export async function count(criteria?: Partial<Component>): Promise<number> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("component").where('component.deleted_by', 'is', null);
+  const count: { value: number; } | undefined = await query
         .select(({ fn }) => [
-          fn.count<number>('id').as('value'),
+          fn.count<number>('component.id').as('value'),
         ])
-        .where('deleted_by', 'is', null)
         .executeTakeFirst();
   return count?.value ?? 0;
 }
 
-export async function paginate(page: number, pageSize: number): Promise<Component[]> {
-    return db
-        .selectFrom("component")
-        .selectAll()
-        .where('deleted_by', 'is', null)
-        .limit(pageSize)
-        .offset(page * pageSize)
-        .execute();
+export async function paginate(page: number, pageSize: number, sort: OrderByDirection, criteria?: Partial<Component>): Promise<Component[]> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("component").where('component.deleted_by', 'is', null);
+  return query
+      .selectAll("component")
+      .limit(pageSize)
+      .offset(page * pageSize)
+      .orderBy('created_date', sort)
+      .execute();
 }
 
 export async function lazyGet(id: number): Promise<Component | undefined> {
     return db
         .selectFrom("component")
         .selectAll()
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('component.id', '=', id)
+        .where('component.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
@@ -133,41 +133,33 @@ export async function get(id: number): Promise<Component | undefined> {
     return db
         .selectFrom("component")
         .selectAll()
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('component.id', '=', id)
+        .where('component.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
 export async function findByCriteria(criteria: Partial<Component>): Promise<Component[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("component")
     .execute();
 }
 
 export async function lazyFindByCriteria(criteria: Partial<Component>): Promise<Component[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("component")
     .execute();
 }
 
 export async function findOneByCriteria(criteria: Partial<Component>): Promise<Component | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("component")
     .limit(1)
     .executeTakeFirst();
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<Component>): Promise<Component | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("component")
     .limit(1)
     .executeTakeFirst();
 }
@@ -186,7 +178,7 @@ function buildUpdateQuery(criteria: Partial<Component>) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCriteriaQuery(query: any, criteria: Partial<Component>): any {
-  query = query.where('deleted_by', 'is', null);
+  query = query.where('component.deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -194,55 +186,55 @@ function getCriteriaQuery(query: any, criteria: Partial<Component>): any {
 
   if (criteria.name !== undefined) {
     query = query.where(
-      'name', 
-      criteria.name === null ? 'is' : '=', 
-      criteria.name
+      'component.name', 
+      criteria.name === null ? 'is' : 'like', 
+      criteria.name === null ? null : `%${ criteria.name }%`
     );
   }
   if (criteria.version !== undefined) {
     query = query.where(
-      'version', 
-      criteria.version === null ? 'is' : '=', 
-      criteria.version
+      'component.version', 
+      criteria.version === null ? 'is' : 'like', 
+      criteria.version === null ? null : `%${ criteria.version }%`
     );
   }
   if (criteria.description !== undefined) {
     query = query.where(
-      'description', 
-      criteria.description === null ? 'is' : '=', 
-      criteria.description
+      'component.description', 
+      criteria.description === null ? 'is' : 'like', 
+      criteria.description === null ? null : `%${ criteria.description }%`
     );
   }
   if (criteria.specs !== undefined) {
     query = query.where(
-      'specs', 
-      criteria.specs === null ? 'is' : '=', 
-      criteria.specs
+      'component.specs', 
+      criteria.specs === null ? 'is' : 'like', 
+      criteria.specs === null ? null : `%${ criteria.specs }%`
     );
   }
   if (criteria.location !== undefined) {
     query = query.where(
-      'location', 
-      criteria.location === null ? 'is' : '=', 
-      criteria.location
+      'component.location', 
+      criteria.location === null ? 'is' : 'like', 
+      criteria.location === null ? null : `%${ criteria.location }%`
     );
   }
   if (criteria.notes !== undefined) {
     query = query.where(
-      'notes', 
-      criteria.notes === null ? 'is' : '=', 
-      criteria.notes
+      'component.notes', 
+      criteria.notes === null ? 'is' : 'like', 
+      criteria.notes === null ? null : `%${ criteria.notes }%`
     );
   }
 
 
   if (criteria.created_by) {
-    query = query.where('created_by', '=', criteria.created_by);
+    query = query.where('component.created_by', '=', criteria.created_by);
   }
 
   if (criteria.modified_by !== undefined) {
     query = query.where(
-      'modified_by', 
+      'component.modified_by', 
       criteria.modified_by === null ? 'is' : '=', 
       criteria.modified_by
     );

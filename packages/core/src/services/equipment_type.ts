@@ -1,4 +1,5 @@
 export * as EquipmentType from "./equipment_type";
+import { OrderByDirection } from "kysely/dist/cjs/parser/order-by-parser";
 import db from '../database';
 import { UpdateResult } from "kysely";
 import { EquipmentType, EquipmentTypeUpdate, NewEquipmentType } from "../database/equipment_type";
@@ -37,8 +38,8 @@ export async function update(id: number, equipment_type: EquipmentTypeUpdate): P
         .set({
             ...equipment_type,
         })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('equipment_type.id', '=', id)
+        .where('equipment_type.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -61,8 +62,8 @@ export async function remove(id: number, user_id: string): Promise<{
     const deleted = await db
         .updateTable('equipment_type')
         .set({ deleted_date: new Date(), deleted_by: user_id })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('equipment_type.id', '=', id)
+        .where('equipment_type.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -87,7 +88,7 @@ export async function removeByCriteria(criteria: Partial<EquipmentType>, user_id
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('equipment_type')
-        .where('id', '=', id)
+        .where('equipment_type.id', '=', id)
         .executeTakeFirst();
 }
 
@@ -95,37 +96,36 @@ export async function list(): Promise<EquipmentType[]> {
     return db
         .selectFrom("equipment_type")
         .selectAll()
-        .where('deleted_by', 'is', null)
+        .where('equipment_type.deleted_by', 'is', null)
         .execute();
 }
 
-export async function count(): Promise<number> {
-  const count: { value: number; } | undefined = await db
-        .selectFrom("equipment_type")
+export async function count(criteria?: Partial<EquipmentType>): Promise<number> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("equipment_type").where('equipment_type.deleted_by', 'is', null);
+  const count: { value: number; } | undefined = await query
         .select(({ fn }) => [
-          fn.count<number>('id').as('value'),
+          fn.count<number>('equipment_type.id').as('value'),
         ])
-        .where('deleted_by', 'is', null)
         .executeTakeFirst();
   return count?.value ?? 0;
 }
 
-export async function paginate(page: number, pageSize: number): Promise<EquipmentType[]> {
-    return db
-        .selectFrom("equipment_type")
-        .selectAll()
-        .where('deleted_by', 'is', null)
-        .limit(pageSize)
-        .offset(page * pageSize)
-        .execute();
+export async function paginate(page: number, pageSize: number, sort: OrderByDirection, criteria?: Partial<EquipmentType>): Promise<EquipmentType[]> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("equipment_type").where('equipment_type.deleted_by', 'is', null);
+  return query
+      .selectAll("equipment_type")
+      .limit(pageSize)
+      .offset(page * pageSize)
+      .orderBy('created_date', sort)
+      .execute();
 }
 
 export async function lazyGet(id: number): Promise<EquipmentType | undefined> {
     return db
         .selectFrom("equipment_type")
         .selectAll()
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('equipment_type.id', '=', id)
+        .where('equipment_type.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
@@ -133,41 +133,33 @@ export async function get(id: number): Promise<EquipmentType | undefined> {
     return db
         .selectFrom("equipment_type")
         .selectAll()
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('equipment_type.id', '=', id)
+        .where('equipment_type.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
 export async function findByCriteria(criteria: Partial<EquipmentType>): Promise<EquipmentType[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("equipment_type")
     .execute();
 }
 
 export async function lazyFindByCriteria(criteria: Partial<EquipmentType>): Promise<EquipmentType[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("equipment_type")
     .execute();
 }
 
 export async function findOneByCriteria(criteria: Partial<EquipmentType>): Promise<EquipmentType | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("equipment_type")
     .limit(1)
     .executeTakeFirst();
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<EquipmentType>): Promise<EquipmentType | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("equipment_type")
     .limit(1)
     .executeTakeFirst();
 }
@@ -186,7 +178,7 @@ function buildUpdateQuery(criteria: Partial<EquipmentType>) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCriteriaQuery(query: any, criteria: Partial<EquipmentType>): any {
-  query = query.where('deleted_by', 'is', null);
+  query = query.where('equipment_type.deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -194,27 +186,27 @@ function getCriteriaQuery(query: any, criteria: Partial<EquipmentType>): any {
 
   if (criteria.type !== undefined) {
     query = query.where(
-      'type', 
-      criteria.type === null ? 'is' : '=', 
-      criteria.type
+      'equipment_type.type', 
+      criteria.type === null ? 'is' : 'like', 
+      criteria.type === null ? null : `%${ criteria.type }%`
     );
   }
   if (criteria.description !== undefined) {
     query = query.where(
-      'description', 
-      criteria.description === null ? 'is' : '=', 
-      criteria.description
+      'equipment_type.description', 
+      criteria.description === null ? 'is' : 'like', 
+      criteria.description === null ? null : `%${ criteria.description }%`
     );
   }
 
 
   if (criteria.created_by) {
-    query = query.where('created_by', '=', criteria.created_by);
+    query = query.where('equipment_type.created_by', '=', criteria.created_by);
   }
 
   if (criteria.modified_by !== undefined) {
     query = query.where(
-      'modified_by', 
+      'equipment_type.modified_by', 
       criteria.modified_by === null ? 'is' : '=', 
       criteria.modified_by
     );

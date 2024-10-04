@@ -1,4 +1,5 @@
 export * as BotAlert from "./bot_alert";
+import { OrderByDirection } from "kysely/dist/cjs/parser/order-by-parser";
 import db, { Database } from '../database';
 import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
@@ -56,8 +57,8 @@ export async function update(id: number, bot_alert: BotAlertUpdate): Promise<{
         .set({
             ...bot_alert,
         })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('bot_alert.id', '=', id)
+        .where('bot_alert.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -80,8 +81,8 @@ export async function remove(id: number, user_id: string): Promise<{
     const deleted = await db
         .updateTable('bot_alert')
         .set({ deleted_date: new Date(), deleted_by: user_id })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('bot_alert.id', '=', id)
+        .where('bot_alert.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -106,7 +107,7 @@ export async function removeByCriteria(criteria: Partial<BotAlert>, user_id: str
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('bot_alert')
-        .where('id', '=', id)
+        .where('bot_alert.id', '=', id)
         .executeTakeFirst();
 }
 
@@ -117,40 +118,39 @@ export async function list(): Promise<BotAlert[]> {
         .select((eb) => withAlertType(eb))
         // uncoment to enable eager loading
         //.select((eb) => withBot(eb))
-        .where('deleted_by', 'is', null)
+        .where('bot_alert.deleted_by', 'is', null)
         .execute();
 }
 
-export async function count(): Promise<number> {
-  const count: { value: number; } | undefined = await db
-        .selectFrom("bot_alert")
+export async function count(criteria?: Partial<BotAlert>): Promise<number> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("bot_alert").where('bot_alert.deleted_by', 'is', null);
+  const count: { value: number; } | undefined = await query
         .select(({ fn }) => [
-          fn.count<number>('id').as('value'),
+          fn.count<number>('bot_alert.id').as('value'),
         ])
-        .where('deleted_by', 'is', null)
         .executeTakeFirst();
   return count?.value ?? 0;
 }
 
-export async function paginate(page: number, pageSize: number): Promise<BotAlert[]> {
-    return db
-        .selectFrom("bot_alert")
-        .selectAll()
-        .select((eb) => withAlertType(eb))
-        // uncoment to enable eager loading
-        //.select((eb) => withBot(eb))
-        .where('deleted_by', 'is', null)
-        .limit(pageSize)
-        .offset(page * pageSize)
-        .execute();
+export async function paginate(page: number, pageSize: number, sort: OrderByDirection, criteria?: Partial<BotAlert>): Promise<BotAlert[]> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("bot_alert").where('bot_alert.deleted_by', 'is', null);
+  return query
+      .selectAll("bot_alert")
+      .select((eb) => withAlertType(eb))
+      // uncoment to enable eager loading
+      //.select((eb) => withBot(eb))
+      .limit(pageSize)
+      .offset(page * pageSize)
+      .orderBy('created_date', sort)
+      .execute();
 }
 
 export async function lazyGet(id: number): Promise<BotAlert | undefined> {
     return db
         .selectFrom("bot_alert")
         .selectAll()
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('bot_alert.id', '=', id)
+        .where('bot_alert.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
@@ -161,16 +161,14 @@ export async function get(id: number): Promise<BotAlert | undefined> {
         .select((eb) => withAlertType(eb))
         // uncoment to enable eager loading
         //.select((eb) => withBot(eb))
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('bot_alert.id', '=', id)
+        .where('bot_alert.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
 export async function findByCriteria(criteria: Partial<BotAlert>): Promise<BotAlert[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("bot_alert")
     .select((eb) => withAlertType(eb))
     // uncoment to enable eager loading
     //.select((eb) => withBot(eb))
@@ -178,18 +176,14 @@ export async function findByCriteria(criteria: Partial<BotAlert>): Promise<BotAl
 }
 
 export async function lazyFindByCriteria(criteria: Partial<BotAlert>): Promise<BotAlert[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("bot_alert")
     .execute();
 }
 
 export async function findOneByCriteria(criteria: Partial<BotAlert>): Promise<BotAlert | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("bot_alert")
     .select((eb) => withAlertType(eb))
     // uncoment to enable eager loading
     //.select((eb) => withBot(eb))
@@ -198,10 +192,8 @@ export async function findOneByCriteria(criteria: Partial<BotAlert>): Promise<Bo
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<BotAlert>): Promise<BotAlert | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("bot_alert")
     .limit(1)
     .executeTakeFirst();
 }
@@ -220,7 +212,7 @@ function buildUpdateQuery(criteria: Partial<BotAlert>) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCriteriaQuery(query: any, criteria: Partial<BotAlert>): any {
-  query = query.where('deleted_by', 'is', null);
+  query = query.where('bot_alert.deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -228,47 +220,47 @@ function getCriteriaQuery(query: any, criteria: Partial<BotAlert>): any {
 
   if (criteria.message_displayed !== undefined) {
     query = query.where(
-      'message_displayed', 
-      criteria.message_displayed === null ? 'is' : '=', 
-      criteria.message_displayed
+      'bot_alert.message_displayed', 
+      criteria.message_displayed === null ? 'is' : 'like', 
+      criteria.message_displayed === null ? null : `%${ criteria.message_displayed }%`
     );
   }
   if (criteria.push_sent) {
-    query = query.where('push_sent', '=', criteria.push_sent);
+    query = query.where('bot_alert.push_sent', '=', criteria.push_sent);
   }
   if (criteria.send_time) {
-    query = query.where('send_time', '=', criteria.send_time);
+    query = query.where('bot_alert.send_time', '=', criteria.send_time);
   }
   if (criteria.display_time) {
-    query = query.where('display_time', '=', criteria.display_time);
+    query = query.where('bot_alert.display_time', '=', criteria.display_time);
   }
   if (criteria.show) {
-    query = query.where('show', '=', criteria.show);
+    query = query.where('bot_alert.show', '=', criteria.show);
   }
   if (criteria.dismissed) {
-    query = query.where('dismissed', '=', criteria.dismissed);
+    query = query.where('bot_alert.dismissed', '=', criteria.dismissed);
   }
   if (criteria.active) {
-    query = query.where('active', '=', criteria.active);
+    query = query.where('bot_alert.active', '=', criteria.active);
   }
   if (criteria.alert_count) {
-    query = query.where('alert_count', '=', criteria.alert_count);
+    query = query.where('bot_alert.alert_count', '=', criteria.alert_count);
   }
 
   if (criteria.alert_type_id) {
-    query = query.where('alert_type_id', '=', criteria.alert_type_id);
+    query = query.where('bot_alert.alert_type_id', '=', criteria.alert_type_id);
   }
   if (criteria.bot_id) {
-    query = query.where('bot_id', '=', criteria.bot_id);
+    query = query.where('bot_alert.bot_id', '=', criteria.bot_id);
   }
 
   if (criteria.created_by) {
-    query = query.where('created_by', '=', criteria.created_by);
+    query = query.where('bot_alert.created_by', '=', criteria.created_by);
   }
 
   if (criteria.modified_by !== undefined) {
     query = query.where(
-      'modified_by', 
+      'bot_alert.modified_by', 
       criteria.modified_by === null ? 'is' : '=', 
       criteria.modified_by
     );

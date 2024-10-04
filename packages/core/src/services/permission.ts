@@ -1,4 +1,5 @@
 export * as Permission from "./permission";
+import { OrderByDirection } from "kysely/dist/cjs/parser/order-by-parser";
 import db from '../database';
 import { UpdateResult } from "kysely";
 import { Permission, PermissionUpdate, NewPermission } from "../database/permission";
@@ -10,11 +11,11 @@ export async function create(permission: NewPermission): Promise<{
 } | undefined> {
     const exists = await db
         .selectFrom('permission')
-        .select(['id'])
+        .select(['permission.id'])
         .where((eb) => eb.or([
-            eb('name', '=', permission.name),
+            eb('permission.name', '=', permission.name),
         ]))
-        .where('deleted_by', 'is', null)
+        .where('permission.deleted_by', 'is', null)
         .executeTakeFirst();
     if (exists) {
         throw Error('Entity already exists with unique values');
@@ -46,8 +47,8 @@ export async function update(id: number, permission: PermissionUpdate): Promise<
         .set({
             ...permission,
         })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('permission.id', '=', id)
+        .where('permission.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -70,8 +71,8 @@ export async function remove(id: number, user_id: string): Promise<{
     const deleted = await db
         .updateTable('permission')
         .set({ deleted_date: new Date(), deleted_by: user_id })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('permission.id', '=', id)
+        .where('permission.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -94,7 +95,7 @@ export async function removeByCriteria(criteria: Partial<Permission>, user_id: s
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('permission')
-        .where('id', '=', id)
+        .where('permission.id', '=', id)
         .executeTakeFirst();
 }
 
@@ -102,37 +103,36 @@ export async function list(): Promise<Permission[]> {
     return db
         .selectFrom("permission")
         .selectAll()
-        .where('deleted_by', 'is', null)
+        .where('permission.deleted_by', 'is', null)
         .execute();
 }
 
-export async function count(): Promise<number> {
-  const count: { value: number; } | undefined = await db
-        .selectFrom("permission")
+export async function count(criteria?: Partial<Permission>): Promise<number> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("permission").where('permission.deleted_by', 'is', null);
+  const count: { value: number; } | undefined = await query
         .select(({ fn }) => [
-          fn.count<number>('id').as('value'),
+          fn.count<number>('permission.id').as('value'),
         ])
-        .where('deleted_by', 'is', null)
         .executeTakeFirst();
   return count?.value ?? 0;
 }
 
-export async function paginate(page: number, pageSize: number): Promise<Permission[]> {
-    return db
-        .selectFrom("permission")
-        .selectAll()
-        .where('deleted_by', 'is', null)
-        .limit(pageSize)
-        .offset(page * pageSize)
-        .execute();
+export async function paginate(page: number, pageSize: number, sort: OrderByDirection, criteria?: Partial<Permission>): Promise<Permission[]> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("permission").where('permission.deleted_by', 'is', null);
+  return query
+      .selectAll("permission")
+      .limit(pageSize)
+      .offset(page * pageSize)
+      .orderBy('created_date', sort)
+      .execute();
 }
 
 export async function lazyGet(id: number): Promise<Permission | undefined> {
     return db
         .selectFrom("permission")
         .selectAll()
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('permission.id', '=', id)
+        .where('permission.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
@@ -140,41 +140,33 @@ export async function get(id: number): Promise<Permission | undefined> {
     return db
         .selectFrom("permission")
         .selectAll()
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('permission.id', '=', id)
+        .where('permission.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
 export async function findByCriteria(criteria: Partial<Permission>): Promise<Permission[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("permission")
     .execute();
 }
 
 export async function lazyFindByCriteria(criteria: Partial<Permission>): Promise<Permission[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("permission")
     .execute();
 }
 
 export async function findOneByCriteria(criteria: Partial<Permission>): Promise<Permission | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("permission")
     .limit(1)
     .executeTakeFirst();
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<Permission>): Promise<Permission | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("permission")
     .limit(1)
     .executeTakeFirst();
 }
@@ -193,7 +185,7 @@ function buildUpdateQuery(criteria: Partial<Permission>) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCriteriaQuery(query: any, criteria: Partial<Permission>): any {
-  query = query.where('deleted_by', 'is', null);
+  query = query.where('permission.deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -201,27 +193,27 @@ function getCriteriaQuery(query: any, criteria: Partial<Permission>): any {
 
   if (criteria.name !== undefined) {
     query = query.where(
-      'name', 
-      criteria.name === null ? 'is' : '=', 
-      criteria.name
+      'permission.name', 
+      criteria.name === null ? 'is' : 'like', 
+      criteria.name === null ? null : `%${ criteria.name }%`
     );
   }
   if (criteria.description !== undefined) {
     query = query.where(
-      'description', 
-      criteria.description === null ? 'is' : '=', 
-      criteria.description
+      'permission.description', 
+      criteria.description === null ? 'is' : 'like', 
+      criteria.description === null ? null : `%${ criteria.description }%`
     );
   }
 
 
   if (criteria.created_by) {
-    query = query.where('created_by', '=', criteria.created_by);
+    query = query.where('permission.created_by', '=', criteria.created_by);
   }
 
   if (criteria.modified_by !== undefined) {
     query = query.where(
-      'modified_by', 
+      'permission.modified_by', 
       criteria.modified_by === null ? 'is' : '=', 
       criteria.modified_by
     );

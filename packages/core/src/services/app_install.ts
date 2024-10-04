@@ -1,4 +1,5 @@
 export * as AppInstall from "./app_install";
+import { OrderByDirection } from "kysely/dist/cjs/parser/order-by-parser";
 import db, { Database } from '../database';
 import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
@@ -48,8 +49,8 @@ export async function update(id: number, app_install: AppInstallUpdate): Promise
         .set({
             ...app_install,
         })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('app_install.id', '=', id)
+        .where('app_install.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -72,8 +73,8 @@ export async function remove(id: number, user_id: string): Promise<{
     const deleted = await db
         .updateTable('app_install')
         .set({ deleted_date: new Date(), deleted_by: user_id })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('app_install.id', '=', id)
+        .where('app_install.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -98,7 +99,7 @@ export async function removeByCriteria(criteria: Partial<AppInstall>, user_id: s
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('app_install')
-        .where('id', '=', id)
+        .where('app_install.id', '=', id)
         .executeTakeFirst();
 }
 
@@ -107,38 +108,37 @@ export async function list(): Promise<AppInstall[]> {
         .selectFrom("app_install")
         .selectAll()
         .select((eb) => withUser(eb))
-        .where('deleted_by', 'is', null)
+        .where('app_install.deleted_by', 'is', null)
         .execute();
 }
 
-export async function count(): Promise<number> {
-  const count: { value: number; } | undefined = await db
-        .selectFrom("app_install")
+export async function count(criteria?: Partial<AppInstall>): Promise<number> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("app_install").where('app_install.deleted_by', 'is', null);
+  const count: { value: number; } | undefined = await query
         .select(({ fn }) => [
-          fn.count<number>('id').as('value'),
+          fn.count<number>('app_install.id').as('value'),
         ])
-        .where('deleted_by', 'is', null)
         .executeTakeFirst();
   return count?.value ?? 0;
 }
 
-export async function paginate(page: number, pageSize: number): Promise<AppInstall[]> {
-    return db
-        .selectFrom("app_install")
-        .selectAll()
-        .select((eb) => withUser(eb))
-        .where('deleted_by', 'is', null)
-        .limit(pageSize)
-        .offset(page * pageSize)
-        .execute();
+export async function paginate(page: number, pageSize: number, sort: OrderByDirection, criteria?: Partial<AppInstall>): Promise<AppInstall[]> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("app_install").where('app_install.deleted_by', 'is', null);
+  return query
+      .selectAll("app_install")
+      .select((eb) => withUser(eb))
+      .limit(pageSize)
+      .offset(page * pageSize)
+      .orderBy('created_date', sort)
+      .execute();
 }
 
 export async function lazyGet(id: number): Promise<AppInstall | undefined> {
     return db
         .selectFrom("app_install")
         .selectAll()
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('app_install.id', '=', id)
+        .where('app_install.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
@@ -147,8 +147,8 @@ export async function get(id: number): Promise<AppInstall | undefined> {
         .selectFrom("app_install")
         .selectAll()
         .select((eb) => withUser(eb))
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('app_install.id', '=', id)
+        .where('app_install.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
@@ -170,37 +170,29 @@ export async function getAppsToNotify(user_ids: number[]): Promise<AppInstall[] 
 }
 
 export async function findByCriteria(criteria: Partial<AppInstall>): Promise<AppInstall[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("app_install")
     .select((eb) => withUser(eb))
     .execute();
 }
 
 export async function lazyFindByCriteria(criteria: Partial<AppInstall>): Promise<AppInstall[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("app_install")
     .execute();
 }
 
 export async function findOneByCriteria(criteria: Partial<AppInstall>): Promise<AppInstall | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("app_install")
     .select((eb) => withUser(eb))
     .limit(1)
     .executeTakeFirst();
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<AppInstall>): Promise<AppInstall | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("app_install")
     .limit(1)
     .executeTakeFirst();
 }
@@ -219,7 +211,7 @@ function buildUpdateQuery(criteria: Partial<AppInstall>) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCriteriaQuery(query: any, criteria: Partial<AppInstall>): any {
-  query = query.where('deleted_by', 'is', null);
+  query = query.where('app_install.deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -227,61 +219,61 @@ function getCriteriaQuery(query: any, criteria: Partial<AppInstall>): any {
 
   if (criteria.app_version !== undefined) {
     query = query.where(
-      'app_version', 
-      criteria.app_version === null ? 'is' : '=', 
-      criteria.app_version
+      'app_install.app_version', 
+      criteria.app_version === null ? 'is' : 'like', 
+      criteria.app_version === null ? null : `%${ criteria.app_version }%`
     );
   }
   if (criteria.platform !== undefined) {
     query = query.where(
-      'platform', 
-      criteria.platform === null ? 'is' : '=', 
-      criteria.platform
+      'app_install.platform', 
+      criteria.platform === null ? 'is' : 'like', 
+      criteria.platform === null ? null : `%${ criteria.platform }%`
     );
   }
   if (criteria.app_platform_id !== undefined) {
     query = query.where(
-      'app_platform_id', 
-      criteria.app_platform_id === null ? 'is' : '=', 
-      criteria.app_platform_id
+      'app_install.app_platform_id', 
+      criteria.app_platform_id === null ? 'is' : 'like', 
+      criteria.app_platform_id === null ? null : `%${ criteria.app_platform_id }%`
     );
   }
   if (criteria.os_version !== undefined) {
     query = query.where(
-      'os_version', 
-      criteria.os_version === null ? 'is' : '=', 
-      criteria.os_version
+      'app_install.os_version', 
+      criteria.os_version === null ? 'is' : 'like', 
+      criteria.os_version === null ? null : `%${ criteria.os_version }%`
     );
   }
   if (criteria.push_token !== undefined) {
     query = query.where(
-      'push_token', 
-      criteria.push_token === null ? 'is' : '=', 
-      criteria.push_token
+      'app_install.push_token', 
+      criteria.push_token === null ? 'is' : 'like', 
+      criteria.push_token === null ? null : `%${ criteria.push_token }%`
     );
   }
   if (criteria.description !== undefined) {
     query = query.where(
-      'description', 
-      criteria.description === null ? 'is' : '=', 
-      criteria.description
+      'app_install.description', 
+      criteria.description === null ? 'is' : 'like', 
+      criteria.description === null ? null : `%${ criteria.description }%`
     );
   }
   if (criteria.active) {
-    query = query.where('active', '=', criteria.active);
+    query = query.where('app_install.active', '=', criteria.active);
   }
 
   if (criteria.user_id) {
-    query = query.where('user_id', '=', criteria.user_id);
+    query = query.where('app_install.user_id', '=', criteria.user_id);
   }
 
   if (criteria.created_by) {
-    query = query.where('created_by', '=', criteria.created_by);
+    query = query.where('app_install.created_by', '=', criteria.created_by);
   }
 
   if (criteria.modified_by !== undefined) {
     query = query.where(
-      'modified_by', 
+      'app_install.modified_by', 
       criteria.modified_by === null ? 'is' : '=', 
       criteria.modified_by
     );

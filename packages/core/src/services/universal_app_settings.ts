@@ -1,4 +1,5 @@
 export * as UniversalAppSettings from "./universal_app_settings";
+import { OrderByDirection } from "kysely/dist/cjs/parser/order-by-parser";
 import db, { Database } from '../database';
 import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
@@ -20,11 +21,11 @@ export async function create(universal_app_settings: NewUniversalAppSettings): P
 } | undefined> {
     const exists = await db
         .selectFrom('universal_app_settings')
-        .select(['id'])
+        .select(['universal_app_settings.id'])
         .where((eb) => eb.or([
-            eb('setting_value', '=', universal_app_settings.setting_value),
+            eb('universal_app_settings.setting_value', '=', universal_app_settings.setting_value),
         ]))
-        .where('deleted_by', 'is', null)
+        .where('universal_app_settings.deleted_by', 'is', null)
         .executeTakeFirst();
     if (exists) {
         throw Error('Entity already exists with unique values');
@@ -58,8 +59,8 @@ export async function update(id: number, universal_app_settings: UniversalAppSet
         .set({
             ...universal_app_settings,
         })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('universal_app_settings.id', '=', id)
+        .where('universal_app_settings.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -82,8 +83,8 @@ export async function remove(id: number, user_id: string): Promise<{
     const deleted = await db
         .updateTable('universal_app_settings')
         .set({ deleted_date: new Date(), deleted_by: user_id })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('universal_app_settings.id', '=', id)
+        .where('universal_app_settings.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -108,7 +109,7 @@ export async function removeByCriteria(criteria: Partial<UniversalAppSettings>, 
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('universal_app_settings')
-        .where('id', '=', id)
+        .where('universal_app_settings.id', '=', id)
         .executeTakeFirst();
 }
 
@@ -117,38 +118,37 @@ export async function list(): Promise<UniversalAppSettings[]> {
         .selectFrom("universal_app_settings")
         .selectAll()
         .select((eb) => withAppSettingsType(eb))
-        .where('deleted_by', 'is', null)
+        .where('universal_app_settings.deleted_by', 'is', null)
         .execute();
 }
 
-export async function count(): Promise<number> {
-  const count: { value: number; } | undefined = await db
-        .selectFrom("universal_app_settings")
+export async function count(criteria?: Partial<UniversalAppSettings>): Promise<number> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("universal_app_settings").where('universal_app_settings.deleted_by', 'is', null);
+  const count: { value: number; } | undefined = await query
         .select(({ fn }) => [
-          fn.count<number>('id').as('value'),
+          fn.count<number>('universal_app_settings.id').as('value'),
         ])
-        .where('deleted_by', 'is', null)
         .executeTakeFirst();
   return count?.value ?? 0;
 }
 
-export async function paginate(page: number, pageSize: number): Promise<UniversalAppSettings[]> {
-    return db
-        .selectFrom("universal_app_settings")
-        .selectAll()
-        .select((eb) => withAppSettingsType(eb))
-        .where('deleted_by', 'is', null)
-        .limit(pageSize)
-        .offset(page * pageSize)
-        .execute();
+export async function paginate(page: number, pageSize: number, sort: OrderByDirection, criteria?: Partial<UniversalAppSettings>): Promise<UniversalAppSettings[]> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("universal_app_settings").where('universal_app_settings.deleted_by', 'is', null);
+  return query
+      .selectAll("universal_app_settings")
+      .select((eb) => withAppSettingsType(eb))
+      .limit(pageSize)
+      .offset(page * pageSize)
+      .orderBy('created_date', sort)
+      .execute();
 }
 
 export async function lazyGet(id: number): Promise<UniversalAppSettings | undefined> {
     return db
         .selectFrom("universal_app_settings")
         .selectAll()
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('universal_app_settings.id', '=', id)
+        .where('universal_app_settings.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
@@ -157,43 +157,35 @@ export async function get(id: number): Promise<UniversalAppSettings | undefined>
         .selectFrom("universal_app_settings")
         .selectAll()
         .select((eb) => withAppSettingsType(eb))
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('universal_app_settings.id', '=', id)
+        .where('universal_app_settings.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
 export async function findByCriteria(criteria: Partial<UniversalAppSettings>): Promise<UniversalAppSettings[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("universal_app_settings")
     .select((eb) => withAppSettingsType(eb))
     .execute();
 }
 
 export async function lazyFindByCriteria(criteria: Partial<UniversalAppSettings>): Promise<UniversalAppSettings[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("universal_app_settings")
     .execute();
 }
 
 export async function findOneByCriteria(criteria: Partial<UniversalAppSettings>): Promise<UniversalAppSettings | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("universal_app_settings")
     .select((eb) => withAppSettingsType(eb))
     .limit(1)
     .executeTakeFirst();
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<UniversalAppSettings>): Promise<UniversalAppSettings | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("universal_app_settings")
     .limit(1)
     .executeTakeFirst();
 }
@@ -212,7 +204,7 @@ function buildUpdateQuery(criteria: Partial<UniversalAppSettings>) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCriteriaQuery(query: any, criteria: Partial<UniversalAppSettings>): any {
-  query = query.where('deleted_by', 'is', null);
+  query = query.where('universal_app_settings.deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -220,23 +212,23 @@ function getCriteriaQuery(query: any, criteria: Partial<UniversalAppSettings>): 
 
   if (criteria.setting_value !== undefined) {
     query = query.where(
-      'setting_value', 
-      criteria.setting_value === null ? 'is' : '=', 
-      criteria.setting_value
+      'universal_app_settings.setting_value', 
+      criteria.setting_value === null ? 'is' : 'like', 
+      criteria.setting_value === null ? null : `%${ criteria.setting_value }%`
     );
   }
 
   if (criteria.app_settings_type_id) {
-    query = query.where('app_settings_type_id', '=', criteria.app_settings_type_id);
+    query = query.where('universal_app_settings.app_settings_type_id', '=', criteria.app_settings_type_id);
   }
 
   if (criteria.created_by) {
-    query = query.where('created_by', '=', criteria.created_by);
+    query = query.where('universal_app_settings.created_by', '=', criteria.created_by);
   }
 
   if (criteria.modified_by !== undefined) {
     query = query.where(
-      'modified_by', 
+      'universal_app_settings.modified_by', 
       criteria.modified_by === null ? 'is' : '=', 
       criteria.modified_by
     );

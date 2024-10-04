@@ -1,4 +1,5 @@
 export * as OutletEquipment from "./outlet_equipment";
+import { OrderByDirection } from "kysely/dist/cjs/parser/order-by-parser";
 import db, { Database } from '../database';
 import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
@@ -67,8 +68,8 @@ export async function update(id: number, outlet_equipment: OutletEquipmentUpdate
         .set({
             ...outlet_equipment,
         })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('outlet_equipment.id', '=', id)
+        .where('outlet_equipment.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -91,8 +92,8 @@ export async function remove(id: number, user_id: string): Promise<{
     const deleted = await db
         .updateTable('outlet_equipment')
         .set({ deleted_date: new Date(), deleted_by: user_id })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('outlet_equipment.id', '=', id)
+        .where('outlet_equipment.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -162,7 +163,7 @@ export async function removeByCriteria(criteria: Partial<OutletEquipment>, user_
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('outlet_equipment')
-        .where('id', '=', id)
+        .where('outlet_equipment.id', '=', id)
         .executeTakeFirst();
 }
 
@@ -173,40 +174,39 @@ export async function list(): Promise<OutletEquipment[]> {
         .select((eb) => withEquipment(eb))
         .select((eb) => withOutlet(eb))
         .select((eb) => withUser(eb))
-        .where('deleted_by', 'is', null)
+        .where('outlet_equipment.deleted_by', 'is', null)
         .execute();
 }
 
-export async function count(): Promise<number> {
-  const count: { value: number; } | undefined = await db
-        .selectFrom("outlet_equipment")
+export async function count(criteria?: Partial<OutletEquipment>): Promise<number> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("outlet_equipment").where('outlet_equipment.deleted_by', 'is', null);
+  const count: { value: number; } | undefined = await query
         .select(({ fn }) => [
-          fn.count<number>('id').as('value'),
+          fn.count<number>('outlet_equipment.id').as('value'),
         ])
-        .where('deleted_by', 'is', null)
         .executeTakeFirst();
   return count?.value ?? 0;
 }
 
-export async function paginate(page: number, pageSize: number): Promise<OutletEquipment[]> {
-    return db
-        .selectFrom("outlet_equipment")
-        .selectAll()
-        .select((eb) => withEquipment(eb))
-        .select((eb) => withOutlet(eb))
-        .select((eb) => withUser(eb))
-        .where('deleted_by', 'is', null)
-        .limit(pageSize)
-        .offset(page * pageSize)
-        .execute();
+export async function paginate(page: number, pageSize: number, sort: OrderByDirection, criteria?: Partial<OutletEquipment>): Promise<OutletEquipment[]> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("outlet_equipment").where('outlet_equipment.deleted_by', 'is', null);
+  return query
+      .selectAll("outlet_equipment")
+      .select((eb) => withEquipment(eb))
+      .select((eb) => withOutlet(eb))
+      .select((eb) => withUser(eb))
+      .limit(pageSize)
+      .offset(page * pageSize)
+      .orderBy('created_date', sort)
+      .execute();
 }
 
 export async function lazyGet(id: number): Promise<OutletEquipment | undefined> {
     return db
         .selectFrom("outlet_equipment")
         .selectAll()
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('outlet_equipment.id', '=', id)
+        .where('outlet_equipment.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
@@ -217,8 +217,8 @@ export async function get(id: number): Promise<OutletEquipment | undefined> {
         .select((eb) => withEquipment(eb))
         .select((eb) => withOutlet(eb))
         .select((eb) => withUser(eb))
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('outlet_equipment.id', '=', id)
+        .where('outlet_equipment.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
@@ -227,16 +227,14 @@ export async function findByOutlets(outlet_ids: number[]): Promise<OutletEquipme
         .selectFrom("outlet_equipment")
         .selectAll()
         .select((eb) => withEquipment(eb))
-        .where('outlet_id', 'in', outlet_ids)
-        .where('deleted_by', 'is', null)
+        .where('outlet_equipment.outlet_id', 'in', outlet_ids)
+        .where('outlet_equipment.deleted_by', 'is', null)
         .execute();
 }
 
 export async function findByCriteria(criteria: Partial<OutletEquipment>): Promise<OutletEquipment[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("outlet_equipment")
     .select((eb) => withEquipment(eb))
     .select((eb) => withOutlet(eb))
     .select((eb) => withUser(eb))
@@ -244,18 +242,14 @@ export async function findByCriteria(criteria: Partial<OutletEquipment>): Promis
 }
 
 export async function lazyFindByCriteria(criteria: Partial<OutletEquipment>): Promise<OutletEquipment[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("outlet_equipment")
     .execute();
 }
 
 export async function findOneByCriteria(criteria: Partial<OutletEquipment>): Promise<OutletEquipment | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("outlet_equipment")
     .select((eb) => withEquipment(eb))
     .select((eb) => withOutlet(eb))
     .select((eb) => withUser(eb))
@@ -264,10 +258,8 @@ export async function findOneByCriteria(criteria: Partial<OutletEquipment>): Pro
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<OutletEquipment>): Promise<OutletEquipment | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("outlet_equipment")
     .limit(1)
     .executeTakeFirst();
 }
@@ -286,7 +278,7 @@ function buildUpdateQuery(criteria: Partial<OutletEquipment>) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCriteriaQuery(query: any, criteria: Partial<OutletEquipment>): any {
-  query = query.where('deleted_by', 'is', null);
+  query = query.where('outlet_equipment.deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -294,29 +286,29 @@ function getCriteriaQuery(query: any, criteria: Partial<OutletEquipment>): any {
 
   if (criteria.notes !== undefined) {
     query = query.where(
-      'notes', 
-      criteria.notes === null ? 'is' : '=', 
-      criteria.notes
+      'outlet_equipment.notes', 
+      criteria.notes === null ? 'is' : 'like', 
+      criteria.notes === null ? null : `%${ criteria.notes }%`
     );
   }
 
   if (criteria.equipment_id) {
-    query = query.where('equipment_id', '=', criteria.equipment_id);
+    query = query.where('outlet_equipment.equipment_id', '=', criteria.equipment_id);
   }
   if (criteria.outlet_id) {
-    query = query.where('outlet_id', '=', criteria.outlet_id);
+    query = query.where('outlet_equipment.outlet_id', '=', criteria.outlet_id);
   }
   if (criteria.user_id) {
-    query = query.where('user_id', '=', criteria.user_id);
+    query = query.where('outlet_equipment.user_id', '=', criteria.user_id);
   }
 
   if (criteria.created_by) {
-    query = query.where('created_by', '=', criteria.created_by);
+    query = query.where('outlet_equipment.created_by', '=', criteria.created_by);
   }
 
   if (criteria.modified_by !== undefined) {
     query = query.where(
-      'modified_by', 
+      'outlet_equipment.modified_by', 
       criteria.modified_by === null ? 'is' : '=', 
       criteria.modified_by
     );

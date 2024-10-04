@@ -54,7 +54,7 @@ export async function create({{snakeCase name}}: New{{pascalCase name}}): Promis
         .where((eb) => eb.or([
         {{#each attributes}}
             {{#if unique}}
-            eb('{{snakeCase name}}.{{snakeCase attribute}}', '=', {{snakeCase ../name}}.{{snakeCase attribute}}),
+            eb('{{snakeCase ../name}}.{{snakeCase attribute}}', '=', {{snakeCase ../name}}.{{snakeCase attribute}}),
             {{/if}}
         {{/each}}
         ]))
@@ -285,10 +285,8 @@ export async function get(id: number): Promise<{{pascalCase name}} | undefined> 
 }
 
 export async function findByCriteria(criteria: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}}[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("{{snakeCase name}}")
     {{#each relationships}}
       {{#when relation_type 'eq' 'many-to-one'}}
         {{#if eager}}
@@ -313,18 +311,14 @@ export async function findByCriteria(criteria: Partial<{{pascalCase name}}>): Pr
 }
 
 export async function lazyFindByCriteria(criteria: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}}[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("{{snakeCase name}}")
     .execute();
 }
 
 export async function findOneByCriteria(criteria: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}} | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("{{snakeCase name}}")
     {{#each relationships}}
       {{#when relation_type 'eq' 'many-to-one'}}
         {{#if eager}}
@@ -350,10 +344,8 @@ export async function findOneByCriteria(criteria: Partial<{{pascalCase name}}>):
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}} | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("{{snakeCase name}}")
     .limit(1)
     .executeTakeFirst();
 }
@@ -382,15 +374,15 @@ function getCriteriaQuery(query: any, criteria: Partial<{{pascalCase name}}>): a
   {{#when tsType 'eq' 'string'}}
   if (criteria.{{snakeCase attribute}} !== undefined) {
     query = query.where(
-      '{{snakeCase name}}.{{snakeCase attribute}}', 
+      '{{snakeCase ../name}}.{{snakeCase attribute}}', 
       criteria.{{snakeCase attribute}} === null ? 'is' : 'like', 
-      criteria.{{snakeCase attribute}} === null ? null : '%${ criteria.{{snakeCase attribute}} }%' 
+      criteria.{{snakeCase attribute}} === null ? null : `%${ criteria.{{snakeCase attribute}} }%`
     );
   }
   {{/when}}
   {{#when tsType 'neq' 'string'}}
   if (criteria.{{snakeCase attribute}}) {
-    query = query.where('{{snakeCase name}}.{{snakeCase attribute}}', '=', criteria.{{snakeCase attribute}});
+    query = query.where('{{snakeCase ../name}}.{{snakeCase attribute}}', '=', criteria.{{snakeCase attribute}});
   }
   {{/when}}
 {{/each}}
@@ -398,16 +390,16 @@ function getCriteriaQuery(query: any, criteria: Partial<{{pascalCase name}}>): a
 {{#each relationships}}
   {{#when relation_type 'eq' 'many-to-one'}}
   if (criteria.{{snakeCase entity}}_id) {
-    query = query.where('{{snakeCase entity}}.{{snakeCase entity}}_id', '=', criteria.{{snakeCase entity}}_id);
+    query = query.where('{{snakeCase ../name}}.{{snakeCase entity}}_id', '=', criteria.{{snakeCase entity}}_id);
   }
   {{/when}}
   {{#when relation_type 'eq' 'many-to-many'}}
   if (criteria.{{snakeCase first_entity}}_id) {
-    query = query.where('{{snakeCase first_entity}}.{{snakeCase first_entity}}_id', '=', criteria.{{snakeCase first_entity}}_id);
+    query = query.where('{{snakeCase ../name}}.{{snakeCase first_entity}}_id', '=', criteria.{{snakeCase first_entity}}_id);
   }
 
   if (criteria.{{snakeCase second_entity}}_id) {
-    query = query.where('{{snakeCase second_entity}}.{{snakeCase second_entity}}_id', '=', criteria.{{snakeCase second_entity}}_id);
+    query = query.where('{{snakeCase ../name}}.{{snakeCase second_entity}}_id', '=', criteria.{{snakeCase second_entity}}_id);
   }
   {{/when}}
 {{/each}}
