@@ -20,9 +20,8 @@ const handler = async (event) => {
   const entity_name = event.pathParameters!.entity!;
   const page = event.pathParameters?.page ?? 0;
   const pageSize = event.pathParameters?.pageSize ?? 10;
+  const sort = event.pathParameters?.sort ?? 'desc';
   const filters = event.body ?? {};
-
-  console.log("Call to Paginate", entity_name, page, pageSize, filters);
 
   if (filters) {
     await validateSearchBody(filters, entity_name);
@@ -34,7 +33,7 @@ const handler = async (event) => {
   let count = 0;
 
   try {
-    records = await service.paginate(+page, +pageSize, filters);
+    records = await service.paginate(+page, +pageSize, sort, filters);
     count = await service.count(filters);
   } catch (error) {
     Log.error("Cannot paginate entity", { entity_name, error });

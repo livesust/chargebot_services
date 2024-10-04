@@ -29,8 +29,3 @@ relationships:
     relation_type: many-to-one
     eager: true
     not_null: false
-  - entity: company
-    relation_type: association
-    association_entity: bot_company
-    eager: true
-    not_null: false
