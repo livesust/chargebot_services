@@ -1,4 +1,5 @@
 export * as UserPhone from "./user_phone";
+import { OrderByDirection } from "kysely/dist/cjs/parser/order-by-parser";
 import db, { Database } from '../database';
 import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
@@ -47,8 +48,8 @@ export async function update(id: number, user_phone: UserPhoneUpdate): Promise<{
         .set({
             ...user_phone,
         })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('user_phone.id', '=', id)
+        .where('user_phone.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -71,8 +72,8 @@ export async function remove(id: number, user_id: string): Promise<{
     const deleted = await db
         .updateTable('user_phone')
         .set({ deleted_date: new Date(), deleted_by: user_id })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('user_phone.id', '=', id)
+        .where('user_phone.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -97,7 +98,7 @@ export async function removeByCriteria(criteria: Partial<UserPhone>, user_id: st
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('user_phone')
-        .where('id', '=', id)
+        .where('user_phone.id', '=', id)
         .executeTakeFirst();
 }
 
@@ -107,39 +108,38 @@ export async function list(): Promise<UserPhone[]> {
         .selectAll()
         // uncoment to enable eager loading
         //.select((eb) => withUser(eb))
-        .where('deleted_by', 'is', null)
+        .where('user_phone.deleted_by', 'is', null)
         .execute();
 }
 
-export async function count(): Promise<number> {
-  const count: { value: number; } | undefined = await db
-        .selectFrom("user_phone")
+export async function count(criteria?: Partial<UserPhone>): Promise<number> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("user_phone").where('user_phone.deleted_by', 'is', null);
+  const count: { value: number; } | undefined = await query
         .select(({ fn }) => [
-          fn.count<number>('id').as('value'),
+          fn.count<number>('user_phone.id').as('value'),
         ])
-        .where('deleted_by', 'is', null)
         .executeTakeFirst();
   return count?.value ?? 0;
 }
 
-export async function paginate(page: number, pageSize: number): Promise<UserPhone[]> {
-    return db
-        .selectFrom("user_phone")
-        .selectAll()
-        // uncoment to enable eager loading
-        //.select((eb) => withUser(eb))
-        .where('deleted_by', 'is', null)
-        .limit(pageSize)
-        .offset(page * pageSize)
-        .execute();
+export async function paginate(page: number, pageSize: number, sort: OrderByDirection, criteria?: Partial<UserPhone>): Promise<UserPhone[]> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("user_phone").where('user_phone.deleted_by', 'is', null);
+  return query
+      .selectAll("user_phone")
+      // uncoment to enable eager loading
+      //.select((eb) => withUser(eb))
+      .limit(pageSize)
+      .offset(page * pageSize)
+      .orderBy('created_date', sort)
+      .execute();
 }
 
 export async function lazyGet(id: number): Promise<UserPhone | undefined> {
     return db
         .selectFrom("user_phone")
         .selectAll()
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('user_phone.id', '=', id)
+        .where('user_phone.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
@@ -149,34 +149,28 @@ export async function get(id: number): Promise<UserPhone | undefined> {
         .selectAll()
         // uncoment to enable eager loading
         //.select((eb) => withUser(eb))
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('user_phone.id', '=', id)
+        .where('user_phone.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
 export async function findByCriteria(criteria: Partial<UserPhone>): Promise<UserPhone[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("user_phone")
     // uncoment to enable eager loading
     //.select((eb) => withUser(eb))
     .execute();
 }
 
 export async function lazyFindByCriteria(criteria: Partial<UserPhone>): Promise<UserPhone[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("user_phone")
     .execute();
 }
 
 export async function findOneByCriteria(criteria: Partial<UserPhone>): Promise<UserPhone | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("user_phone")
     // uncoment to enable eager loading
     //.select((eb) => withUser(eb))
     .limit(1)
@@ -184,10 +178,8 @@ export async function findOneByCriteria(criteria: Partial<UserPhone>): Promise<U
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<UserPhone>): Promise<UserPhone | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("user_phone")
     .limit(1)
     .executeTakeFirst();
 }
@@ -206,7 +198,7 @@ function buildUpdateQuery(criteria: Partial<UserPhone>) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCriteriaQuery(query: any, criteria: Partial<UserPhone>): any {
-  query = query.where('deleted_by', 'is', null);
+  query = query.where('user_phone.deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -214,29 +206,29 @@ function getCriteriaQuery(query: any, criteria: Partial<UserPhone>): any {
 
   if (criteria.phone_number !== undefined) {
     query = query.where(
-      'phone_number', 
-      criteria.phone_number === null ? 'is' : '=', 
-      criteria.phone_number
+      'user_phone.phone_number', 
+      criteria.phone_number === null ? 'is' : 'like', 
+      criteria.phone_number === null ? null : `%${ criteria.phone_number }%`
     );
   }
   if (criteria.send_text) {
-    query = query.where('send_text', '=', criteria.send_text);
+    query = query.where('user_phone.send_text', '=', criteria.send_text);
   }
   if (criteria.primary) {
-    query = query.where('primary', '=', criteria.primary);
+    query = query.where('user_phone.primary', '=', criteria.primary);
   }
 
   if (criteria.user_id) {
-    query = query.where('user_id', '=', criteria.user_id);
+    query = query.where('user_phone.user_id', '=', criteria.user_id);
   }
 
   if (criteria.created_by) {
-    query = query.where('created_by', '=', criteria.created_by);
+    query = query.where('user_phone.created_by', '=', criteria.created_by);
   }
 
   if (criteria.modified_by !== undefined) {
     query = query.where(
-      'modified_by', 
+      'user_phone.modified_by', 
       criteria.modified_by === null ? 'is' : '=', 
       criteria.modified_by
     );

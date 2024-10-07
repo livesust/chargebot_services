@@ -1,4 +1,5 @@
 export * as ScheduledAlert from "./scheduled_alert";
+import { OrderByDirection } from "kysely/dist/cjs/parser/order-by-parser";
 import db from '../database';
 import { UpdateResult } from "kysely";
 import { ScheduledAlert, ScheduledAlertUpdate, NewScheduledAlert } from "../database/scheduled_alert";
@@ -10,11 +11,11 @@ export async function create(scheduled_alert: NewScheduledAlert): Promise<{
 } | undefined> {
     const exists = await db
         .selectFrom('scheduled_alert')
-        .select(['id'])
+        .select(['scheduled_alert.id'])
         .where((eb) => eb.or([
-            eb('name', '=', scheduled_alert.name),
+            eb('scheduled_alert.name', '=', scheduled_alert.name),
         ]))
-        .where('deleted_by', 'is', null)
+        .where('scheduled_alert.deleted_by', 'is', null)
         .executeTakeFirst();
     if (exists) {
         throw Error('Entity already exists with unique values');
@@ -48,8 +49,8 @@ export async function update(id: number, scheduled_alert: ScheduledAlertUpdate):
             ...scheduled_alert,
             config_settings: scheduled_alert.config_settings ? json(scheduled_alert.config_settings) : undefined,
         })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('scheduled_alert.id', '=', id)
+        .where('scheduled_alert.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -72,8 +73,8 @@ export async function remove(id: number, user_id: string): Promise<{
     const deleted = await db
         .updateTable('scheduled_alert')
         .set({ deleted_date: new Date(), deleted_by: user_id })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('scheduled_alert.id', '=', id)
+        .where('scheduled_alert.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -98,7 +99,7 @@ export async function removeByCriteria(criteria: Partial<ScheduledAlert>, user_i
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('scheduled_alert')
-        .where('id', '=', id)
+        .where('scheduled_alert.id', '=', id)
         .executeTakeFirst();
 }
 
@@ -106,37 +107,36 @@ export async function list(): Promise<ScheduledAlert[]> {
     return db
         .selectFrom("scheduled_alert")
         .selectAll()
-        .where('deleted_by', 'is', null)
+        .where('scheduled_alert.deleted_by', 'is', null)
         .execute();
 }
 
-export async function count(): Promise<number> {
-  const count: { value: number; } | undefined = await db
-        .selectFrom("scheduled_alert")
+export async function count(criteria?: Partial<ScheduledAlert>): Promise<number> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("scheduled_alert").where('scheduled_alert.deleted_by', 'is', null);
+  const count: { value: number; } | undefined = await query
         .select(({ fn }) => [
-          fn.count<number>('id').as('value'),
+          fn.count<number>('scheduled_alert.id').as('value'),
         ])
-        .where('deleted_by', 'is', null)
         .executeTakeFirst();
   return count?.value ?? 0;
 }
 
-export async function paginate(page: number, pageSize: number): Promise<ScheduledAlert[]> {
-    return db
-        .selectFrom("scheduled_alert")
-        .selectAll()
-        .where('deleted_by', 'is', null)
-        .limit(pageSize)
-        .offset(page * pageSize)
-        .execute();
+export async function paginate(page: number, pageSize: number, sort: OrderByDirection, criteria?: Partial<ScheduledAlert>): Promise<ScheduledAlert[]> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("scheduled_alert").where('scheduled_alert.deleted_by', 'is', null);
+  return query
+      .selectAll("scheduled_alert")
+      .limit(pageSize)
+      .offset(page * pageSize)
+      .orderBy('created_date', sort)
+      .execute();
 }
 
 export async function lazyGet(id: number): Promise<ScheduledAlert | undefined> {
     return db
         .selectFrom("scheduled_alert")
         .selectAll()
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('scheduled_alert.id', '=', id)
+        .where('scheduled_alert.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
@@ -144,41 +144,33 @@ export async function get(id: number): Promise<ScheduledAlert | undefined> {
     return db
         .selectFrom("scheduled_alert")
         .selectAll()
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('scheduled_alert.id', '=', id)
+        .where('scheduled_alert.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
 export async function findByCriteria(criteria: Partial<ScheduledAlert>): Promise<ScheduledAlert[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("scheduled_alert")
     .execute();
 }
 
 export async function lazyFindByCriteria(criteria: Partial<ScheduledAlert>): Promise<ScheduledAlert[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("scheduled_alert")
     .execute();
 }
 
 export async function findOneByCriteria(criteria: Partial<ScheduledAlert>): Promise<ScheduledAlert | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("scheduled_alert")
     .limit(1)
     .executeTakeFirst();
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<ScheduledAlert>): Promise<ScheduledAlert | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("scheduled_alert")
     .limit(1)
     .executeTakeFirst();
 }
@@ -197,7 +189,7 @@ function buildUpdateQuery(criteria: Partial<ScheduledAlert>) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCriteriaQuery(query: any, criteria: Partial<ScheduledAlert>): any {
-  query = query.where('deleted_by', 'is', null);
+  query = query.where('scheduled_alert.deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -205,30 +197,30 @@ function getCriteriaQuery(query: any, criteria: Partial<ScheduledAlert>): any {
 
   if (criteria.name !== undefined) {
     query = query.where(
-      'name', 
-      criteria.name === null ? 'is' : '=', 
-      criteria.name
+      'scheduled_alert.name', 
+      criteria.name === null ? 'is' : 'like', 
+      criteria.name === null ? null : `%${ criteria.name }%`
     );
   }
   if (criteria.description !== undefined) {
     query = query.where(
-      'description', 
-      criteria.description === null ? 'is' : '=', 
-      criteria.description
+      'scheduled_alert.description', 
+      criteria.description === null ? 'is' : 'like', 
+      criteria.description === null ? null : `%${ criteria.description }%`
     );
   }
   if (criteria.config_settings) {
-    query = query.where('config_settings', '=', criteria.config_settings);
+    query = query.where('scheduled_alert.config_settings', '=', criteria.config_settings);
   }
 
 
   if (criteria.created_by) {
-    query = query.where('created_by', '=', criteria.created_by);
+    query = query.where('scheduled_alert.created_by', '=', criteria.created_by);
   }
 
   if (criteria.modified_by !== undefined) {
     query = query.where(
-      'modified_by', 
+      'scheduled_alert.modified_by', 
       criteria.modified_by === null ? 'is' : '=', 
       criteria.modified_by
     );

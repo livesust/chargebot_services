@@ -1,4 +1,5 @@
 export * as AppInstallPermissions from "./app_install_permissions";
+import { OrderByDirection } from "kysely/dist/cjs/parser/order-by-parser";
 import db, { Database } from '../database';
 import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
@@ -73,8 +74,8 @@ export async function update(id: number, app_install_permissions: AppInstallPerm
         .set({
             ...app_install_permissions,
         })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('app_install_permissions.id', '=', id)
+        .where('app_install_permissions.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -97,8 +98,8 @@ export async function remove(id: number, user_id: string): Promise<{
     const deleted = await db
         .updateTable('app_install_permissions')
         .set({ deleted_date: new Date(), deleted_by: user_id })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('app_install_permissions.id', '=', id)
+        .where('app_install_permissions.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -123,7 +124,7 @@ export async function removeByCriteria(criteria: Partial<AppInstallPermissions>,
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('app_install_permissions')
-        .where('id', '=', id)
+        .where('app_install_permissions.id', '=', id)
         .executeTakeFirst();
 }
 
@@ -133,39 +134,38 @@ export async function list(): Promise<AppInstallPermissions[]> {
         .selectAll()
         .select((eb) => withAppInstall(eb))
         .select((eb) => withPermission(eb))
-        .where('deleted_by', 'is', null)
+        .where('app_install_permissions.deleted_by', 'is', null)
         .execute();
 }
 
-export async function count(): Promise<number> {
-  const count: { value: number; } | undefined = await db
-        .selectFrom("app_install_permissions")
+export async function count(criteria?: Partial<AppInstallPermissions>): Promise<number> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("app_install_permissions").where('app_install_permissions.deleted_by', 'is', null);
+  const count: { value: number; } | undefined = await query
         .select(({ fn }) => [
-          fn.count<number>('id').as('value'),
+          fn.count<number>('app_install_permissions.id').as('value'),
         ])
-        .where('deleted_by', 'is', null)
         .executeTakeFirst();
   return count?.value ?? 0;
 }
 
-export async function paginate(page: number, pageSize: number): Promise<AppInstallPermissions[]> {
-    return db
-        .selectFrom("app_install_permissions")
-        .selectAll()
-        .select((eb) => withAppInstall(eb))
-        .select((eb) => withPermission(eb))
-        .where('deleted_by', 'is', null)
-        .limit(pageSize)
-        .offset(page * pageSize)
-        .execute();
+export async function paginate(page: number, pageSize: number, sort: OrderByDirection, criteria?: Partial<AppInstallPermissions>): Promise<AppInstallPermissions[]> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("app_install_permissions").where('app_install_permissions.deleted_by', 'is', null);
+  return query
+      .selectAll("app_install_permissions")
+      .select((eb) => withAppInstall(eb))
+      .select((eb) => withPermission(eb))
+      .limit(pageSize)
+      .offset(page * pageSize)
+      .orderBy('created_date', sort)
+      .execute();
 }
 
 export async function lazyGet(id: number): Promise<AppInstallPermissions | undefined> {
     return db
         .selectFrom("app_install_permissions")
         .selectAll()
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('app_install_permissions.id', '=', id)
+        .where('app_install_permissions.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
@@ -175,34 +175,28 @@ export async function get(id: number): Promise<AppInstallPermissions | undefined
         .selectAll()
         .select((eb) => withAppInstall(eb))
         .select((eb) => withPermission(eb))
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('app_install_permissions.id', '=', id)
+        .where('app_install_permissions.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
 export async function findByCriteria(criteria: Partial<AppInstallPermissions>): Promise<AppInstallPermissions[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("app_install_permissions")
     .select((eb) => withAppInstall(eb))
     .select((eb) => withPermission(eb))
     .execute();
 }
 
 export async function lazyFindByCriteria(criteria: Partial<AppInstallPermissions>): Promise<AppInstallPermissions[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("app_install_permissions")
     .execute();
 }
 
 export async function findOneByCriteria(criteria: Partial<AppInstallPermissions>): Promise<AppInstallPermissions | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("app_install_permissions")
     .select((eb) => withAppInstall(eb))
     .select((eb) => withPermission(eb))
     .limit(1)
@@ -210,10 +204,8 @@ export async function findOneByCriteria(criteria: Partial<AppInstallPermissions>
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<AppInstallPermissions>): Promise<AppInstallPermissions | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("app_install_permissions")
     .limit(1)
     .executeTakeFirst();
 }
@@ -232,31 +224,31 @@ function buildUpdateQuery(criteria: Partial<AppInstallPermissions>) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCriteriaQuery(query: any, criteria: Partial<AppInstallPermissions>): any {
-  query = query.where('deleted_by', 'is', null);
+  query = query.where('app_install_permissions.deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
   }
 
   if (criteria.permission_status) {
-    query = query.where('permission_status', '=', criteria.permission_status);
+    query = query.where('app_install_permissions.permission_status', '=', criteria.permission_status);
   }
 
   if (criteria.app_install_id) {
-    query = query.where('app_install_id', '=', criteria.app_install_id);
+    query = query.where('app_install_permissions.app_install_id', '=', criteria.app_install_id);
   }
 
   if (criteria.permission_id) {
-    query = query.where('permission_id', '=', criteria.permission_id);
+    query = query.where('app_install_permissions.permission_id', '=', criteria.permission_id);
   }
 
   if (criteria.created_by) {
-    query = query.where('created_by', '=', criteria.created_by);
+    query = query.where('app_install_permissions.created_by', '=', criteria.created_by);
   }
 
   if (criteria.modified_by !== undefined) {
     query = query.where(
-      'modified_by', 
+      'app_install_permissions.modified_by', 
       criteria.modified_by === null ? 'is' : '=', 
       criteria.modified_by
     );

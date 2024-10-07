@@ -48,6 +48,8 @@ export const SearchSchema = Joi.object({
     id: Joi.number(),
     bot_version_id: Joi.number(),
     vehicle_id: Joi.number(),
+    assigned: Joi.string(),
+    company_name: Joi.string(),
     ...BotSchemaDef
 });
 

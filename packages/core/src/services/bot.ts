@@ -1,4 +1,5 @@
 export * as Bot from "./bot";
+import { OrderByDirection } from "kysely/dist/cjs/parser/order-by-parser";
 import db, { Database } from '../database';
 import { ExpressionBuilder, UpdateResult } from "kysely";
 import { BusinessError } from "../errors/business_error";
@@ -38,11 +39,11 @@ async function canAssignEquipment(bot_id: number | null, vehicle_id: number): Pr
   const count: { value: number; } | undefined = await db
     .selectFrom('bot')
     .select(({ fn }) => [
-      fn.count<number>('id').as('value'),
+      fn.count<number>('bot.id').as('value'),
     ])
-    .where('id', '!=', bot_id)
-    .where('vehicle_id', '=', vehicle_id)
-    .where('deleted_by', 'is', null)
+    .where('bot.id', '!=', bot_id)
+    .where('bot.vehicle_id', '=', vehicle_id)
+    .where('bot.deleted_by', 'is', null)
     .executeTakeFirst();
   return (count && count.value == 0) ?? false;
 }
@@ -54,13 +55,12 @@ export async function create(bot: NewBot): Promise<{
 } | undefined> {
     const exists = await db
         .selectFrom('bot')
-        .select(['id'])
+        .select(['bot.id'])
         .where((eb) => eb.or([
-            eb('bot_uuid', '=', bot.bot_uuid),
+            eb('bot.bot_uuid', '=', bot.bot_uuid),
         ]))
-        .where('deleted_by', 'is', null)
+        .where('bot.deleted_by', 'is', null)
         .executeTakeFirst();
-
     if (exists) {
         throw Error('Entity already exists with unique values');
     }
@@ -102,8 +102,8 @@ export async function update(id: number, bot: BotUpdate): Promise<{
         .set({
             ...bot,
         })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('bot.id', '=', id)
+        .where('bot.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -126,8 +126,8 @@ export async function remove(id: number, user_id: string): Promise<{
     const deleted = await db
         .updateTable('bot')
         .set({ deleted_date: new Date(), deleted_by: user_id })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('bot.id', '=', id)
+        .where('bot.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -150,63 +150,62 @@ export async function removeByCriteria(criteria: Partial<Bot>, user_id: string):
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('bot')
-        .where('id', '=', id)
+        .where('bot.id', '=', id)
         .executeTakeFirst();
 }
 
 export async function list(): Promise<Bot[]> {
     return db
         .selectFrom("bot")
-        .selectAll()
+        .selectAll("bot")
         .select((eb) => withBotVersion(eb))
         .select((eb) => withVehicle(eb))
         .select((eb) => withBotCompany(eb))
-        .where('deleted_by', 'is', null)
+        .where('bot.deleted_by', 'is', null)
         .execute();
 }
 
-export async function count(): Promise<number> {
-  const count: { value: number; } | undefined = await db
-        .selectFrom("bot")
+export async function count(criteria?: Partial<Bot>): Promise<number> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("bot").where('bot.deleted_by', 'is', null);
+  const count: { value: number; } | undefined = await query
         .select(({ fn }) => [
-          fn.count<number>('id').as('value'),
+          fn.count<number>('bot.id').as('value'),
         ])
-        .where('deleted_by', 'is', null)
         .executeTakeFirst();
   return count?.value ?? 0;
 }
 
-export async function paginate(page: number, pageSize: number): Promise<Bot[]> {
-    return db
-        .selectFrom("bot")
-        .selectAll()
-        .select((eb) => withBotVersion(eb))
-        .select((eb) => withVehicle(eb))
-        .select((eb) => withBotCompany(eb))
-        .where('deleted_by', 'is', null)
-        .limit(pageSize)
-        .offset(page * pageSize)
-        .execute();
+export async function paginate(page: number, pageSize: number, sort: OrderByDirection, criteria?: Partial<Bot>): Promise<Bot[]> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("bot").where('bot.deleted_by', 'is', null);
+  return query
+      .selectAll("bot")
+      .select((eb) => withBotVersion(eb))
+      .select((eb) => withVehicle(eb))
+      .select((eb) => withBotCompany(eb))
+      .limit(pageSize)
+      .offset(page * pageSize)
+      .orderBy('created_date', sort)
+      .execute();
 }
 
 export async function lazyGet(id: number): Promise<Bot | undefined> {
     return db
         .selectFrom("bot")
-        .selectAll()
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .selectAll("bot")
+        .where('bot.id', '=', id)
+        .where('bot.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
 export async function get(id: number): Promise<Bot | undefined> {
     return db
         .selectFrom("bot")
-        .selectAll()
+        .selectAll("bot")
         .select((eb) => withBotVersion(eb))
         .select((eb) => withVehicle(eb))
         .select((eb) => withBotCompany(eb))
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('bot.id', '=', id)
+        .where('bot.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
@@ -234,10 +233,8 @@ export async function findByCompany(company_id: number): Promise<Bot[]> {
 }
 
 export async function findByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("bot")
     .select((eb) => withBotVersion(eb))
     .select((eb) => withVehicle(eb))
     .select((eb) => withBotCompany(eb))
@@ -245,18 +242,14 @@ export async function findByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
 }
 
 export async function lazyFindByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("bot")
     .execute();
 }
 
 export async function findOneByCriteria(criteria: Partial<Bot>): Promise<Bot | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("bot")
     .select((eb) => withBotVersion(eb))
     .select((eb) => withVehicle(eb))
     .select((eb) => withBotCompany(eb))
@@ -265,10 +258,8 @@ export async function findOneByCriteria(criteria: Partial<Bot>): Promise<Bot | u
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<Bot>): Promise<Bot | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("bot")
     .limit(1)
     .executeTakeFirst();
 }
@@ -287,7 +278,38 @@ function buildUpdateQuery(criteria: Partial<Bot>) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCriteriaQuery(query: any, criteria: Partial<Bot>): any {
-  query = query.where('deleted_by', 'is', null);
+  query = query.where('bot.deleted_by', 'is', null);
+
+  const assigned = Reflect.get(criteria, "assigned") as string;
+  const companyName = Reflect.get(criteria, "company_name") as string;
+
+  if (assigned && companyName) {
+    query = query.leftJoin('bot_company', 'bot_company.bot_id', 'bot.id');
+    if (assigned === 'assigned') {
+      if (companyName) {
+        query = query.leftJoin('company', 'company.id', 'bot_company.company_id')
+          .where('company.name', 'like', `%${companyName}%`);
+      }
+
+      query = query.where('bot_company.id', 'is not', null)
+        .where('bot_company.deleted_by', 'is', null);
+    } else if (assigned === 'pending') {
+      query = query.where('bot_company.id', 'is', null);
+    }
+  } else if (assigned) {
+    query = query.leftJoin('bot_company', 'bot_company.bot_id', 'bot.id')
+    if (assigned === 'assigned') {
+      query = query.where('bot_company.id', 'is not', null)
+        .where('bot_company.deleted_by', 'is', null);
+    } else if (assigned === 'pending') {
+      query = query.where('bot_company.id', 'is', null);
+    }
+  } else if (companyName) {
+    query = query.leftJoin('bot_company', 'bot_company.bot_id', 'bot.id')
+      .leftJoin('company', 'company.id', 'bot_company.company_id')
+      .where('bot_company.deleted_by', 'is', null)
+      .where('company.name', 'like', `%${companyName}%`);    
+  }
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -295,47 +317,47 @@ function getCriteriaQuery(query: any, criteria: Partial<Bot>): any {
 
   if (criteria.bot_uuid !== undefined) {
     query = query.where(
-      'bot_uuid', 
-      criteria.bot_uuid === null ? 'is' : '=', 
-      criteria.bot_uuid
+      'bot.bot_uuid', 
+      criteria.bot_uuid === null ? 'is' : 'like', 
+      criteria.bot_uuid === null ? null : `%${ criteria.bot_uuid }%`
     );
   }
   if (criteria.initials !== undefined) {
     query = query.where(
-      'initials', 
-      criteria.initials === null ? 'is' : '=', 
-      criteria.initials
+      'bot.initials', 
+      criteria.initials === null ? 'is' : 'like', 
+      criteria.initials === null ? null : `%${ criteria.initials }%`
     );
   }
   if (criteria.name !== undefined) {
     query = query.where(
-      'name', 
-      criteria.name === null ? 'is' : '=', 
-      criteria.name
+      'bot.name', 
+      criteria.name === null ? 'is' : 'like', 
+      criteria.name === null ? null : `%${ criteria.name }%`
     );
   }
   if (criteria.pin_color !== undefined) {
     query = query.where(
-      'pin_color', 
-      criteria.pin_color === null ? 'is' : '=', 
-      criteria.pin_color
+      'bot.pin_color', 
+      criteria.pin_color === null ? 'is' : 'like', 
+      criteria.pin_color === null ? null : `%${ criteria.pin_color }%`
     );
   }
 
   if (criteria.bot_version_id) {
-    query = query.where('bot_version_id', '=', criteria.bot_version_id);
+    query = query.where('bot.bot_version_id', '=', criteria.bot_version_id);
   }
   if (criteria.vehicle_id) {
-    query = query.where('vehicle_id', '=', criteria.vehicle_id);
+    query = query.where('bot.vehicle_id', '=', criteria.vehicle_id);
   }
 
   if (criteria.created_by) {
-    query = query.where('created_by', '=', criteria.created_by);
+    query = query.where('bot.created_by', '=', criteria.created_by);
   }
 
   if (criteria.modified_by !== undefined) {
     query = query.where(
-      'modified_by', 
+      'bot.modified_by', 
       criteria.modified_by === null ? 'is' : '=', 
       criteria.modified_by
     );

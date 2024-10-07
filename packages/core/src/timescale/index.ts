@@ -7,6 +7,7 @@ import { ChargebotPDUTable } from "./chargebot_pdu";
 import { ChargebotErrorTable } from "./chargebot_error";
 import { ChargebotAlertTable } from "./chargebot_alert";
 import { ChargebotGeocodingTable } from "./chargebot_geocoding";
+import { ChargebotSystemTable } from "./chargebot_system";
 import { Config } from "sst/node/config";
 import { ChargebotBatteryLevelAggregate } from "./chargebot_battery_level_aggregate";
 
@@ -18,6 +19,7 @@ export interface AnalyticsDatabase {
     chargebot_error: ChargebotErrorTable,
     chargebot_alert: ChargebotAlertTable,
     chargebot_geocoding: ChargebotGeocodingTable,
+    chargebot_system: ChargebotSystemTable,
     chargebot_battery_level_aggregate: ChargebotBatteryLevelAggregate,
 }
 

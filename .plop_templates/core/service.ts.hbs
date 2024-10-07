@@ -1,4 +1,5 @@
 export * as {{pascalCase name}} from "./{{snakeCase name}}";
+import { OrderByDirection } from "kysely/dist/cjs/parser/order-by-parser";
 import db{{#if relationships}}, { Database{{#any attributes 'type' 'eq' 'json'}}, json{{/any}} }{{/if}} from '../database';
 {{#if relationships}}
 import { ExpressionBuilder, UpdateResult } from "kysely";
@@ -49,15 +50,15 @@ export async function create({{snakeCase name}}: New{{pascalCase name}}): Promis
     {{#any attributes 'unique' 'eq' true}}
     const exists = await db
         .selectFrom('{{snakeCase name}}')
-        .select(['id'])
+        .select(['{{snakeCase name}}.id'])
         .where((eb) => eb.or([
         {{#each attributes}}
             {{#if unique}}
-            eb('{{snakeCase attribute}}', '=', {{snakeCase ../name}}.{{snakeCase attribute}}),
+            eb('{{snakeCase ../name}}.{{snakeCase attribute}}', '=', {{snakeCase ../name}}.{{snakeCase attribute}}),
             {{/if}}
         {{/each}}
         ]))
-        .where('deleted_by', 'is', null)
+        .where('{{snakeCase name}}.deleted_by', 'is', null)
         .executeTakeFirst();
     if (exists) {
         throw Error('Entity already exists with unique values');
@@ -123,8 +124,8 @@ export async function update(id: number, {{snakeCase name}}: {{pascalCase name}}
                 {{/when}}
             {{/each}}
         })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('{{snakeCase name}}.id', '=', id)
+        .where('{{snakeCase name}}.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -147,8 +148,8 @@ export async function remove(id: number, user_id: string): Promise<{
     const deleted = await db
         .updateTable('{{snakeCase name}}')
         .set({ deleted_date: new Date(), deleted_by: user_id })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('{{snakeCase name}}.id', '=', id)
+        .where('{{snakeCase name}}.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -173,7 +174,7 @@ export async function removeByCriteria(criteria: Partial<{{pascalCase name}}>, u
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('{{snakeCase name}}')
-        .where('id', '=', id)
+        .where('{{snakeCase name}}.id', '=', id)
         .executeTakeFirst();
 }
 
@@ -201,57 +202,56 @@ export async function list(): Promise<{{pascalCase name}}[]> {
             {{/if}}
           {{/when}}
         {{/each}}
-        .where('deleted_by', 'is', null)
+        .where('{{snakeCase name}}.deleted_by', 'is', null)
         .execute();
 }
 
-export async function count(): Promise<number> {
-  const count: { value: number; } | undefined = await db
-        .selectFrom("{{snakeCase name}}")
+export async function count(criteria?: Partial<{{pascalCase name}}>): Promise<number> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("{{snakeCase name}}").where('{{snakeCase name}}.deleted_by', 'is', null);
+  const count: { value: number; } | undefined = await query
         .select(({ fn }) => [
-          fn.count<number>('id').as('value'),
+          fn.count<number>('{{snakeCase name}}.id').as('value'),
         ])
-        .where('deleted_by', 'is', null)
         .executeTakeFirst();
   return count?.value ?? 0;
 }
 
-export async function paginate(page: number, pageSize: number): Promise<{{pascalCase name}}[]> {
-    return db
-        .selectFrom("{{snakeCase name}}")
-        .selectAll()
-        {{#each relationships}}
-          {{#when relation_type 'eq' 'many-to-one'}}
-            {{#if eager}}
-        .select((eb) => with{{pascalCase entity}}(eb))
-            {{else}}
-        // uncoment to enable eager loading
-        //.select((eb) => with{{pascalCase entity}}(eb))
-            {{/if}}
-          {{/when}}
-          {{#when relation_type 'eq' 'many-to-many'}}
-            {{#if eager}}
-        .select((eb) => with{{pascalCase first_entity}}(eb))
-        .select((eb) => with{{pascalCase second_entity}}(eb))
-            {{else}}
-        // uncoment to enable eager loading
-        // .select((eb) => with{{pascalCase first_entity}}(eb))
-        // .select((eb) => with{{pascalCase second_entity}}(eb))
-            {{/if}}
-          {{/when}}
-        {{/each}}
-        .where('deleted_by', 'is', null)
-        .limit(pageSize)
-        .offset(page * pageSize)
-        .execute();
+export async function paginate(page: number, pageSize: number, sort: OrderByDirection, criteria?: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}}[]> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("{{snakeCase name}}").where('{{snakeCase name}}.deleted_by', 'is', null);
+  return query
+      .selectAll("{{snakeCase name}}")
+      {{#each relationships}}
+        {{#when relation_type 'eq' 'many-to-one'}}
+          {{#if eager}}
+      .select((eb) => with{{pascalCase entity}}(eb))
+          {{else}}
+      // uncoment to enable eager loading
+      //.select((eb) => with{{pascalCase entity}}(eb))
+          {{/if}}
+        {{/when}}
+        {{#when relation_type 'eq' 'many-to-many'}}
+          {{#if eager}}
+      .select((eb) => with{{pascalCase first_entity}}(eb))
+      .select((eb) => with{{pascalCase second_entity}}(eb))
+          {{else}}
+      // uncoment to enable eager loading
+      // .select((eb) => with{{pascalCase first_entity}}(eb))
+      // .select((eb) => with{{pascalCase second_entity}}(eb))
+          {{/if}}
+        {{/when}}
+      {{/each}}
+      .limit(pageSize)
+      .offset(page * pageSize)
+      .orderBy('created_date', sort)
+      .execute();
 }
 
 export async function lazyGet(id: number): Promise<{{pascalCase name}} | undefined> {
     return db
         .selectFrom("{{snakeCase name}}")
         .selectAll()
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('{{snakeCase name}}.id', '=', id)
+        .where('{{snakeCase name}}.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
@@ -279,16 +279,14 @@ export async function get(id: number): Promise<{{pascalCase name}} | undefined> 
             {{/if}}
           {{/when}}
         {{/each}}
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('{{snakeCase name}}.id', '=', id)
+        .where('{{snakeCase name}}.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
 export async function findByCriteria(criteria: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}}[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("{{snakeCase name}}")
     {{#each relationships}}
       {{#when relation_type 'eq' 'many-to-one'}}
         {{#if eager}}
@@ -313,18 +311,14 @@ export async function findByCriteria(criteria: Partial<{{pascalCase name}}>): Pr
 }
 
 export async function lazyFindByCriteria(criteria: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}}[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("{{snakeCase name}}")
     .execute();
 }
 
 export async function findOneByCriteria(criteria: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}} | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("{{snakeCase name}}")
     {{#each relationships}}
       {{#when relation_type 'eq' 'many-to-one'}}
         {{#if eager}}
@@ -350,10 +344,8 @@ export async function findOneByCriteria(criteria: Partial<{{pascalCase name}}>):
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}} | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("{{snakeCase name}}")
     .limit(1)
     .executeTakeFirst();
 }
@@ -372,7 +364,7 @@ function buildUpdateQuery(criteria: Partial<{{pascalCase name}}>) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCriteriaQuery(query: any, criteria: Partial<{{pascalCase name}}>): any {
-  query = query.where('deleted_by', 'is', null);
+  query = query.where('{{snakeCase name}}.deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -382,15 +374,15 @@ function getCriteriaQuery(query: any, criteria: Partial<{{pascalCase name}}>): a
   {{#when tsType 'eq' 'string'}}
   if (criteria.{{snakeCase attribute}} !== undefined) {
     query = query.where(
-      '{{snakeCase attribute}}', 
-      criteria.{{snakeCase attribute}} === null ? 'is' : '=', 
-      criteria.{{snakeCase attribute}}
+      '{{snakeCase ../name}}.{{snakeCase attribute}}', 
+      criteria.{{snakeCase attribute}} === null ? 'is' : 'like', 
+      criteria.{{snakeCase attribute}} === null ? null : `%${ criteria.{{snakeCase attribute}} }%`
     );
   }
   {{/when}}
   {{#when tsType 'neq' 'string'}}
   if (criteria.{{snakeCase attribute}}) {
-    query = query.where('{{snakeCase attribute}}', '=', criteria.{{snakeCase attribute}});
+    query = query.where('{{snakeCase ../name}}.{{snakeCase attribute}}', '=', criteria.{{snakeCase attribute}});
   }
   {{/when}}
 {{/each}}
@@ -398,27 +390,27 @@ function getCriteriaQuery(query: any, criteria: Partial<{{pascalCase name}}>): a
 {{#each relationships}}
   {{#when relation_type 'eq' 'many-to-one'}}
   if (criteria.{{snakeCase entity}}_id) {
-    query = query.where('{{snakeCase entity}}_id', '=', criteria.{{snakeCase entity}}_id);
+    query = query.where('{{snakeCase ../name}}.{{snakeCase entity}}_id', '=', criteria.{{snakeCase entity}}_id);
   }
   {{/when}}
   {{#when relation_type 'eq' 'many-to-many'}}
   if (criteria.{{snakeCase first_entity}}_id) {
-    query = query.where('{{snakeCase first_entity}}_id', '=', criteria.{{snakeCase first_entity}}_id);
+    query = query.where('{{snakeCase ../name}}.{{snakeCase first_entity}}_id', '=', criteria.{{snakeCase first_entity}}_id);
   }
 
   if (criteria.{{snakeCase second_entity}}_id) {
-    query = query.where('{{snakeCase second_entity}}_id', '=', criteria.{{snakeCase second_entity}}_id);
+    query = query.where('{{snakeCase ../name}}.{{snakeCase second_entity}}_id', '=', criteria.{{snakeCase second_entity}}_id);
   }
   {{/when}}
 {{/each}}
 
   if (criteria.created_by) {
-    query = query.where('created_by', '=', criteria.created_by);
+    query = query.where('{{snakeCase name}}.created_by', '=', criteria.created_by);
   }
 
   if (criteria.modified_by !== undefined) {
     query = query.where(
-      'modified_by', 
+      '{{snakeCase name}}.modified_by', 
       criteria.modified_by === null ? 'is' : '=', 
       criteria.modified_by
     );

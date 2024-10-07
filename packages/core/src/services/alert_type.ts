@@ -1,4 +1,5 @@
 export * as AlertType from "./alert_type";
+import { OrderByDirection } from "kysely/dist/cjs/parser/order-by-parser";
 import db from '../database';
 import { UpdateResult } from "kysely";
 import { AlertType, AlertTypeUpdate, NewAlertType } from "../database/alert_type";
@@ -10,11 +11,11 @@ export async function create(alert_type: NewAlertType): Promise<{
 } | undefined> {
     const exists = await db
         .selectFrom('alert_type')
-        .select(['id'])
+        .select(['alert_type.id'])
         .where((eb) => eb.or([
-            eb('name', '=', alert_type.name),
+            eb('alert_type.name', '=', alert_type.name),
         ]))
-        .where('deleted_by', 'is', null)
+        .where('alert_type.deleted_by', 'is', null)
         .executeTakeFirst();
     if (exists) {
         throw Error('Entity already exists with unique values');
@@ -48,8 +49,8 @@ export async function update(id: number, alert_type: AlertTypeUpdate): Promise<{
         .set({
             ...alert_type,
         })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('alert_type.id', '=', id)
+        .where('alert_type.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -72,8 +73,8 @@ export async function remove(id: number, user_id: string): Promise<{
     const deleted = await db
         .updateTable('alert_type')
         .set({ deleted_date: new Date(), deleted_by: user_id })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('alert_type.id', '=', id)
+        .where('alert_type.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -98,7 +99,7 @@ export async function removeByCriteria(criteria: Partial<AlertType>, user_id: st
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('alert_type')
-        .where('id', '=', id)
+        .where('alert_type.id', '=', id)
         .executeTakeFirst();
 }
 
@@ -106,37 +107,36 @@ export async function list(): Promise<AlertType[]> {
     return db
         .selectFrom("alert_type")
         .selectAll()
-        .where('deleted_by', 'is', null)
+        .where('alert_type.deleted_by', 'is', null)
         .execute();
 }
 
-export async function count(): Promise<number> {
-  const count: { value: number; } | undefined = await db
-        .selectFrom("alert_type")
+export async function count(criteria?: Partial<AlertType>): Promise<number> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("alert_type").where('alert_type.deleted_by', 'is', null);
+  const count: { value: number; } | undefined = await query
         .select(({ fn }) => [
-          fn.count<number>('id').as('value'),
+          fn.count<number>('alert_type.id').as('value'),
         ])
-        .where('deleted_by', 'is', null)
         .executeTakeFirst();
   return count?.value ?? 0;
 }
 
-export async function paginate(page: number, pageSize: number): Promise<AlertType[]> {
-    return db
-        .selectFrom("alert_type")
-        .selectAll()
-        .where('deleted_by', 'is', null)
-        .limit(pageSize)
-        .offset(page * pageSize)
-        .execute();
+export async function paginate(page: number, pageSize: number, sort: OrderByDirection, criteria?: Partial<AlertType>): Promise<AlertType[]> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("alert_type").where('alert_type.deleted_by', 'is', null);
+  return query
+      .selectAll("alert_type")
+      .limit(pageSize)
+      .offset(page * pageSize)
+      .orderBy('created_date', sort)
+      .execute();
 }
 
 export async function lazyGet(id: number): Promise<AlertType | undefined> {
     return db
         .selectFrom("alert_type")
         .selectAll()
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('alert_type.id', '=', id)
+        .where('alert_type.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
@@ -144,41 +144,33 @@ export async function get(id: number): Promise<AlertType | undefined> {
     return db
         .selectFrom("alert_type")
         .selectAll()
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('alert_type.id', '=', id)
+        .where('alert_type.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
 export async function findByCriteria(criteria: Partial<AlertType>): Promise<AlertType[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("alert_type")
     .execute();
 }
 
 export async function lazyFindByCriteria(criteria: Partial<AlertType>): Promise<AlertType[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("alert_type")
     .execute();
 }
 
 export async function findOneByCriteria(criteria: Partial<AlertType>): Promise<AlertType | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("alert_type")
     .limit(1)
     .executeTakeFirst();
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<AlertType>): Promise<AlertType | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("alert_type")
     .limit(1)
     .executeTakeFirst();
 }
@@ -197,7 +189,7 @@ function buildUpdateQuery(criteria: Partial<AlertType>) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCriteriaQuery(query: any, criteria: Partial<AlertType>): any {
-  query = query.where('deleted_by', 'is', null);
+  query = query.where('alert_type.deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -205,65 +197,65 @@ function getCriteriaQuery(query: any, criteria: Partial<AlertType>): any {
 
   if (criteria.name !== undefined) {
     query = query.where(
-      'name', 
-      criteria.name === null ? 'is' : '=', 
-      criteria.name
+      'alert_type.name', 
+      criteria.name === null ? 'is' : 'like', 
+      criteria.name === null ? null : `%${ criteria.name }%`
     );
   }
   if (criteria.description !== undefined) {
     query = query.where(
-      'description', 
-      criteria.description === null ? 'is' : '=', 
-      criteria.description
+      'alert_type.description', 
+      criteria.description === null ? 'is' : 'like', 
+      criteria.description === null ? null : `%${ criteria.description }%`
     );
   }
   if (criteria.priority !== undefined) {
     query = query.where(
-      'priority', 
-      criteria.priority === null ? 'is' : '=', 
-      criteria.priority
+      'alert_type.priority', 
+      criteria.priority === null ? 'is' : 'like', 
+      criteria.priority === null ? null : `%${ criteria.priority }%`
     );
   }
   if (criteria.severity !== undefined) {
     query = query.where(
-      'severity', 
-      criteria.severity === null ? 'is' : '=', 
-      criteria.severity
+      'alert_type.severity', 
+      criteria.severity === null ? 'is' : 'like', 
+      criteria.severity === null ? null : `%${ criteria.severity }%`
     );
   }
   if (criteria.color_code !== undefined) {
     query = query.where(
-      'color_code', 
-      criteria.color_code === null ? 'is' : '=', 
-      criteria.color_code
+      'alert_type.color_code', 
+      criteria.color_code === null ? 'is' : 'like', 
+      criteria.color_code === null ? null : `%${ criteria.color_code }%`
     );
   }
   if (criteria.send_push) {
-    query = query.where('send_push', '=', criteria.send_push);
+    query = query.where('alert_type.send_push', '=', criteria.send_push);
   }
   if (criteria.alert_text !== undefined) {
     query = query.where(
-      'alert_text', 
-      criteria.alert_text === null ? 'is' : '=', 
-      criteria.alert_text
+      'alert_type.alert_text', 
+      criteria.alert_text === null ? 'is' : 'like', 
+      criteria.alert_text === null ? null : `%${ criteria.alert_text }%`
     );
   }
   if (criteria.alert_link !== undefined) {
     query = query.where(
-      'alert_link', 
-      criteria.alert_link === null ? 'is' : '=', 
-      criteria.alert_link
+      'alert_type.alert_link', 
+      criteria.alert_link === null ? 'is' : 'like', 
+      criteria.alert_link === null ? null : `%${ criteria.alert_link }%`
     );
   }
 
 
   if (criteria.created_by) {
-    query = query.where('created_by', '=', criteria.created_by);
+    query = query.where('alert_type.created_by', '=', criteria.created_by);
   }
 
   if (criteria.modified_by !== undefined) {
     query = query.where(
-      'modified_by', 
+      'alert_type.modified_by', 
       criteria.modified_by === null ? 'is' : '=', 
       criteria.modified_by
     );

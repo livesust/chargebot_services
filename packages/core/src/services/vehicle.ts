@@ -1,4 +1,5 @@
 export * as Vehicle from "./vehicle";
+import { OrderByDirection } from "kysely/dist/cjs/parser/order-by-parser";
 import db, { Database } from '../database';
 import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
@@ -20,11 +21,11 @@ export async function create(vehicle: NewVehicle): Promise<{
 } | undefined> {
     const exists = await db
         .selectFrom('vehicle')
-        .select(['id'])
+        .select(['vehicle.id'])
         .where((eb) => eb.or([
-            eb('license_plate', '=', vehicle.license_plate),
+            eb('vehicle.license_plate', '=', vehicle.license_plate),
         ]))
-        .where('deleted_by', 'is', null)
+        .where('vehicle.deleted_by', 'is', null)
         .executeTakeFirst();
     if (exists) {
         throw Error('Entity already exists with unique values');
@@ -58,8 +59,8 @@ export async function update(id: number, vehicle: VehicleUpdate): Promise<{
         .set({
             ...vehicle,
         })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('vehicle.id', '=', id)
+        .where('vehicle.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -82,8 +83,8 @@ export async function remove(id: number, user_id: string): Promise<{
     const deleted = await db
         .updateTable('vehicle')
         .set({ deleted_date: new Date(), deleted_by: user_id })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('vehicle.id', '=', id)
+        .where('vehicle.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -108,7 +109,7 @@ export async function removeByCriteria(criteria: Partial<Vehicle>, user_id: stri
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('vehicle')
-        .where('id', '=', id)
+        .where('vehicle.id', '=', id)
         .executeTakeFirst();
 }
 
@@ -117,38 +118,37 @@ export async function list(): Promise<Vehicle[]> {
         .selectFrom("vehicle")
         .selectAll()
         .select((eb) => withVehicleType(eb))
-        .where('deleted_by', 'is', null)
+        .where('vehicle.deleted_by', 'is', null)
         .execute();
 }
 
-export async function count(): Promise<number> {
-  const count: { value: number; } | undefined = await db
-        .selectFrom("vehicle")
+export async function count(criteria?: Partial<Vehicle>): Promise<number> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("vehicle").where('vehicle.deleted_by', 'is', null);
+  const count: { value: number; } | undefined = await query
         .select(({ fn }) => [
-          fn.count<number>('id').as('value'),
+          fn.count<number>('vehicle.id').as('value'),
         ])
-        .where('deleted_by', 'is', null)
         .executeTakeFirst();
   return count?.value ?? 0;
 }
 
-export async function paginate(page: number, pageSize: number): Promise<Vehicle[]> {
-    return db
-        .selectFrom("vehicle")
-        .selectAll()
-        .select((eb) => withVehicleType(eb))
-        .where('deleted_by', 'is', null)
-        .limit(pageSize)
-        .offset(page * pageSize)
-        .execute();
+export async function paginate(page: number, pageSize: number, sort: OrderByDirection, criteria?: Partial<Vehicle>): Promise<Vehicle[]> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("vehicle").where('vehicle.deleted_by', 'is', null);
+  return query
+      .selectAll("vehicle")
+      .select((eb) => withVehicleType(eb))
+      .limit(pageSize)
+      .offset(page * pageSize)
+      .orderBy('created_date', sort)
+      .execute();
 }
 
 export async function lazyGet(id: number): Promise<Vehicle | undefined> {
     return db
         .selectFrom("vehicle")
         .selectAll()
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('vehicle.id', '=', id)
+        .where('vehicle.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
@@ -157,43 +157,35 @@ export async function get(id: number): Promise<Vehicle | undefined> {
         .selectFrom("vehicle")
         .selectAll()
         .select((eb) => withVehicleType(eb))
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('vehicle.id', '=', id)
+        .where('vehicle.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
 export async function findByCriteria(criteria: Partial<Vehicle>): Promise<Vehicle[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("vehicle")
     .select((eb) => withVehicleType(eb))
     .execute();
 }
 
 export async function lazyFindByCriteria(criteria: Partial<Vehicle>): Promise<Vehicle[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("vehicle")
     .execute();
 }
 
 export async function findOneByCriteria(criteria: Partial<Vehicle>): Promise<Vehicle | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("vehicle")
     .select((eb) => withVehicleType(eb))
     .limit(1)
     .executeTakeFirst();
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<Vehicle>): Promise<Vehicle | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("vehicle")
     .limit(1)
     .executeTakeFirst();
 }
@@ -212,7 +204,7 @@ function buildUpdateQuery(criteria: Partial<Vehicle>) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCriteriaQuery(query: any, criteria: Partial<Vehicle>): any {
-  query = query.where('deleted_by', 'is', null);
+  query = query.where('vehicle.deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -220,37 +212,37 @@ function getCriteriaQuery(query: any, criteria: Partial<Vehicle>): any {
 
   if (criteria.name !== undefined) {
     query = query.where(
-      'name', 
-      criteria.name === null ? 'is' : '=', 
-      criteria.name
+      'vehicle.name', 
+      criteria.name === null ? 'is' : 'like', 
+      criteria.name === null ? null : `%${ criteria.name }%`
     );
   }
   if (criteria.license_plate !== undefined) {
     query = query.where(
-      'license_plate', 
-      criteria.license_plate === null ? 'is' : '=', 
-      criteria.license_plate
+      'vehicle.license_plate', 
+      criteria.license_plate === null ? 'is' : 'like', 
+      criteria.license_plate === null ? null : `%${ criteria.license_plate }%`
     );
   }
   if (criteria.notes !== undefined) {
     query = query.where(
-      'notes', 
-      criteria.notes === null ? 'is' : '=', 
-      criteria.notes
+      'vehicle.notes', 
+      criteria.notes === null ? 'is' : 'like', 
+      criteria.notes === null ? null : `%${ criteria.notes }%`
     );
   }
 
   if (criteria.vehicle_type_id) {
-    query = query.where('vehicle_type_id', '=', criteria.vehicle_type_id);
+    query = query.where('vehicle.vehicle_type_id', '=', criteria.vehicle_type_id);
   }
 
   if (criteria.created_by) {
-    query = query.where('created_by', '=', criteria.created_by);
+    query = query.where('vehicle.created_by', '=', criteria.created_by);
   }
 
   if (criteria.modified_by !== undefined) {
     query = query.where(
-      'modified_by', 
+      'vehicle.modified_by', 
       criteria.modified_by === null ? 'is' : '=', 
       criteria.modified_by
     );

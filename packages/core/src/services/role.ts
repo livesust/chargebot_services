@@ -1,4 +1,5 @@
 export * as Role from "./role";
+import { OrderByDirection } from "kysely/dist/cjs/parser/order-by-parser";
 import db from '../database';
 import { UpdateResult } from "kysely";
 import { Role, RoleUpdate, NewRole } from "../database/role";
@@ -10,11 +11,11 @@ export async function create(role: NewRole): Promise<{
 } | undefined> {
     const exists = await db
         .selectFrom('role')
-        .select(['id'])
+        .select(['role.id'])
         .where((eb) => eb.or([
-            eb('role', '=', role.role),
+            eb('role.role', '=', role.role),
         ]))
-        .where('deleted_by', 'is', null)
+        .where('role.deleted_by', 'is', null)
         .executeTakeFirst();
     if (exists) {
         throw Error('Entity already exists with unique values');
@@ -48,8 +49,8 @@ export async function update(id: number, role: RoleUpdate): Promise<{
         .set({
             ...role,
         })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('role.id', '=', id)
+        .where('role.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -72,8 +73,8 @@ export async function remove(id: number, user_id: string): Promise<{
     const deleted = await db
         .updateTable('role')
         .set({ deleted_date: new Date(), deleted_by: user_id })
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('role.id', '=', id)
+        .where('role.deleted_by', 'is', null)
         .returningAll()
         .executeTakeFirst();
 
@@ -98,7 +99,7 @@ export async function removeByCriteria(criteria: Partial<Role>, user_id: string)
 export async function hard_remove(id: number): Promise<void> {
     db
         .deleteFrom('role')
-        .where('id', '=', id)
+        .where('role.id', '=', id)
         .executeTakeFirst();
 }
 
@@ -106,37 +107,36 @@ export async function list(): Promise<Role[]> {
     return db
         .selectFrom("role")
         .selectAll()
-        .where('deleted_by', 'is', null)
+        .where('role.deleted_by', 'is', null)
         .execute();
 }
 
-export async function count(): Promise<number> {
-  const count: { value: number; } | undefined = await db
-        .selectFrom("role")
+export async function count(criteria?: Partial<Role>): Promise<number> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("role").where('role.deleted_by', 'is', null);
+  const count: { value: number; } | undefined = await query
         .select(({ fn }) => [
-          fn.count<number>('id').as('value'),
+          fn.count<number>('role.id').as('value'),
         ])
-        .where('deleted_by', 'is', null)
         .executeTakeFirst();
   return count?.value ?? 0;
 }
 
-export async function paginate(page: number, pageSize: number): Promise<Role[]> {
-    return db
-        .selectFrom("role")
-        .selectAll()
-        .where('deleted_by', 'is', null)
-        .limit(pageSize)
-        .offset(page * pageSize)
-        .execute();
+export async function paginate(page: number, pageSize: number, sort: OrderByDirection, criteria?: Partial<Role>): Promise<Role[]> {
+  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("role").where('role.deleted_by', 'is', null);
+  return query
+      .selectAll("role")
+      .limit(pageSize)
+      .offset(page * pageSize)
+      .orderBy('created_date', sort)
+      .execute();
 }
 
 export async function lazyGet(id: number): Promise<Role | undefined> {
     return db
         .selectFrom("role")
         .selectAll()
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('role.id', '=', id)
+        .where('role.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
@@ -144,41 +144,33 @@ export async function get(id: number): Promise<Role | undefined> {
     return db
         .selectFrom("role")
         .selectAll()
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('role.id', '=', id)
+        .where('role.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
 export async function findByCriteria(criteria: Partial<Role>): Promise<Role[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("role")
     .execute();
 }
 
 export async function lazyFindByCriteria(criteria: Partial<Role>): Promise<Role[]> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("role")
     .execute();
 }
 
 export async function findOneByCriteria(criteria: Partial<Role>): Promise<Role | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("role")
     .limit(1)
     .executeTakeFirst();
 }
 
 export async function lazyFindOneByCriteria(criteria: Partial<Role>): Promise<Role | undefined> {
-  const query = buildSelectQuery(criteria);
-
-  return query
-    .selectAll()
+  return buildSelectQuery(criteria)
+    .selectAll("role")
     .limit(1)
     .executeTakeFirst();
 }
@@ -197,7 +189,7 @@ function buildUpdateQuery(criteria: Partial<Role>) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCriteriaQuery(query: any, criteria: Partial<Role>): any {
-  query = query.where('deleted_by', 'is', null);
+  query = query.where('role.deleted_by', 'is', null);
 
   if (criteria.id) {
     query = query.where('id', '=', criteria.id);
@@ -205,27 +197,27 @@ function getCriteriaQuery(query: any, criteria: Partial<Role>): any {
 
   if (criteria.role !== undefined) {
     query = query.where(
-      'role', 
-      criteria.role === null ? 'is' : '=', 
-      criteria.role
+      'role.role', 
+      criteria.role === null ? 'is' : 'like', 
+      criteria.role === null ? null : `%${ criteria.role }%`
     );
   }
   if (criteria.description !== undefined) {
     query = query.where(
-      'description', 
-      criteria.description === null ? 'is' : '=', 
-      criteria.description
+      'role.description', 
+      criteria.description === null ? 'is' : 'like', 
+      criteria.description === null ? null : `%${ criteria.description }%`
     );
   }
 
 
   if (criteria.created_by) {
-    query = query.where('created_by', '=', criteria.created_by);
+    query = query.where('role.created_by', '=', criteria.created_by);
   }
 
   if (criteria.modified_by !== undefined) {
     query = query.where(
-      'modified_by', 
+      'role.modified_by', 
       criteria.modified_by === null ? 'is' : '=', 
       criteria.modified_by
     );
