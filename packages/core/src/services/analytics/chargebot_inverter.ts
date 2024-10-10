@@ -10,6 +10,7 @@ export async function getInverterStatus(bot_uuid: string): Promise<ChargebotInve
     .distinctOn("variable")
     .select(({ fn }) => [
       'variable',
+      'timestamp',
       fn.coalesce(
         'value_int',
         'value_long',

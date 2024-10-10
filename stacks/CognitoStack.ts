@@ -136,29 +136,41 @@ export function CognitoStack({ app, stack }: StackContext) {
       // SES Verified Domain ARN
       const domainName = "sust.pro";
 
+      // Create SES email verification
+      // new VerifySesEmailAddress(stack, 'SesEmailVerification', {
+      //   emailAddress: `no-reply@${domainName}`
+      // });
+      const sesEmailIdentity = new ses.EmailIdentity(stack, `SESEmailIdentity_${app.stage}`, {
+        identity: ses.Identity.email(`no-reply@${domainName}`),
+        dkimSigning: true, // Enables DKIM signing
+      });
+
       // Create SES domain identity and enable DKIM
       const sesDomainIdentity = new ses.EmailIdentity(stack, `SESIdentity_${app.stage}`, {
         identity: ses.Identity.domain(domainName),
         dkimSigning: true, // Enables DKIM signing
       });
 
-      // const sesVerifiedDomainArn = `arn:aws:ses:${app.region}:${app.account}:identity/no-reply@${domainName}`;
+      const sesVerifiedDomainArn = `arn:aws:ses:${app.region}:${app.account}:identity/no-reply@${domainName}`;
 
-      // // Set up the SES Email Configuration in Cognito
-      // const emailConfiguration: cognito.CfnUserPool.EmailConfigurationProperty = {
-      //   emailSendingAccount: 'DEVELOPER', // Use "DEVELOPER" to send from SES
-      //   sourceArn: sesVerifiedDomainArn, // SES domain ARN
-      //   from: `no-reply@${domainName}`, // Custom email address
-      // };
+      // Set up the SES Email Configuration in Cognito
+      const emailConfiguration: cognito.CfnUserPool.EmailConfigurationProperty = {
+        emailSendingAccount: 'DEVELOPER', // Use "DEVELOPER" to send from SES
+        sourceArn: sesVerifiedDomainArn, // SES domain ARN
+        from: `no-reply@${domainName}`, // Custom email address
+      };
 
-      // // @ts-expect-error ignore check
-      // const cfnUserPool = cognitoConfig.cdk.userPool.node.defaultChild as cognito.CfnUserPool;
-      // cfnUserPool.emailConfiguration = emailConfiguration;
+      // @ts-expect-error ignore check
+      const cfnUserPool = cognitoConfig.cdk.userPool.node.defaultChild as cognito.CfnUserPool;
+      cfnUserPool.emailConfiguration = emailConfiguration;
 
       stack.addOutputs({
-          SESCNAMEDnsRecord1: JSON.stringify({"name": sesDomainIdentity.dkimDnsTokenName1, "value": sesDomainIdentity.dkimDnsTokenValue1}),
-          SESCNAMEDnsRecord2: JSON.stringify({"name": sesDomainIdentity.dkimDnsTokenName2, "value": sesDomainIdentity.dkimDnsTokenValue2}),
-          SESCNAMEDnsRecord3: JSON.stringify({"name": sesDomainIdentity.dkimDnsTokenName3, "value": sesDomainIdentity.dkimDnsTokenValue3}),
+          SESCNAMEDomainDnsRecord1: JSON.stringify({"name": sesDomainIdentity.dkimDnsTokenName1, "value": sesDomainIdentity.dkimDnsTokenValue1}),
+          SESCNAMEDomainDnsRecord2: JSON.stringify({"name": sesDomainIdentity.dkimDnsTokenName2, "value": sesDomainIdentity.dkimDnsTokenValue2}),
+          SESCNAMEDomainDnsRecord3: JSON.stringify({"name": sesDomainIdentity.dkimDnsTokenName3, "value": sesDomainIdentity.dkimDnsTokenValue3}),
+          SESEmailDnsRecord1: JSON.stringify({"name": sesEmailIdentity.dkimDnsTokenName1, "value": sesEmailIdentity.dkimDnsTokenValue1}),
+          SESEmailDnsRecord2: JSON.stringify({"name": sesEmailIdentity.dkimDnsTokenName2, "value": sesEmailIdentity.dkimDnsTokenValue2}),
+          SESEmailDnsRecord3: JSON.stringify({"name": sesEmailIdentity.dkimDnsTokenName3, "value": sesEmailIdentity.dkimDnsTokenValue3}),
       });
     }
 

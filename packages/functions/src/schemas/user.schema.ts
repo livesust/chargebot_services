@@ -47,6 +47,7 @@ export const UpdateSchema = Joi.object({
 export const SearchSchema = Joi.object({
     id: Joi.number(),
     company_id: Joi.number(),
+    email: Joi.string().allow(null, ''),
     ...UserSchemaDef
 });
 

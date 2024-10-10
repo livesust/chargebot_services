@@ -262,6 +262,14 @@ function getCriteriaQuery(query: any, criteria: Partial<User>): any {
     query = query.where('id', '=', criteria.id);
   }
 
+  const email = Reflect.get(criteria, "email") as string;
+  if (email) {
+    query = query.innerJoin('user_email', 'user_email.user_id', 'user.id')
+      .where('user_email.deleted_by', 'is', null)
+      .where('user_email.primary', 'is', true)
+      .where('user_email.email_address', 'like', `%${email}%`);
+  }
+
   if (criteria.first_name !== undefined) {
     query = query.where(
       'user.first_name', 
