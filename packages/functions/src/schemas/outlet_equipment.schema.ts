@@ -23,7 +23,7 @@ export const EntitySchema = Joi.object({
     outlet: OutletSchema,
     
     user: UserSchema,
-});
+}).id('outletEquipmentSchema');
 
 export const CreateSchema = Joi.object({
     ...AuditedEntityCreateSchemaDef,
