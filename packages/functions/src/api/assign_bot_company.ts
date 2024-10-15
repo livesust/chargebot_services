@@ -33,13 +33,13 @@ const handler = async (event) => {
     if (existentBotCompany?.length > 0) {
       existentBotCompany.map(async (bc) => {
         promises.push(BotCompany.remove(bc.id!, user_id))
-      });      
+      });
     }
 
     if (existentBotUsers?.length > 0) {
       existentBotUsers.map(async (bu) => {
         promises.push(BotUser.remove(bu.id!, user_id))
-      });      
+      });
     }
 
     const now = new Date();

@@ -8,13 +8,18 @@ import { BotCompany } from "@chargebot-services/core/services/bot_company";
 import { BotComponent } from "@chargebot-services/core/services/bot_component";
 import { BotFirmware } from "@chargebot-services/core/services/bot_firmware";
 import { BotScheduledAlert } from "@chargebot-services/core/services/bot_scheduled_alert";
+import { Outlet } from "@chargebot-services/core/services/outlet";
+import { OutletEquipment } from "@chargebot-services/core/services/outlet_equipment";
+import { OutletSchedule } from "@chargebot-services/core/services/outlet_schedule";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
   const bot_id = event?.detail?.id;
   const deleted_by = event?.detail?.deleted_by;
   if (bot_id) {
-    await Promise.all([
+    const outlets = await Outlet.findByCriteria({bot_id});
+
+    const promises = [
       BotAlert.removeByCriteria({bot_id}, deleted_by),
       BotChargingSettings.removeByCriteria({bot_id}, deleted_by),
       BotCompany.removeByCriteria({bot_id}, deleted_by),
@@ -22,7 +27,15 @@ const handler = async (event) => {
       BotFirmware.removeByCriteria({bot_id}, deleted_by),
       BotScheduledAlert.removeByCriteria({bot_id}, deleted_by),
       BotUser.removeByCriteria({bot_id}, deleted_by),
-    ])
+      Outlet.removeByCriteria({bot_id}, deleted_by),
+    ]
+    if (outlets?.length > 0) {
+      outlets.map(async (o) => {
+        promises.push(OutletEquipment.removeByCriteria({outlet_id: o.id}, deleted_by));
+        promises.push(OutletSchedule.removeByCriteria({outlet_id: o.id}, deleted_by))
+      });
+    }
+    await Promise.all(promises)
   }
 };
 

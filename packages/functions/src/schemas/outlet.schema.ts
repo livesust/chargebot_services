@@ -18,6 +18,7 @@ export const EntitySchema = Joi.object({
     bot_id: Joi.number(),
     
     outlet_type: OutletTypeSchema,
+    outlet_equipment: Joi.object().allow(null),
     
     bot: BotSchema,
 });

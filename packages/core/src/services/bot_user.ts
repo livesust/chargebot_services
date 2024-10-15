@@ -4,6 +4,7 @@ import db, { Database } from '../database';
 import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { BotUser, BotUserUpdate, NewBotUser } from "../database/bot_user";
+import { withEmail, withRole } from "./user";
 
 export function withBot(eb: ExpressionBuilder<Database, 'bot_user'>) {
     return jsonObjectFrom(
@@ -18,11 +19,12 @@ export function withUser(eb: ExpressionBuilder<Database, 'bot_user'>) {
     return jsonObjectFrom(
       eb.selectFrom('user')
         .selectAll()
+        .select((eb) => withEmail(eb))
+        .select((eb) => withRole(eb))
         .whereRef('user.id', '=', 'bot_user.user_id')
         .where('user.deleted_by', 'is', null)
     ).as('user')
 }
-
 
 export async function create(bot_user: NewBotUser): Promise<{
   entity: BotUser | undefined,

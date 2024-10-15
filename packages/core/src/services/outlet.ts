@@ -4,6 +4,7 @@ import db, { Database } from '../database';
 import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { Outlet, OutletUpdate, NewOutlet } from "../database/outlet";
+import { withEquipment } from "./outlet_equipment";
 
 export function withOutletType(eb: ExpressionBuilder<Database, 'outlet'>) {
     return jsonObjectFrom(
@@ -21,6 +22,16 @@ export function withBot(eb: ExpressionBuilder<Database, 'outlet'>) {
         .whereRef('bot.id', '=', 'outlet.bot_id')
         .where('bot.deleted_by', 'is', null)
     ).as('bot')
+}
+
+export function withOutletEquipment(eb: ExpressionBuilder<Database, 'outlet'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('outlet_equipment')
+        .selectAll()
+        .select((eb) => withEquipment(eb))
+        .whereRef('outlet_equipment.outlet_id', '=', 'outlet.id')
+        .where('outlet_equipment.deleted_by', 'is', null)
+    ).as('outlet_equipment')
 }
 
 
@@ -115,6 +126,7 @@ export async function list(): Promise<Outlet[]> {
         .selectAll()
         .select((eb) => withOutletType(eb))
         .select((eb) => withBot(eb))
+        .select((eb) => withOutletEquipment(eb))
         .where('outlet.deleted_by', 'is', null)
         .execute();
 }
@@ -135,6 +147,7 @@ export async function paginate(page: number, pageSize: number, sort: OrderByDire
       .selectAll("outlet")
       .select((eb) => withOutletType(eb))
       .select((eb) => withBot(eb))
+      .select((eb) => withOutletEquipment(eb))
       .limit(pageSize)
       .offset(page * pageSize)
       .orderBy('created_date', sort)
@@ -156,6 +169,7 @@ export async function get(id: number): Promise<Outlet | undefined> {
         .selectAll()
         .select((eb) => withOutletType(eb))
         .select((eb) => withBot(eb))
+        .select((eb) => withOutletEquipment(eb))
         .where('outlet.id', '=', id)
         .where('outlet.deleted_by', 'is', null)
         .executeTakeFirst();
@@ -199,6 +213,7 @@ export async function findByCriteria(criteria: Partial<Outlet>): Promise<Outlet[
     .selectAll('outlet')
     .select((eb) => withOutletType(eb))
     .select((eb) => withBot(eb))
+    .select((eb) => withOutletEquipment(eb))
     .execute();
 }
 
@@ -213,6 +228,7 @@ export async function findOneByCriteria(criteria: Partial<Outlet>): Promise<Outl
     .selectAll('outlet')
     .select((eb) => withOutletType(eb))
     .select((eb) => withBot(eb))
+    .select((eb) => withOutletEquipment(eb))
     .limit(1)
     .executeTakeFirst();
 }

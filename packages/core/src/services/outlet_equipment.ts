@@ -5,6 +5,7 @@ import { ExpressionBuilder, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { OutletEquipment, OutletEquipmentUpdate, NewOutletEquipment } from "../database/outlet_equipment";
 import { withEquipmentType } from "./equipment";
+import { withBot } from "./outlet";
 
 export function withEquipment(eb: ExpressionBuilder<Database, 'outlet_equipment'>) {
     return jsonObjectFrom(
@@ -20,6 +21,7 @@ export function withOutlet(eb: ExpressionBuilder<Database, 'outlet_equipment'>) 
     return jsonObjectFrom(
       eb.selectFrom('outlet')
         .selectAll()
+        .select((eb) => withBot(eb))
         .whereRef('outlet.id', '=', 'outlet_equipment.outlet_id')
         .where('outlet.deleted_by', 'is', null)
     ).as('outlet')
