@@ -5,12 +5,12 @@ import { BotUser } from "@chargebot-services/core/services/bot_user";
 import { BotAlert } from "@chargebot-services/core/services/bot_alert";
 import { BotChargingSettings } from "@chargebot-services/core/services/bot_charging_settings";
 import { BotCompany } from "@chargebot-services/core/services/bot_company";
-import { BotComponent } from "@chargebot-services/core/services/bot_component";
-import { BotFirmware } from "@chargebot-services/core/services/bot_firmware";
 import { BotScheduledAlert } from "@chargebot-services/core/services/bot_scheduled_alert";
 import { Outlet } from "@chargebot-services/core/services/outlet";
 import { OutletEquipment } from "@chargebot-services/core/services/outlet_equipment";
 import { OutletSchedule } from "@chargebot-services/core/services/outlet_schedule";
+import { BotFirmwareInstall } from "@chargebot-services/core/services/bot_firmware_install";
+import { BotComponentAttribute } from "@chargebot-services/core/services/bot_component_attribute";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
@@ -23,8 +23,8 @@ const handler = async (event) => {
       BotAlert.removeByCriteria({bot_id}, deleted_by),
       BotChargingSettings.removeByCriteria({bot_id}, deleted_by),
       BotCompany.removeByCriteria({bot_id}, deleted_by),
-      BotComponent.removeByCriteria({bot_id}, deleted_by),
-      BotFirmware.removeByCriteria({bot_id}, deleted_by),
+      BotComponentAttribute.removeByCriteria({bot_id}, deleted_by),
+      BotFirmwareInstall.removeByCriteria({bot_id}, deleted_by),
       BotScheduledAlert.removeByCriteria({bot_id}, deleted_by),
       BotUser.removeByCriteria({bot_id}, deleted_by),
       Outlet.removeByCriteria({bot_id}, deleted_by),
