@@ -10,6 +10,7 @@ import jsonBodyParser from "@middy/http-json-body-parser";
 import { dateReviver } from "src/shared/middlewares/json-date-parser";
 import { ChargebotSystem } from "@chargebot-services/core/services/analytics/chargebot_system";
 import { SystemVariables } from "@chargebot-services/core/timescale/chargebot_system";
+import { processBotDiscovery } from "./bot_discovery";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
@@ -39,6 +40,8 @@ const handler = async (event) => {
     });
 
     Log.debug("Status registered", {connectedStatus});
+
+    await processBotDiscovery(device_id, data.device_version);
 
     return createSuccessResponse({ "response": "success" });
 

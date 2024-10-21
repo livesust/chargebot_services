@@ -304,6 +304,7 @@ export function LambdaStack({ app, stack }: StackContext) {
     timeout,
     bind: [
       rdsCluster,
+      eventBus,
       timescaleConfigs.TIMESCALE_HOST,
       timescaleConfigs.TIMESCALE_USER,
       timescaleConfigs.TIMESCALE_PASSWORD,

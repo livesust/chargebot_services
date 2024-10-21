@@ -6,13 +6,25 @@ import { BusinessError } from "../errors/business_error";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { Bot, BotUpdate, NewBot } from "../database/bot";
 
-export function withBotVersion(eb: ExpressionBuilder<Database, 'bot'>) {
+export function withBotModel(eb: ExpressionBuilder<Database, 'bot'>) {
     return jsonObjectFrom(
-      eb.selectFrom('bot_version')
+      eb.selectFrom('bot_model')
         .selectAll()
-        .whereRef('bot_version.id', '=', 'bot.bot_version_id')
-        .where('bot_version.deleted_by', 'is', null)
-    ).as('bot_version')
+        .whereRef('bot_model.id', '=', 'bot.bot_model_id')
+        .where('bot_model.deleted_by', 'is', null)
+    ).as('bot_model')
+}
+
+export function withBotFirmwareVersion(eb: ExpressionBuilder<Database, 'bot'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('bot_firmware_version')
+        .innerJoin('bot_firmware_install', 'bot_firmware_install.bot_firmware_version_id', 'bot_firmware_version.id')
+        .selectAll("bot_firmware_version")
+        .whereRef('bot_firmware_install.bot_id', '=', 'bot.id')
+        .where('bot_firmware_install.active', 'is', true)
+        .where('bot_firmware_version.deleted_by', 'is', null)
+        .where('bot_firmware_install.deleted_by', 'is', null)
+    ).as('bot_firmware_version')
 }
 
 export function withVehicle(eb: ExpressionBuilder<Database, 'bot'>) {
@@ -158,7 +170,8 @@ export async function list(): Promise<Bot[]> {
     return db
         .selectFrom("bot")
         .selectAll("bot")
-        .select((eb) => withBotVersion(eb))
+        .select((eb) => withBotModel(eb))
+        .select((eb) => withBotFirmwareVersion(eb))
         .select((eb) => withVehicle(eb))
         .select((eb) => withBotCompany(eb))
         .where('bot.deleted_by', 'is', null)
@@ -179,7 +192,8 @@ export async function paginate(page: number, pageSize: number, sort: OrderByDire
   const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("bot").where('bot.deleted_by', 'is', null);
   return query
       .selectAll("bot")
-      .select((eb) => withBotVersion(eb))
+      .select((eb) => withBotModel(eb))
+      .select((eb) => withBotFirmwareVersion(eb))
       .select((eb) => withVehicle(eb))
       .select((eb) => withBotCompany(eb))
       .limit(pageSize)
@@ -201,7 +215,8 @@ export async function get(id: number): Promise<Bot | undefined> {
     return db
         .selectFrom("bot")
         .selectAll("bot")
-        .select((eb) => withBotVersion(eb))
+        .select((eb) => withBotModel(eb))
+        .select((eb) => withBotFirmwareVersion(eb))
         .select((eb) => withVehicle(eb))
         .select((eb) => withBotCompany(eb))
         .where('bot.id', '=', id)
@@ -235,7 +250,8 @@ export async function findByCompany(company_id: number): Promise<Bot[]> {
 export async function findByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
   return buildSelectQuery(criteria)
     .selectAll("bot")
-    .select((eb) => withBotVersion(eb))
+    .select((eb) => withBotModel(eb))
+    .select((eb) => withBotFirmwareVersion(eb))
     .select((eb) => withVehicle(eb))
     .select((eb) => withBotCompany(eb))
     .execute();
@@ -250,7 +266,8 @@ export async function lazyFindByCriteria(criteria: Partial<Bot>): Promise<Bot[]>
 export async function findOneByCriteria(criteria: Partial<Bot>): Promise<Bot | undefined> {
   return buildSelectQuery(criteria)
     .selectAll("bot")
-    .select((eb) => withBotVersion(eb))
+    .select((eb) => withBotModel(eb))
+    .select((eb) => withBotFirmwareVersion(eb))
     .select((eb) => withVehicle(eb))
     .select((eb) => withBotCompany(eb))
     .limit(1)
@@ -344,8 +361,8 @@ function getCriteriaQuery(query: any, criteria: Partial<Bot>): any {
     );
   }
 
-  if (criteria.bot_version_id) {
-    query = query.where('bot.bot_version_id', '=', criteria.bot_version_id);
+  if (criteria.bot_model_id) {
+    query = query.where('bot.bot_model_id', '=', criteria.bot_model_id);
   }
   if (criteria.vehicle_id) {
     query = query.where('bot.vehicle_id', '=', criteria.vehicle_id);

@@ -42,44 +42,53 @@ const handler = async (event) => {
       }))?.entity;
     }
 
-    for (let i = 1; i <= 8; i++) {
-      const outlet = await Outlet.create({
-        bot_id: bot.id,
-        outlet_type_id: outletType!.id!,
-        pdu_outlet_number: i,
-        ...audit
-      });
-      await OutletSchedule.create({
-        all_day: true,
-        outlet_id: outlet!.entity!.id!,
-        ...audit
-      });
+    const existentOutlets = await Outlet.count({bot_id: bot.id});
+    if (existentOutlets === 0) {
+      for (let i = 1; i <= 8; i++) {
+        const outlet = await Outlet.create({
+          bot_id: bot.id,
+          outlet_type_id: outletType!.id!,
+          pdu_outlet_number: i,
+          ...audit
+        });
+        await OutletSchedule.create({
+          all_day: true,
+          outlet_id: outlet!.entity!.id!,
+          ...audit
+        });
+      }
     }
       
     // create bot charging setings of all day for every day of week
-    const weekdays = Info.weekdays();
-    for (const day in weekdays) {
-      await BotChargingSettings.create({
-        bot_id: bot.id,
-        all_day: true,
-        day_of_week: day,
-        ...audit
-      })
+    const existentBotChargingSettings = await BotChargingSettings.count({bot_id: bot.id});
+    if (existentBotChargingSettings === 0){
+      const weekdays = Info.weekdays();
+      for (const day in weekdays) {
+        await BotChargingSettings.create({
+          bot_id: bot.id,
+          all_day: true,
+          day_of_week: day,
+          ...audit
+        })
+      }
     }
 
     // create scheduled alerts
-    for (const alert of scheduledAlerts) {
-      await BotScheduledAlert.create({
-        bot_id: bot.id,
-        scheduled_alert_id: alert.id!,
-        alert_status: true,
-        settings: alert.config_settings ? Object.keys(alert.config_settings).reduce((acc, key) => {
-          // @ts-expect-error ignore error
-          acc[key] = alert.config_settings![key].default;
-          return acc;
-        }, {}) : undefined,
-        ...audit
-      });
+    const existentBotScheduledAlert = await BotScheduledAlert.count({bot_id: bot.id});
+    if (existentBotScheduledAlert === 0){
+      for (const alert of scheduledAlerts) {
+        await BotScheduledAlert.create({
+          bot_id: bot.id,
+          scheduled_alert_id: alert.id!,
+          alert_status: true,
+          settings: alert.config_settings ? Object.keys(alert.config_settings).reduce((acc, key) => {
+            // @ts-expect-error ignore error
+            acc[key] = alert.config_settings![key].default;
+            return acc;
+          }, {}) : undefined,
+          ...audit
+        });
+      }
     }
 
   }

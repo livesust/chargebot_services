@@ -2,59 +2,43 @@ import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
 
 import { EntitySchema as BotModelSchema } from "./bot_model.schema";
+import { EntitySchema as ComponentSchema } from "./component.schema";
 
-import { EntitySchema as CompanySchema } from "./company.schema";
-
-import { EntitySchema as BotFirmwareVersionSchema } from "./bot_firmware_version.schema";
-
-import { EntitySchema as VehicleSchema } from "./vehicle.schema";
-
-const BotSchemaDef = {
-    bot_uuid: Joi.string(),
-    initials: Joi.string().max(2),
-    name: Joi.string().max(255),
-    pin_color: Joi.string().max(100).allow(null, ''),
+const BotModelComponentSchemaDef = {
+    assignment_date: Joi.date().allow(null),
 };
 
 export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
-    ...BotSchemaDef,
+    ...BotModelComponentSchemaDef,
     bot_model_id: Joi.number(),
-    vehicle_id: Joi.number().allow(null),
+    component_id: Joi.number(),
     
     bot_model: BotModelSchema,
-    
-    vehicle: VehicleSchema.allow(null),
-    company: CompanySchema.allow(null),
-    bot_firmware_version: BotFirmwareVersionSchema.allow(null),
+    component: ComponentSchema,
 });
 
 export const CreateSchema = Joi.object({
     ...AuditedEntityCreateSchemaDef,
-    ...BotSchemaDef
+    ...BotModelComponentSchemaDef
 }).keys({
     // overwrite keys for required attributes
-    bot_uuid: Joi.string().required(),
-    initials: Joi.string().max(2).required(),
-    name: Joi.string().max(255).required(),
     bot_model_id: Joi.number().required(),
-    vehicle_id: Joi.number(),
+    component_id: Joi.number().required(),
 });
 
 export const UpdateSchema = Joi.object({
     ...AuditedEntityUpdateSchemaDef,
-    ...BotSchemaDef,
+    ...BotModelComponentSchemaDef,
     bot_model_id: Joi.number(),
-    vehicle_id: Joi.number(),
+    component_id: Joi.number(),
 });
 
 export const SearchSchema = Joi.object({
     id: Joi.number(),
     bot_model_id: Joi.number(),
-    vehicle_id: Joi.number(),
-    assigned: Joi.string(),
-    company_name: Joi.string(),
-    ...BotSchemaDef
+    component_id: Joi.number(),
+    ...BotModelComponentSchemaDef
 });
 
 export const ResponseSchema = Joi.object({

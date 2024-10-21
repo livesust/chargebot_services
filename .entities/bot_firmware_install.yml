@@ -1,17 +1,16 @@
-name: bot_component
+name: bot_firmware_install
 attributes:
   - attribute: install date
     type: timestamptz
     tsType: Date
     not_null: true
-  - attribute: component serial
-    type: varchar
-    varchar_length: '255'
-    tsType: string
-    not_null: false
+  - attribute: active
+    type: boolean
+    tsType: boolean
+    not_null: true
 relationships:
   - relation_type: many-to-many
     first_entity: bot
-    second_entity: component
+    second_entity: bot_firmware_version
     eager: true
     not_null: true

@@ -1,9 +1,20 @@
 export * as Component from "./component";
 import { OrderByDirection } from "kysely/dist/cjs/parser/order-by-parser";
-import db from '../database';
-import { UpdateResult } from "kysely";
+import db, { Database } from '../database';
+import { ExpressionBuilder, UpdateResult } from "kysely";
 import { Component, ComponentUpdate, NewComponent } from "../database/component";
+import { jsonArrayFrom } from "kysely/helpers/postgres";
 
+
+
+export function withComponentAttributes(eb: ExpressionBuilder<Database, 'component'>) {
+  return jsonArrayFrom(
+    eb.selectFrom('component_attribute')
+      .selectAll()
+      .whereRef('component_attribute.component_id', '=', 'component.id')
+      .where('component_attribute.deleted_by', 'is', null)
+  ).as('component_attributes')
+}
 
 export async function create(component: NewComponent): Promise<{
   entity: Component | undefined,
@@ -136,6 +147,22 @@ export async function get(id: number): Promise<Component | undefined> {
         .where('component.id', '=', id)
         .where('component.deleted_by', 'is', null)
         .executeTakeFirst();
+}
+
+export async function findByBot(bot_id: number): Promise<Component[] | undefined> {
+    return db
+        .selectFrom("component")
+        .select((eb) => withComponentAttributes(eb))
+        .innerJoin("bot_model_component", "bot_model_component.component_id", "component.id")
+        .innerJoin("bot_model", "bot_model_component.bot_model_id", "bot_model.id")
+        .innerJoin("bot", "bot_model.id", "bot.bot_model_id")
+        .where("bot.id", "=", bot_id)
+        .where('component.deleted_by', 'is', null)
+        .where('bot_model_component.deleted_by', 'is', null)
+        .where('bot_model.deleted_by', 'is', null)
+        .where('bot.deleted_by', 'is', null)
+        .selectAll('component')
+        .execute();
 }
 
 export async function findByCriteria(criteria: Partial<Component>): Promise<Component[]> {

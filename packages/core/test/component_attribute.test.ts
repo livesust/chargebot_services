@@ -1,76 +1,74 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { Bot } from "../src/services/bot";
+import { ComponentAttribute } from "../src/services/component_attribute";
 import { getRandom } from './utils';
-import { createAndSaveBotModel, removeBotModel } from "./bot_model.test";
+import { createAndSaveComponent, removeComponent } from "./component.test";
 
 
 // @ts-expect-error ignore any type error
 let entity_id;
 // @ts-expect-error ignore any type error
-let bot_model;
+let component;
 
-export async function createAndSaveBot() {
-    bot_model = await createAndSaveBotModel();
+export async function createAndSaveComponentAttribute() {
+    component = await createAndSaveComponent();
     // @ts-expect-error ignore error
-    return Bot.create(getBotInstance());
+    return ComponentAttribute.create(getComponentAttributeInstance());
 }
 
-export async function removeBot(id: number) {
+export async function removeComponentAttribute(id: number) {
     // run delete query to clean database
-    await Bot.hard_remove(id);
+    await ComponentAttribute.hard_remove(id);
     // @ts-expect-error ignore any type error
-    await removeBotModel(bot_model.id);
+    await removeComponent(component.id);
 }
 
-function getBotInstance() {
+function getComponentAttributeInstance() {
     return {
-        "bot_uuid": getRandom('text'),
-        "initials": getRandom('varchar', 2),
         "name": getRandom('varchar', 255),
-        "pin_color": getRandom('varchar', 100),
+        "type": getRandom('varchar', 255),
         // @ts-expect-error ignore any type error
-        "bot_model_id": bot_model.id,
+        "component_id": component.id,
     };
 }
 
-describe('Bot Tests', () => {
+describe('ComponentAttribute Tests', () => {
 
     afterAll(async () => {
         // @ts-expect-error ignore any type error
-        await removeBot(entity_id);
+        await removeComponentAttribute(entity_id);
     })
 
     it("Create", async () => {
-        const response = await createAndSaveBot();
+        const response = await createAndSaveComponentAttribute();
         expect(response).toBeDefined();
         expect(response!.id).toBeTruthy();
         entity_id = response!.id;
     });
 
     it("Update", async () => {
-        const response = await Bot.update(
+        const response = await ComponentAttribute.update(
             entity_id!,
-            { "bot_uuid": getRandom('text') }
+            { "name": getRandom('varchar') }
         );
         expect(response).toBeDefined();
         expect(response!.id).toEqual(entity_id);
     });
 
     it("List", async () => {
-        const response = await Bot.list();
+        const response = await ComponentAttribute.list();
         expect(response).toBeDefined();
         expect(response.length).toBeGreaterThan(0);
     });
 
     it("Get by ID", async () => {
-        const response = await Bot.get(entity_id!);
+        const response = await ComponentAttribute.get(entity_id!);
         expect(response).toBeTruthy();
         expect(response!.id).toEqual(entity_id!);
     });
 
     it("Search", async () => {
         // @ts-expect-error ignore any type error
-        const response: [] = await Bot.findByCriteria({
+        const response: [] = await ComponentAttribute.findByCriteria({
             "id": entity_id!
         });
         expect(response).toBeTruthy();
@@ -80,9 +78,9 @@ describe('Bot Tests', () => {
     });
 
     it("Delete", async () => {
-        const response = await Bot.list();
-        await Bot.remove(entity_id!, "unit_test");
-        const list = await Bot.list();
+        const response = await ComponentAttribute.list();
+        await ComponentAttribute.remove(entity_id!, "unit_test");
+        const list = await ComponentAttribute.list();
 
         expect(response).toBeTruthy();
         expect(list).toBeDefined();

@@ -321,6 +321,7 @@ export function ApiStack({ app, stack }: StackContext) {
           function: functions.processDailyUsageAlerts,
         }
       },
+      "GET /components/bot/{bot_id}": "packages/functions/src/api/get_components_by_bot.main",
       // UNCOMMENT JUST FOR TESTING IN DEV MODE
       // IN OTHER CASE THE Throttling will cause errors when processing from Kafka
       // "POST /test-gps-geocoding": {

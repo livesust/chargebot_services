@@ -1,6 +1,5 @@
 import Log from '@dazn/lambda-powertools-logger';
 import { createError } from '@middy/util';
-import { BotVersion } from "./bot_version";
 import { UserRole } from "./user_role";
 import { UserPhone } from "./user_phone";
 import { UserEmail } from "./user_email";
@@ -21,8 +20,6 @@ import { Customer } from "./customer";
 import { Component } from "./component";
 import { Company } from "./company";
 import { BotUser } from "./bot_user";
-import { BotFirmware } from "./bot_firmware";
-import { BotComponent } from "./bot_component";
 import { BotCompany } from "./bot_company";
 import { BotChargingSettings } from "./bot_charging_settings";
 import { BotAlert } from "./bot_alert";
@@ -34,12 +31,17 @@ import { AlertType } from "./alert_type";
 import { VehicleType } from "./vehicle_type";
 import { Vehicle } from "./vehicle";
 import { BotScheduledAlert } from "./bot_scheduled_alert";
+import { BotComponentAttribute } from "./bot_component_attribute";
+import { BotFirmwareInstall } from "./bot_firmware_install";
+import { BotFirmwareVersion } from "./bot_firmware_version";
+import { BotModel } from "./bot_model";
+import { BotModelComponent } from "./bot_model_component";
+import { ComponentAttribute } from "./component_attribute";
 // DO NOT REMOVE THIS LINE: PLOP SERVICE IMPORT
 
 export const loadService = async (entity_name: string) => {
   let service;
 
-  if ("bot_version" === entity_name) { service = BotVersion; }
   if ("user_role" === entity_name) { service = UserRole; }
   if ("user_phone" === entity_name) { service = UserPhone; }
   if ("user_email" === entity_name) { service = UserEmail; }
@@ -60,8 +62,6 @@ export const loadService = async (entity_name: string) => {
   if ("component" === entity_name) { service = Component; }
   if ("company" === entity_name) { service = Company; }
   if ("bot_user" === entity_name) { service = BotUser; }
-  if ("bot_firmware" === entity_name) { service = BotFirmware; }
-  if ("bot_component" === entity_name) { service = BotComponent; }
   if ("bot_company" === entity_name) { service = BotCompany; }
   if ("bot_charging_settings" === entity_name) { service = BotChargingSettings; }
   if ("bot_alert" === entity_name) { service = BotAlert; }
@@ -73,6 +73,12 @@ export const loadService = async (entity_name: string) => {
   if ("vehicle_type" === entity_name) { service = VehicleType; }
   if ("vehicle" === entity_name) { service = Vehicle; }
   if ("bot_scheduled_alert" === entity_name) { service = BotScheduledAlert; }
+    if ("bot_component_attribute" === entity_name) { service = BotComponentAttribute; }
+    if ("bot_firmware_install" === entity_name) { service = BotFirmwareInstall; }
+    if ("bot_firmware_version" === entity_name) { service = BotFirmwareVersion; }
+    if ("bot_model" === entity_name) { service = BotModel; }
+    if ("bot_model_component" === entity_name) { service = BotModelComponent; }
+    if ("component_attribute" === entity_name) { service = ComponentAttribute; }
 // DO NOT REMOVE THIS LINE: PLOP SERVICE IF
 
   if (!service) {

@@ -1,0 +1,12 @@
+name: bot_model_component
+attributes:
+  - attribute: assignment date
+    type: timestamptz
+    tsType: Date
+    not_null: false
+relationships:
+  - relation_type: many-to-many
+    first_entity: bot_model
+    second_entity: component
+    eager: true
+    not_null: true

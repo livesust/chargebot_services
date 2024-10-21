@@ -1,37 +1,35 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
 
-const ComponentSchemaDef = {
+const BotModelSchemaDef = {
     name: Joi.string().max(255),
-    version: Joi.string().max(100).allow(null, ''),
-    description: Joi.string().allow(null, ''),
-    specs: Joi.string().allow(null, ''),
-    location: Joi.string().max(255).allow(null, ''),
-    notes: Joi.string().allow(null, ''),
-    component_attributes: Joi.array().items(Joi.object())
+    version: Joi.string().max(255),
+    release_date: Joi.date(),
 };
 
 export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
-    ...ComponentSchemaDef,
+    ...BotModelSchemaDef,
 });
 
 export const CreateSchema = Joi.object({
     ...AuditedEntityCreateSchemaDef,
-    ...ComponentSchemaDef
+    ...BotModelSchemaDef
 }).keys({
     // overwrite keys for required attributes
     name: Joi.string().max(255).required(),
+    version: Joi.string().max(255).required(),
+    release_date: Joi.date().required(),
 });
 
 export const UpdateSchema = Joi.object({
     ...AuditedEntityUpdateSchemaDef,
-    ...ComponentSchemaDef,
+    ...BotModelSchemaDef,
 });
 
 export const SearchSchema = Joi.object({
     id: Joi.number(),
-    ...ComponentSchemaDef
+    ...BotModelSchemaDef
 });
 
 export const ResponseSchema = Joi.object({
