@@ -9,35 +9,30 @@ import { createSuccessResponse } from "../shared/rest_utils";
 import { Bot } from "@chargebot-services/core/services/bot";
 import jsonBodyParser from "@middy/http-json-body-parser";
 import { dateReviver } from "src/shared/middlewares/json-date-parser";
-import { BotVersion } from "@chargebot-services/core/services/bot_version";
+import { BotFirmwareVersion } from "@chargebot-services/core/services/bot_firmware_version";
+import { BotFirmwareInstall } from "@chargebot-services/core/services/bot_firmware_install";
 import { EventBus } from "@chargebot-services/core/services/aws/event_bus";
+import { BotModel } from "@chargebot-services/core/services/bot_model";
 
-// @ts-expect-error ignore any type for event
-const handler = async (event) => {
-  // payload will come on body when called from API
-  // but direct on event when from IoT
-  const body = event.body ?? event;
-
-  Log.debug("Echo from bot", { body });
-
-  // bot_uuid from IoT, device_id from API
-  const bot_uuid: string = body.bot_uuid ?? body.device_id;
-  const device_version = body.device_version;
-
+export const processBotDiscovery = async (bot_uuid: string, device_version: string) => {
   try {
     if (!bot_uuid) {
       return createError(400, "bot uuid not provided", { expose: true });
     }
 
-    const bot = await Bot.findOneByCriteria({ bot_uuid })
+    const [bot, botModel] = await Promise.all([
+      Bot.findOneByCriteria({ bot_uuid }),
+      BotModel.findOneByCriteria({name: 'Trailblazer'})
+    ])
 
     if (bot) {
       Log.debug("Bot already registered");
     }
 
-    let botVersion = await BotVersion.findOneByCriteria({version_number: device_version})
-    if (!botVersion){
-      botVersion = (await BotVersion.create({
+    let botFirmwareVersion = await BotFirmwareVersion.findOneByCriteria({version_number: device_version})
+    if (!botFirmwareVersion){
+      // Create the new Bot Firmware Version
+      botFirmwareVersion = (await BotFirmwareVersion.create({
         version_number: device_version,
         version_name: `v${device_version}`,
         active_date: new Date(),
@@ -45,18 +40,44 @@ const handler = async (event) => {
     }
 
     if (!bot) {
-      const created = await Bot.create({
+      // Create the new Bot
+      const botCreated = await Bot.create({
         bot_uuid,
         name: bot_uuid,
         initials: bot_uuid.substring(0, 2),
-        bot_version_id: botVersion!.id!,
+        bot_model_id: botModel!.id!
       });
-      Log.debug("Dispatch creation event");
-      EventBus.dispatchEvent('bot', "created", created?.entity);
+      // Associate the version
+      await BotFirmwareInstall.create({
+        install_date: new Date(),
+        active: true,
+        bot_id: botCreated!.entity!.id!,
+        bot_firmware_version_id: botFirmwareVersion!.id!
+      });
+      Log.debug("Dispatch bot creation event");
+      EventBus.dispatchEvent('bot', "created", botCreated?.entity);
     } else {
-      await Bot.update(bot.id!, {
-        bot_version_id: botVersion!.id!,
-      });
+      // Search if this version is already associated to bot
+      const existentInstall = await BotFirmwareInstall.findOneByCriteria({
+        bot_id: bot.id,
+        bot_firmware_version_id: botFirmwareVersion!.id!
+      })
+      if (existentInstall?.bot_firmware_version?.version_number !== device_version) {
+        // This version is not associated to bot
+        // mark others installs as inactive
+        (await BotFirmwareInstall.findByCriteria({bot_id: bot.id!})).map(async (bfi) => {
+          return await BotFirmwareInstall.update(bfi.id!, {active: false})
+        });
+        // associate new version as active
+        await BotFirmwareInstall.create({
+          install_date: new Date(),
+          active: true,
+          bot_id: bot.id!,
+          bot_firmware_version_id: botFirmwareVersion!.id!
+        });
+      }
+      Log.debug("Dispatch bot creation event");
+      EventBus.dispatchEvent('bot', "created", bot);
     }
 
     Log.debug("Bot registered", {bot_uuid});
@@ -73,6 +94,21 @@ const handler = async (event) => {
     httpError.details = (<Error>error).message;
     throw httpError;
   }
+}
+
+// @ts-expect-error ignore any type for event
+const handler = async (event) => {
+  // payload will come on body when called from API
+  // but direct on event when from IoT
+  const body = event. body ?? event;
+
+  Log.debug("Echo from bot", { body });
+
+  // bot_uuid from IoT, device_id from API
+  const bot_uuid: string = body.bot_uuid ?? body.device_id;
+  const device_version = body.device_version;
+
+  return await processBotDiscovery(bot_uuid, device_version);
 };
 
 export const main = middy(handler)

@@ -21,7 +21,7 @@ attributes:
     tsType: string
     not_null: false
 relationships:
-  - entity: bot_version
+  - entity: bot_model
     relation_type: many-to-one
     eager: true
     not_null: true

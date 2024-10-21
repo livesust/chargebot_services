@@ -1,37 +1,40 @@
 import Joi from 'joi';
 import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEntitySchemaDef, JsonResponseSchemaDef } from "../shared/schemas";
 
-const ComponentSchemaDef = {
+import { EntitySchema as ComponentSchema } from "./component.schema";
+
+const ComponentAttributeSchemaDef = {
     name: Joi.string().max(255),
-    version: Joi.string().max(100).allow(null, ''),
-    description: Joi.string().allow(null, ''),
-    specs: Joi.string().allow(null, ''),
-    location: Joi.string().max(255).allow(null, ''),
-    notes: Joi.string().allow(null, ''),
-    component_attributes: Joi.array().items(Joi.object())
+    type: Joi.string().max(255).allow(null, ''),
 };
 
 export const EntitySchema = Joi.object({
     ...AuditedEntitySchemaDef,
-    ...ComponentSchemaDef,
-});
+    ...ComponentAttributeSchemaDef,
+    component_id: Joi.number(),
+    
+    component: ComponentSchema,
+}).id('componentAttributeSchema');
 
 export const CreateSchema = Joi.object({
     ...AuditedEntityCreateSchemaDef,
-    ...ComponentSchemaDef
+    ...ComponentAttributeSchemaDef
 }).keys({
     // overwrite keys for required attributes
     name: Joi.string().max(255).required(),
+    component_id: Joi.number().required(),
 });
 
 export const UpdateSchema = Joi.object({
     ...AuditedEntityUpdateSchemaDef,
-    ...ComponentSchemaDef,
+    ...ComponentAttributeSchemaDef,
+    component_id: Joi.number(),
 });
 
 export const SearchSchema = Joi.object({
     id: Joi.number(),
-    ...ComponentSchemaDef
+    component_id: Joi.number(),
+    ...ComponentAttributeSchemaDef
 });
 
 export const ResponseSchema = Joi.object({

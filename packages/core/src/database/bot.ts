@@ -1,6 +1,6 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
-import { BotVersion } from "./bot_version";
+import { BotModel } from "./bot_model";
 import { Vehicle } from "./vehicle";
 
 export interface BotTable extends AuditedEntity {
@@ -8,9 +8,9 @@ export interface BotTable extends AuditedEntity {
   initials: string;
   name: string;
   pin_color?: string;
-  bot_version_id: number;
+  bot_model_id: number;
   vehicle_id?: number;
-  bot_version?: BotVersion;
+  bot_model?: BotModel;
   vehicle?: Vehicle;
 }
 

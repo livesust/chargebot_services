@@ -1,4 +1,4 @@
-name: bot_version
+name: bot_firmware_version
 attributes:
   - attribute: version number
     type: varchar

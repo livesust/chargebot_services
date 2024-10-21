@@ -23,9 +23,6 @@ import { HomeMasterTable } from "./home_master";
 import { EquipmentTypeTable } from "./equipment_type";
 import { EquipmentTable } from "./equipment";
 import { ComponentTable } from "./component";
-import { BotVersionTable } from "./bot_version";
-import { BotFirmwareTable } from "./bot_firmware";
-import { BotComponentTable } from "./bot_component";
 import { BotCompanyTable } from "./bot_company";
 import { BotChargingSettingsTable } from "./bot_charging_settings";
 import { BotAlertTable } from "./bot_alert";
@@ -36,6 +33,12 @@ import { BotUserTable } from "./bot_user";
 import { VehicleTypeTable } from "./vehicle_type";
 import { VehicleTable } from "./vehicle";
 import { BotScheduledAlertTable } from "./bot_scheduled_alert";
+import { BotComponentAttributeTable } from "./bot_component_attribute";
+import { BotFirmwareInstallTable } from "./bot_firmware_install";
+import { BotFirmwareVersionTable } from "./bot_firmware_version";
+import { BotModelTable } from "./bot_model";
+import { BotModelComponentTable } from "./bot_model_component";
+import { ComponentAttributeTable } from "./component_attribute";
 // DO NOT REMOVE THIS LINE: PLOP ENTITY IMPORT
 
 export function json<T>(value: T): RawBuilder<T> {
@@ -63,9 +66,6 @@ export interface Database {
   equipment_type: EquipmentTypeTable,
   equipment: EquipmentTable,
   component: ComponentTable,
-  bot_version: BotVersionTable,
-  bot_firmware: BotFirmwareTable,
-  bot_component: BotComponentTable,
   bot_company: BotCompanyTable,
   bot_charging_settings: BotChargingSettingsTable,
   bot_alert: BotAlertTable,
@@ -76,6 +76,12 @@ export interface Database {
   vehicle_type: VehicleTypeTable,
   vehicle: VehicleTable,
   bot_scheduled_alert: BotScheduledAlertTable,
+  bot_component_attribute: BotComponentAttributeTable,
+  bot_firmware_install: BotFirmwareInstallTable,
+  bot_firmware_version: BotFirmwareVersionTable,
+  bot_model: BotModelTable,
+  bot_model_component: BotModelComponentTable,
+  component_attribute: ComponentAttributeTable,
 // DO NOT REMOVE THIS LINE: PLOP ENTITY LIST
 }
 

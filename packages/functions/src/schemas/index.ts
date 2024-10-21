@@ -1,6 +1,5 @@
 import Log from '@dazn/lambda-powertools-logger';
 import { createError } from '@middy/util';
-import * as BotVersion from "./bot_version.schema";
 import * as UserRole from "./user_role.schema";
 import * as UserPhone from "./user_phone.schema";
 import * as UserEmail from "./user_email.schema";
@@ -21,8 +20,6 @@ import * as Customer from "./customer.schema";
 import * as Component from "./component.schema";
 import * as Company from "./company.schema";
 import * as BotUser from "./bot_user.schema";
-import * as BotFirmware from "./bot_firmware.schema";
-import * as BotComponent from "./bot_component.schema";
 import * as BotCompany from "./bot_company.schema";
 import * as BotChargingSettings from "./bot_charging_settings.schema";
 import * as BotAlert from "./bot_alert.schema";
@@ -34,12 +31,17 @@ import * as AlertType from "./alert_type.schema";
 import * as VehicleType from "./vehicle_type.schema";
 import * as Vehicle from "./vehicle.schema";
 import * as BotScheduledAlert from "./bot_scheduled_alert.schema";
+import * as BotComponentAttribute from "./bot_component_attribute.schema";
+import * as BotFirmwareInstall from "./bot_firmware_install.schema";
+import * as BotFirmwareVersion from "./bot_firmware_version.schema";
+import * as BotModel from "./bot_model.schema";
+import * as BotModelComponent from "./bot_model_component.schema";
+import * as ComponentAttribute from "./component_attribute.schema";
 // DO NOT REMOVE THIS LINE: PLOP SCHEMA IMPORT
 
 export const loadSchemas = (entity_name: string) => {
   let schema;
 
-  if ("bot_version" === entity_name) { schema = BotVersion; }
   if ("user_role" === entity_name) { schema = UserRole; }
   if ("user_phone" === entity_name) { schema = UserPhone; }
   if ("user_email" === entity_name) { schema = UserEmail; }
@@ -60,8 +62,6 @@ export const loadSchemas = (entity_name: string) => {
   if ("component" === entity_name) { schema = Component; }
   if ("company" === entity_name) { schema = Company; }
   if ("bot_user" === entity_name) { schema = BotUser; }
-  if ("bot_firmware" === entity_name) { schema = BotFirmware; }
-  if ("bot_component" === entity_name) { schema = BotComponent; }
   if ("bot_company" === entity_name) { schema = BotCompany; }
   if ("bot_charging_settings" === entity_name) { schema = BotChargingSettings; }
   if ("bot_alert" === entity_name) { schema = BotAlert; }
@@ -73,6 +73,12 @@ export const loadSchemas = (entity_name: string) => {
   if ("vehicle_type" === entity_name) { schema = VehicleType; }
   if ("vehicle" === entity_name) { schema = Vehicle; }
   if ("bot_scheduled_alert" === entity_name) { schema = BotScheduledAlert; }
+    if ("bot_component_attribute" === entity_name) { schema = BotComponentAttribute; }
+    if ("bot_firmware_install" === entity_name) { schema = BotFirmwareInstall; }
+    if ("bot_firmware_version" === entity_name) { schema = BotFirmwareVersion; }
+    if ("bot_model" === entity_name) { schema = BotModel; }
+    if ("bot_model_component" === entity_name) { schema = BotModelComponent; }
+    if ("component_attribute" === entity_name) { schema = ComponentAttribute; }
 // DO NOT REMOVE THIS LINE: PLOP SCHEMA IF
 
   if (!schema) {

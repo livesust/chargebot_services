@@ -1,0 +1,13 @@
+name: bot_component_attribute
+attributes:
+  - attribute: value
+    type: text
+    tsType: string
+    unique: false
+    not_null: false
+relationships:
+  - relation_type: many-to-many
+    first_entity: bot
+    second_entity: component_attribute
+    eager: true
+    not_null: true

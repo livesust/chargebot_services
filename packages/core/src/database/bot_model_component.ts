@@ -1,20 +1,19 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
-import { Bot } from "./bot";
+import { BotModel } from "./bot_model";
 import { Component } from "./component";
 
-export interface BotComponentTable extends AuditedEntity {
-  install_date: Date;
-  component_serial?: string;
-  bot_id: number;
+export interface BotModelComponentTable extends AuditedEntity {
+  assignment_date?: Date;
+  bot_model_id: number;
   component_id: number;
-  bot?: Bot;
+  bot_model?: BotModel;
   component?: Component;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should
 // use the `Selectable`, `Insertable` and `Updateable` wrappers. These wrappers
 // make sure that the correct types are used in each operation.
-export type BotComponent = Selectable<BotComponentTable>
-export type NewBotComponent = Insertable<BotComponentTable>
-export type BotComponentUpdate = Updateable<BotComponentTable>
+export type BotModelComponent = Selectable<BotModelComponentTable>
+export type NewBotModelComponent = Insertable<BotModelComponentTable>
+export type BotModelComponentUpdate = Updateable<BotModelComponentTable>
