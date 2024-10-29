@@ -30,6 +30,8 @@ export enum AlertCode {
   GPS_LONG_STOP = "A203",
   NOT_PLUGGED_IN = "A300",
   NOTHING_CHARGING = "A301",
+  ABSENT_EQUIPMENT = "A400",
+  ALL_EQUIPMENTS_PRESENT = "A401",
 }
 
 export enum AlertName {
@@ -46,4 +48,6 @@ export enum AlertName {
   GPS_LONG_STOP = "gps_long_stop",
   NOT_PLUGGED_IN = "not_plugged_in",
   NOTHING_CHARGING = "nothing_charging",
+  ABSENT_EQUIPMENT = "absent_equipment",
+  ALL_EQUIPMENTS_PRESENT = "all_equipments_present",
 }

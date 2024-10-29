@@ -2,17 +2,23 @@ import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import { isWarmingUp } from "../shared/rest_utils";
 import { OutletEquipment } from "@chargebot-services/core/services/outlet_equipment";
+import { updateEquipmentsShadow } from "./on_update_equipments_shadow";
+import { Equipment } from "@chargebot-services/core/database/equipment";
+import { Bot } from "@chargebot-services/core/services/bot";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
   const entity = event && (event.detailType ?? event['detail-type']);
-  const entity_id = event?.detail?.id;
   const user_id = event?.detail?.deleted_by;
-  console.log(`Delete OutletEquipment by ${entity} with ID ${entity_id}`);
+  const equipment = event?.detail as Equipment;
   if(entity === 'outlet') {
-    await OutletEquipment.unassignByOutlet(entity_id, user_id);
+    await OutletEquipment.unassignByOutlet(equipment.id!, user_id);
   } else if(entity === 'equipment') {
-    await OutletEquipment.unassignByEquipment(entity_id, user_id);
+    const bot = await Bot.findBotByEquipment(equipment.id!);
+    if (bot){
+      updateEquipmentsShadow(bot.bot_uuid, equipment.customer_id);
+    }
+    await OutletEquipment.unassignByEquipment(equipment.id!, user_id);
   }
 };
 

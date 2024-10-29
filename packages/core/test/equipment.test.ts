@@ -32,6 +32,7 @@ function getEquipmentInstance() {
     return {
         "name": getRandom('varchar', 255),
         "brand": getRandom('varchar', 255),
+        "rfid": getRandom('varchar', 255),
         "description": getRandom('text'),
         "voltage": getRandom('float'),
         "max_charging_amps": getRandom('float'),

@@ -3,7 +3,14 @@ import Log from '@dazn/lambda-powertools-logger';
 import { Expo, ExpoPushMessage } from "expo-server-sdk";
 import { Config } from "sst/node/config";
 
-export const send_push_notifications = async(tokens: string[], message: string, title?: string, data?: object) => {
+
+export interface Notification {
+  message?: string;
+  title?: string;
+  data?: object
+}
+
+export const send_push_notifications = async(tokens: string[], notification: Notification) => {
   const messages: ExpoPushMessage[] = [];
 
   const expo = new Expo({ accessToken: Config.EXPO_ACCESS_TOKEN });
@@ -21,9 +28,9 @@ export const send_push_notifications = async(tokens: string[], message: string, 
     messages.push({
       to: token,
       sound: 'default',
-      title: title ?? 'ChargeBot',
-      body: message,
-      data: data,
+      title: notification.title ?? 'ChargeBot',
+      body: notification.message,
+      data: notification.data,
     })
   }
 

@@ -25,6 +25,7 @@
     }
   },
   "current_location": "the current location",
+  "generic_equipment": "some equipment",
   "push_alerts": {
     "battery_low": {
       "title": "Battery Low",
@@ -77,6 +78,14 @@
     "daily_usage": {
       "title": "Daily Usage",
       "message": "Since 12am today, your ChargeBot \"{{{device_id}}}\" has charged {{{energy_kwh}}}Kwh worth of batteries."
+    },
+    "absent_equipment": {
+      "title": "Equipment Left Behind",
+      "message": "You forgot to load \"{{{equipment}}}\" at \"{{{address}}}\". Please return to pick it up."
+    },
+    "all_equipments_present": {
+      "title": "All Equipment Loaded",
+      "message": "You successfully loaded all equipment before leaving the last location."
     }
   },
   "scheduled_alert": {

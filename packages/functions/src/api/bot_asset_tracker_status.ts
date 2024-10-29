@@ -1,9 +1,9 @@
 import middy from "@middy/core";
 import warmup from "@middy/warmup";
-import { createError, HttpError } from '@middy/util';
+import { createError } from '@middy/util';
 import Log from '@dazn/lambda-powertools-logger';
 import httpErrorHandler from "@middy/http-error-handler";
-import { PathParamSchema } from "../schemas/assign_equipment_outlet.schema";
+import { ArrayResponseSchema } from "../schemas/bot_asset_tracker_status.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import httpSecurityHeaders from '@middy/http-security-headers';
@@ -11,37 +11,32 @@ import httpEventNormalizer from '@middy/http-event-normalizer';
 // import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
-import { OutletEquipment } from "@chargebot-services/core/services/outlet_equipment";
+import { ChargebotAssetTracker } from "@chargebot-services/core/services/analytics/chargebot_asset_tracker";
+import { BotUUIDPathParamSchema } from "src/shared/schemas";
 import { Equipment } from "@chargebot-services/core/services/equipment";
-import { updateEquipmentsShadow } from "../events/on_update_equipments_shadow";
-import { Outlet } from "@chargebot-services/core/services/outlet";
-
 
 // @ts-expect-error ignore any type for event
-const handler = async (event) => {
-  const equipment_id = +event.pathParameters!.equipment_id!;
-  const outlet_id = +event.pathParameters!.outlet_id!;
-  const user_id = event.requestContext?.authorizer?.jwt.claims.sub;
+export const handler = async (event) => {
+  const bot_uuid = event.pathParameters!.bot_uuid!;
 
   try {
-    const [equipment, outlet, _] = await Promise.all([
-      Equipment.get(equipment_id),
-      Outlet.get(outlet_id),
-      OutletEquipment.unassign(equipment_id, outlet_id, user_id),
-    ]);
+    const assetsStatus = await ChargebotAssetTracker.getAssetTrackerTagsStatus(bot_uuid);
 
-    if (outlet?.bot && equipment) {
-      updateEquipmentsShadow(outlet.bot.bot_uuid, equipment.customer_id);
-    }
+    const response = await Promise.all(assetsStatus.map(async (asset) => {
+      const equipment = await Equipment.findOneByCriteria({rfid: asset.rfid});
+      return {
+        bot_uuid,
+        equipment_id: equipment?.id,
+        equipment_name: equipment?.name,
+        ...asset
+      }
+    }));
 
-    return createSuccessResponse({ "response": "success" });
+    return createSuccessResponse(response);
   } catch (error) {
     Log.error("ERROR", { error });
-    if (error instanceof HttpError) {
-      // re-throw when is a http error generated above
-      throw error;
-    }
-    const httpError = createError(406, "cannot unassign equipment from outlet", { expose: true });
+    // create and throw database errors
+    const httpError = createError(406, "cannot query bot status", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;
   }
@@ -53,10 +48,11 @@ export const main = middy(handler)
   // .use(executionTimeLogger())
   .use(httpEventNormalizer())
   // .use(logTimeout())
-  .use(validator({ pathParametersSchema: PathParamSchema }))
+  .use(validator({ pathParametersSchema: BotUUIDPathParamSchema }))
   // after: inverse order execution
-  .use(jsonBodySerializer())
+  .use(jsonBodySerializer(false))
   .use(httpSecurityHeaders())
+  .use(validator({ responseSchema: ArrayResponseSchema }))
   // httpErrorHandler must be the last error handler attached, first to execute.
   // When non-http errors (those without statusCode) occur they will be returned with a 500 status code.
   .use(httpErrorHandler());

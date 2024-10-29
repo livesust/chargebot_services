@@ -2,6 +2,7 @@ import { Insertable, Selectable, Updateable } from 'kysely'
 import { AuditedEntity } from "./audited_entity";
 import { BotModel } from "./bot_model";
 import { Vehicle } from "./vehicle";
+import { Company } from './company';
 
 export interface BotTable extends AuditedEntity {
   bot_uuid: string;
@@ -12,6 +13,7 @@ export interface BotTable extends AuditedEntity {
   vehicle_id?: number;
   bot_model?: BotModel;
   vehicle?: Vehicle;
+  company?: Company;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

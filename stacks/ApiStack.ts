@@ -162,6 +162,15 @@ export function ApiStack({ app, stack }: StackContext) {
           bind: [IOT_ENDPOINT]
         }
       },
+      "GET /bot/{bot_uuid}/assets/status": { 
+        function: {
+          handler: "packages/functions/src/api/bot_asset_tracker_status.main",
+          timeout,
+          // @ts-expect-error ignore check
+          role: iotRole,
+          bind: [IOT_ENDPOINT]
+        }
+      },
       "GET /bot/{bot_uuid}/status/encrypted": {
         function: {
           handler: "packages/functions/src/api/bot_status_encrypted.main",
@@ -201,8 +210,22 @@ export function ApiStack({ app, stack }: StackContext) {
       "GET /bot/{bot_uuid}/usage/interval/from/{from}/to/{to}": "packages/functions/src/api/bot_usage_days_history.main",
       "POST /bot/{bot_id}/company/{company_id}": "packages/functions/src/api/assign_bot_company.main",
       "GET /equipment/customer/{customer_id}": "packages/functions/src/api/equipments_by_customer.main",
-      "POST /equipment/{equipment_id}/outlet/{outlet_id}": "packages/functions/src/api/assign_equipment_outlet.main",
-      "DELETE /equipment/{equipment_id}/outlet/{outlet_id}": "packages/functions/src/api/unassign_equipment_outlet.main",
+      "POST /equipment/{equipment_id}/outlet/{outlet_id}": {
+        function: {
+          handler: "packages/functions/src/api/assign_equipment_outlet.main",
+          // @ts-expect-error ignore check
+          role: iotRole,
+          bind: [IOT_ENDPOINT]
+        }
+      },
+      "DELETE /equipment/{equipment_id}/outlet/{outlet_id}": {
+        function: {
+          handler: "packages/functions/src/api/unassign_equipment_outlet.main",
+          // @ts-expect-error ignore check
+          role: iotRole,
+          bind: [IOT_ENDPOINT]
+        }
+      },
       "POST /bot/{bot_uuid}/control": {
         function: {
           handler: "packages/functions/src/api/control_outlet.main",
