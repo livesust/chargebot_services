@@ -69,7 +69,26 @@ export function EventBusStack({ app, stack }: StackContext) {
             function: {
               handler: "packages/functions/src/events/on_outlet_or_equipment_deleted.main",
               timeout,
-              bind: [rdsCluster],
+              // @ts-expect-error ignore check
+              role: iotRole,
+              bind: [rdsCluster, IOT_ENDPOINT],
+            }
+          },
+        },
+      },
+      update_equipments_shadow: {
+        pattern: {
+          source: ["created", "updated"],
+          detailType: ["equipment"],
+        },
+        targets: {
+          on_outlet_or_equipment_deleted: {
+            function: {
+              handler: "packages/functions/src/events/on_update_equipments_shadow.main",
+              timeout,
+              // @ts-expect-error ignore check
+              role: iotRole,
+              bind: [rdsCluster, IOT_ENDPOINT],
             }
           },
         },

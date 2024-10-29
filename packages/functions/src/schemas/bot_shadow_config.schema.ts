@@ -20,6 +20,12 @@ export const BotShadowConfigSchema = Joi.object({
     device_id: Joi.string().allow(null),
   }).allow(null),
 
+  equipments: Joi.array().items(Joi.object({
+    id: Joi.number().optional().allow(null),
+    name: Joi.string().max(255),
+    rfid: Joi.string().max(255).allow(null, ''),
+  })).allow(null),
+
   config: Joi.object({
     hardware: Joi.object({
 
@@ -39,6 +45,11 @@ export const BotShadowConfigSchema = Joi.object({
           low_limit_celcius: Joi.number().allow(null),
           high_limit_celcius: Joi.number().allow(null),
         }).allow(null),
+      }).allow(null),
+
+      asset_tracker: Joi.object({
+        enabled: Joi.boolean().allow(null),
+        model: Joi.string().allow(null),
       }).allow(null),
 
       temperature_sensor: Joi.object({

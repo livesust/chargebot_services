@@ -8,6 +8,7 @@ import { ChargebotErrorTable } from "./chargebot_error";
 import { ChargebotAlertTable } from "./chargebot_alert";
 import { ChargebotGeocodingTable } from "./chargebot_geocoding";
 import { ChargebotSystemTable } from "./chargebot_system";
+import { ChargebotAssetTrackerTable } from "./chargebot_asset_tracker";
 import { Config } from "sst/node/config";
 import { ChargebotBatteryLevelAggregate } from "./chargebot_battery_level_aggregate";
 
@@ -21,6 +22,7 @@ export interface AnalyticsDatabase {
     chargebot_geocoding: ChargebotGeocodingTable,
     chargebot_system: ChargebotSystemTable,
     chargebot_battery_level_aggregate: ChargebotBatteryLevelAggregate,
+    chargebot_asset_tracker: ChargebotAssetTrackerTable,
 }
 
 // Configs secrets are set with the following command

@@ -247,6 +247,19 @@ export async function findByCompany(company_id: number): Promise<Bot[]> {
       .execute()
 }
 
+export async function findBotByEquipment(equipment_id: number): Promise<Bot | undefined> {
+  return await db
+    .selectFrom('bot')
+    .leftJoin('outlet', 'outlet.bot_id', 'bot.id')
+    .leftJoin('outlet_equipment', 'outlet_equipment.outlet_id', 'outlet.id')
+    .where('outlet_equipment.equipment_id', '=', equipment_id)
+    .where('bot.deleted_by', 'is', null)
+    .where('outlet.deleted_by', 'is', null)
+    .where('outlet_equipment.deleted_by', 'is', null)
+    .selectAll('bot')
+    .executeTakeFirst();
+}
+
 export async function findByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
   return buildSelectQuery(criteria)
     .selectAll("bot")

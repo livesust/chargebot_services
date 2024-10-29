@@ -42,9 +42,7 @@ export async function create(equipment: NewEquipment): Promise<{
 
     return {
       entity: created,
-      // event to dispatch on EventBus on creation
-      // undefined as default to not dispatch any event
-      event: undefined
+      event: created
     };
 }
 
@@ -68,9 +66,7 @@ export async function update(id: number, equipment: EquipmentUpdate): Promise<{
 
     return {
       entity: updated,
-      // event to dispatch on EventBus on creation
-      // undefined as default to not dispatch any event
-      event: undefined
+      event: updated
     };
 }
 
@@ -156,8 +152,8 @@ export async function get(id: number): Promise<Equipment | undefined> {
         .selectAll()
         .select((eb) => withEquipmentType(eb))
         .select((eb) => withCustomer(eb))
-        .where('id', '=', id)
-        .where('deleted_by', 'is', null)
+        .where('equipment.id', '=', id)
+        .where('equipment.deleted_by', 'is', null)
         .executeTakeFirst();
 }
 
@@ -174,7 +170,7 @@ export async function findByOutlet(outlet_id: number): Promise<Equipment | undef
 
 export async function findByCriteria(criteria: Partial<Equipment>): Promise<Equipment[]> {
   return buildSelectQuery(criteria)
-    .selectAll('equipment')
+    .selectAll("equipment")
     .select((eb) => withEquipmentType(eb))
     .select((eb) => withCustomer(eb))
     .execute();
@@ -182,13 +178,13 @@ export async function findByCriteria(criteria: Partial<Equipment>): Promise<Equi
 
 export async function lazyFindByCriteria(criteria: Partial<Equipment>): Promise<Equipment[]> {
   return buildSelectQuery(criteria)
-    .selectAll('equipment')
+    .selectAll("equipment")
     .execute();
 }
 
 export async function findOneByCriteria(criteria: Partial<Equipment>): Promise<Equipment | undefined> {
   return buildSelectQuery(criteria)
-    .selectAll('equipment')
+    .selectAll("equipment")
     .select((eb) => withEquipmentType(eb))
     .select((eb) => withCustomer(eb))
     .limit(1)
@@ -197,7 +193,7 @@ export async function findOneByCriteria(criteria: Partial<Equipment>): Promise<E
 
 export async function lazyFindOneByCriteria(criteria: Partial<Equipment>): Promise<Equipment | undefined> {
   return buildSelectQuery(criteria)
-    .selectAll('equipment')
+    .selectAll("equipment")
     .limit(1)
     .executeTakeFirst();
 }
@@ -234,6 +230,13 @@ function getCriteriaQuery(query: any, criteria: Partial<Equipment>): any {
       'equipment.brand', 
       criteria.brand === null ? 'is' : 'like', 
       criteria.brand === null ? null : `%${ criteria.brand }%`
+    );
+  }
+  if (criteria.rfid !== undefined) {
+    query = query.where(
+      'equipment.rfid', 
+      criteria.rfid === null ? 'is' : 'like', 
+      criteria.rfid === null ? null : `%${ criteria.rfid }%`
     );
   }
   if (criteria.description !== undefined) {

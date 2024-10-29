@@ -14,6 +14,9 @@ import httpEventNormalizer from '@middy/http-event-normalizer';
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { OutletEquipment } from "@chargebot-services/core/services/outlet_equipment";
 import { User } from "@chargebot-services/core/services/user";
+import { Equipment } from "@chargebot-services/core/services/equipment";
+import { updateEquipmentsShadow } from "../events/on_update_equipments_shadow";
+import { Outlet } from "@chargebot-services/core/services/outlet";
 
 
 // @ts-expect-error ignore any type for event
@@ -33,11 +36,15 @@ const handler = async (event) => {
     const [
       user,
       assignedToAnotherOutlet,
-      outletHasAnotherEquipment
+      outletHasAnotherEquipment,
+      equipment,
+      outlet
     ] = await Promise.all([
       User.findByCognitoId(user_id),
       OutletEquipment.lazyFindOneByCriteria({ equipment_id }),
-      OutletEquipment.lazyFindOneByCriteria({ outlet_id })
+      OutletEquipment.lazyFindOneByCriteria({ outlet_id }),
+      Equipment.get(equipment_id),
+      Outlet.get(outlet_id)
     ]);
 
     const removePromises = [];
@@ -66,6 +73,10 @@ const handler = async (event) => {
       outlet_id,
       user_id: user!.id!,
     });
+
+    if (outlet?.bot && equipment) {
+      updateEquipmentsShadow(outlet.bot.bot_uuid, equipment.customer_id);
+    }
 
     return createSuccessResponse(created?.entity);
 

@@ -6,7 +6,7 @@ import { DateTime } from 'luxon';
 import i18n from '../shared/i18n/i18n';
 import { BotUser } from '@chargebot-services/core/services/bot_user';
 import { AppInstall } from '@chargebot-services/core/services/app_install';
-import { ExpoPush } from '@chargebot-services/core/services/expo/expo_push';
+import { ExpoPush, Notification } from '@chargebot-services/core/services/expo/expo_push';
 import { ChargebotInverter } from '@chargebot-services/core/services/analytics/chargebot_inverter';
 import { InverterVariable } from '@chargebot-services/core/timescale/chargebot_inverter';
 
@@ -60,9 +60,12 @@ export const main = async () => {
 
         // dispatch alert
         Log.info("SENT ALERT", { alertName: 'Daily Usage', pushTokens, title, message });
-        await ExpoPush.send_push_notifications(pushTokens, message, title,
-          {bot_uuid: bsa.bot.bot_uuid, bot_id: bsa.bot.id, energy_kwh: data.energy_kwh}
-        )
+        const notification: Notification = {
+          title,
+          message,
+          data: {bot_uuid: bsa.bot.bot_uuid, bot_id: bsa.bot.id, energy_kwh: data.energy_kwh}
+        }
+        await ExpoPush.send_push_notifications(pushTokens, notification);
       } else {
         Log.info("No users to be notified");
       }

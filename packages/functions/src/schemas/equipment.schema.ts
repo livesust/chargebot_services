@@ -8,6 +8,7 @@ import { EntitySchema as CustomerSchema } from "./customer.schema";
 const EquipmentSchemaDef = {
     name: Joi.string().max(255),
     brand: Joi.string().max(255).allow(null, ''),
+    rfid: Joi.string().max(255).allow(null, ''),
     description: Joi.string().allow(null, ''),
     voltage: Joi.number().allow(null),
     max_charging_amps: Joi.number().allow(null),
