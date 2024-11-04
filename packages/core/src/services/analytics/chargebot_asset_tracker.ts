@@ -144,6 +144,7 @@ export async function getAssetTrackerTagsStatus(bot_uuid: string): Promise<{
           from chargebot_geocoding
           where bot_assets.latitude = ANY(chargebot_geocoding.latitudes)
           and bot_assets.longitude = ANY(chargebot_geocoding.longitudes)
+          order by timestamp desc limit 1
       ) as last_known_address`
     ])
     .orderBy('status', 'desc')

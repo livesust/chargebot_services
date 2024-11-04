@@ -43,6 +43,28 @@ export function translateVehicleStatus(vehicle_status: VehicleStatus | string | 
     );
 }
 
+export async function getConnectionStatus(bot_uuid: string): Promise<{
+  timestamp: Date,
+  connected: boolean
+}> {
+  // @ts-expect-error not overloads match
+  return db
+    .selectFrom("chargebot_gps")
+    // @ts-expect-error not overloads match
+    .select(() => [
+      sql`max(timestamp) as timestamp`,
+      sql`
+      CASE
+          WHEN max(timestamp) < NOW() - INTERVAL '60 minutes' THEN false
+          ELSE true
+      END as connected`
+    ])
+    .where('device_id', '=', bot_uuid)
+    .orderBy('timestamp', 'desc')
+    .limit(1)
+    .executeTakeFirst();
+}
+
 export async function getLastPositionByBot(bot_uuid: string): Promise<ChargebotLocation | undefined> {
   const location: ChargebotGps | undefined = await db
   .selectFrom("chargebot_gps")

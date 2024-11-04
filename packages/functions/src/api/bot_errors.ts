@@ -35,7 +35,7 @@ const handler = async (event) => {
           const content = typeof(alert.message) === "string" ? JSON.parse(alert.message) : alert.message;
           const title = i18n.__(`push_alerts.${alert.name}.title`);
           const message = i18n.__(`push_alerts.${alert.name}.message`, content);
-          const level = ['battery_critical', 'battery_temperature_critical'].includes(alert.name) ? ErrorLevel.HIGH : ErrorLevel.MEDIUM;
+          const level = ['battery_critical', 'battery_temperature_critical', 'absent_equipment'].includes(alert.name) ? ErrorLevel.HIGH : ErrorLevel.MEDIUM;
           const module = alert.name.includes('battery') ? ErrorModule.BATTERY : ErrorModule.GENERAL;
           return {
             timestamp: alert.timestamp,
