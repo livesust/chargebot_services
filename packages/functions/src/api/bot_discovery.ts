@@ -25,10 +25,6 @@ export const processBotDiscovery = async (bot_uuid: string, device_version: stri
       BotModel.findOneByCriteria({name: 'Trailblazer'})
     ])
 
-    if (bot) {
-      Log.debug("Bot already registered");
-    }
-
     let botFirmwareVersion = await BotFirmwareVersion.findOneByCriteria({version_number: device_version})
     if (!botFirmwareVersion){
       // Create the new Bot Firmware Version
@@ -54,7 +50,6 @@ export const processBotDiscovery = async (bot_uuid: string, device_version: stri
         bot_id: botCreated!.entity!.id!,
         bot_firmware_version_id: botFirmwareVersion!.id!
       });
-      Log.debug("Dispatch bot creation event");
       EventBus.dispatchEvent('bot', "created", botCreated?.entity);
     } else {
       // Search if this version is already associated to bot
@@ -76,11 +71,8 @@ export const processBotDiscovery = async (bot_uuid: string, device_version: stri
           bot_firmware_version_id: botFirmwareVersion!.id!
         });
       }
-      Log.debug("Dispatch bot creation event");
       EventBus.dispatchEvent('bot', "created", bot);
     }
-
-    Log.debug("Bot registered", {bot_uuid});
 
     return createSuccessResponse({ "response": "success" });
 
@@ -101,8 +93,6 @@ const handler = async (event) => {
   // payload will come on body when called from API
   // but direct on event when from IoT
   const body = event. body ?? event;
-
-  Log.debug("Echo from bot", { body });
 
   // bot_uuid from IoT, device_id from API
   const bot_uuid: string = body.bot_uuid ?? body.device_id;

@@ -41,53 +41,75 @@ export async function getConnectionStatus(bot_uuid: string): Promise<{
     .executeTakeFirst();
 }
 
-export async function getOutletStatus(bot_uuid: string, pdu_outlet_number: number): Promise<{timestamp: Date, status: string} | undefined> {
-  // Returns the current status of an outlet and since when is in that status
+export async function getOutletsStatus(bot_uuid: string): Promise<{
+  timestamp: Date,
+  pdu_outlet_number: number,
+  status: string
+}[]> {
+  // Returns the current status of all outlets
   /*
-  WITH status_groups AS (
-      SELECT
-          "timestamp",
-          (case value_int when 0 then 'OFF' when 1 then 'ON' when 2 then 'LIMITED' when 3 then 'OFF SCHEDULE' else 'UNKNOWN' end) as status,
-          ROW_NUMBER() OVER (ORDER BY timestamp DESC) - 
-          ROW_NUMBER() OVER (PARTITION BY value_int ORDER BY "timestamp" DESC) AS block
-      FROM
-          chargebot_pdu
-      where device_id = 'dev_device_33db2037-35b7-4d57-9844-9e08d99de3d1'
-      and variable = 'outlet_state_0'
-  )
-  SELECT
-      "timestamp",
-      status
-  FROM
-      status_groups
-  where block = 0
-  ORDER BY
-      timestamp ASC
-  LIMIT 1;
+  select
+    variable,
+    last("timestamp", "timestamp") as "timestamp",
+    last(value_int, "timestamp") as value
+  from chargebot_pdu
+  where device_id = 'aklAuLg'
+  and variable like 'outlet_state_%'
+  group by variable
   */
   // @ts-expect-error not overloads match
-  const status: {timestamp: Date, status: string} | undefined = await db
-    .with(
-      'status_groups',
-      (db) => db
-        .selectFrom('chargebot_pdu')
-        // @ts-expect-error ignore overload not mapping
-        .select([
-          'timestamp',
-          sql`(case value_int when 0 then 'OFF' when 1 then 'ON' when 2 then 'LIMITED' when 3 then 'OFF_SCHEDULE' else 'UNKNOWN' end) as status`,
-          sql`
-            ROW_NUMBER() OVER (ORDER BY timestamp DESC) -
-            ROW_NUMBER() OVER (PARTITION BY value_int ORDER BY "timestamp" DESC) AS block
-          `
-        ])
-        .where('device_id', '=', bot_uuid)
-        .where('variable', '=', translatePduOutletNumber(pdu_outlet_number))
-    )
-    .selectFrom('status_groups')
-    .select(['timestamp', 'status'])
-    .where('block', '=', 0)
-    .orderBy('timestamp', 'asc')
-    .limit(1)
+  const status: {
+    timestamp: Date,
+    pdu_outlet_number: number,
+    status: string
+  }[] = await db
+    .selectFrom('chargebot_pdu')
+    // @ts-expect-error ignore overload not mapping
+    .select([
+      sql`last("timestamp", "timestamp") as timestamp`,
+      sql`regexp_replace("variable", '[^0-9]*([0-9]+)$', '\\1')::int + 1 AS pdu_outlet_number`,
+      sql`(case last("value_int", "timestamp") when 0 then 'OFF' when 1 then 'ON' when 2 then 'LIMITED' when 3 then 'OFF SCHEDULE' else 'UNKNOWN' end) as status`
+    ])
+    .where('device_id', '=', bot_uuid)
+    .where('variable', 'like', PDUVariable.OUTLET_STATE_WILDCARD)
+    .groupBy('variable')
+    .execute();
+
+  return status;
+}
+
+export async function getOutletStatus(bot_uuid: string, pdu_outlet_number: number): Promise<{
+  timestamp: Date,
+  pdu_outlet_number: number,
+  status: string
+} | undefined> {
+  // Returns the current status of all outlets
+  /*
+  select
+    variable,
+    last("timestamp", "timestamp") as "timestamp",
+    last(value_int, "timestamp") as value
+  from chargebot_pdu
+  where device_id = 'aklAuLg'
+  and variable = 'outlet_state_1'
+  group by variable
+  */
+  // @ts-expect-error not overloads match
+  const status: {
+    timestamp: Date,
+    pdu_outlet_number: number,
+    status: string
+  } = await db
+    .selectFrom('chargebot_pdu')
+    // @ts-expect-error ignore overload not mapping
+    .select([
+      sql`last("timestamp", "timestamp") as timestamp`,
+      sql`regexp_replace("variable", '[^0-9]*([0-9]+)$', '\\1')::int + 1 AS pdu_outlet_number`,
+      sql`(case last("value_int", "timestamp") when 0 then 'OFF' when 1 then 'ON' when 2 then 'LIMITED' when 3 then 'OFF SCHEDULE' else 'UNKNOWN' end) as status`
+    ])
+    .where('device_id', '=', bot_uuid)
+    .where('variable', '=', translatePduOutletNumber(pdu_outlet_number))
+    .groupBy('variable')
     .executeTakeFirst();
 
   return status;
@@ -211,7 +233,7 @@ export async function getStateHistory(bot_uuid: string, from: Date, to: Date): P
   return results;
 }
 
-export function translatePduOutletNumber(pdu_outlet_number: number=0): PDUVariable {
+export function translatePduOutletNumber(pdu_outlet_number: number=1): PDUVariable {
   if (!pdu_outlet_number) {
     return PDUVariable.OUTLET_1_STATE;
   }

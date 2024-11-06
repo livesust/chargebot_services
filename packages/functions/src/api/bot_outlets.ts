@@ -22,16 +22,17 @@ const handler = async (event) => {
   const bot_uuid = event.pathParameters!.bot_uuid!;
 
   try {
-    const [outlets, outletPriority] = await Promise.all([
+    const [outlets, outletPriority, outletsStatus] = await Promise.all([
       Outlet.findByBot(bot_uuid),
-      ChargebotPDU.getOutletPriorityCharging(bot_uuid),      
+      ChargebotPDU.getOutletPriorityCharging(bot_uuid),
+      ChargebotPDU.getOutletsStatus(bot_uuid)
     ]);
 
     // Split the outlet processing into separate promises using map.
     // Each outlet is processed concurrently, allowing for better parallelism.
     const outletPromises = outlets.map(async (outlet) => {
       const [outletStatus, equipment] = await Promise.all([
-        ChargebotPDU.getOutletStatus(bot_uuid, outlet.pdu_outlet_number),
+        outletsStatus.find(s => s.pdu_outlet_number === outlet.pdu_outlet_number),
         Equipment.findByOutlet(outlet.id!)
       ]);
 
