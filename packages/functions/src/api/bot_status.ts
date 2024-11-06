@@ -23,6 +23,8 @@ import { PDUVariable } from "@chargebot-services/core/timescale/chargebot_pdu";
 import { BatteryVariables } from "@chargebot-services/core/timescale/chargebot_battery";
 import { ChargebotSystem } from "@chargebot-services/core/services/analytics/chargebot_system";
 import { SystemVariables } from "@chargebot-services/core/timescale/chargebot_system";
+import { ChargebotTemperature } from "@chargebot-services/core/services/analytics/chargebot_temperature";
+import { ChargebotFan } from "@chargebot-services/core/services/analytics/chargebot_fan";
 
 // @ts-expect-error ignore any type for event
 export const handler = async (event) => {
@@ -30,11 +32,14 @@ export const handler = async (event) => {
 
   try {
     const [
-        batteryStatus, inverterStatus, pduStatus, errorStatus, systemStatus, todayUsage
+        batteryStatus, inverterStatus, inverterConnectionStatus, pduStatus, temperatureStatus, fanStatus, errorStatus, systemStatus, todayUsage
     ] = await Promise.all([
       ChargebotBattery.getBatteryStatus(bot_uuid),
       ChargebotInverter.getInverterStatus(bot_uuid),
+      ChargebotInverter.getConnectionStatus(bot_uuid),
       ChargebotPDU.getPDUStatus(bot_uuid),
+      ChargebotTemperature.getTemperature(bot_uuid),
+      ChargebotFan.getFanStatus(bot_uuid),
       ChargebotError.getSystemStatus(bot_uuid),
       ChargebotSystem.getSystemStatus(bot_uuid),
       ChargebotInverter.getTodayTotals(bot_uuid, [
@@ -43,7 +48,7 @@ export const handler = async (event) => {
         InverterVariable.SOLAR_CHARGE_DIFF,
         InverterVariable.GRID_CHARGE_DIFF,
         InverterVariable.ENERGY_USAGE
-      ]),
+      ])
     ]);
 
     const batteryVariables: { [key: string]: unknown } = batteryStatus.reduce((acc: { [key: string]: unknown }, obj) => {
@@ -81,7 +86,7 @@ export const handler = async (event) => {
     const iotConnected = systemVariables[SystemVariables.CONNECTED] ?? false;
 
     const iotConnectedTime = systemStatus.filter(s => s.variable === SystemVariables.CONNECTED)[0]?.timestamp;
-    const inverterLastReport = inverterStatus?.length > 0 ? DateTime.fromJSDate(inverterStatus[0].timestamp) : null;
+    const inverterLastReport = inverterConnectionStatus?.timestamp ? DateTime.fromJSDate(inverterConnectionStatus?.timestamp) : null;
     const lastSeen = inverterLastReport
       ? inverterLastReport.setZone('UTC').toISO()
       : (iotConnectedTime ? DateTime.fromJSDate(iotConnectedTime).setZone('UTC').toISO() : null);
@@ -90,6 +95,8 @@ export const handler = async (event) => {
 
     const response = {
       bot_uuid,
+      temperature: getNumber(temperatureStatus?.value),
+      fan_status: fanStatus?.value ?? false,
       battery_level: battery_level,
       battery_status: translateBatteryState(batteryVariables[BatteryVariables.STATE] as number),
       output_current: getNumber(pduVariables[PDUVariable.CURRENT]),

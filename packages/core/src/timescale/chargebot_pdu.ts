@@ -28,6 +28,7 @@ export enum PDUVariable {
   CURRENT = 'current',
   STATE = 'state',
   OUTLET_PRIORITY = 'outlet_priority',
+  OUTLET_STATE_WILDCARD = 'outlet_state_%',
   OUTLET_1_STATE = 'outlet_state_0',
   OUTLET_2_STATE = 'outlet_state_1',
   OUTLET_3_STATE = 'outlet_state_2',

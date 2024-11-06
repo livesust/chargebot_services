@@ -2,21 +2,15 @@ export * as ChargebotInverter from "./chargebot_inverter";
 import { sql } from "kysely";
 import db from '../../timescale';
 import { ChargebotInverter, InverterVariable } from "../../timescale/chargebot_inverter";
+import { DateTime } from "luxon";
 
 export async function getInverterStatus(bot_uuid: string): Promise<ChargebotInverter[]> {
-  // @ts-expect-error not overloads match
   return db
     .selectFrom("chargebot_inverter")
-    .distinctOn("variable")
-    .select(({ fn }) => [
+    // @ts-expect-error not overloads match
+    .select(() => [
       'variable',
-      'timestamp',
-      fn.coalesce(
-        'value_int',
-        'value_long',
-        'value_float',
-        'value_double'
-      ).as('value'),
+      sql`last(coalesce (value_int, value_long, value_float, value_double), "timestamp") as value`,
     ])
     .where('device_id', '=', bot_uuid)
     .where('variable', 'in', [
@@ -24,9 +18,72 @@ export async function getInverterStatus(bot_uuid: string): Promise<ChargebotInve
       InverterVariable.GRID_CURRENT,
       InverterVariable.GRID_VOLTAGE
     ])
-    .orderBy('variable', 'desc')
-    .orderBy('timestamp', 'desc')
+    .groupBy('variable')
     .execute();
+}
+
+export async function getHistory(bot_uuid: string, from: Date, to: Date): Promise<{
+  date: Date,
+  variable: string,
+  value: number
+}[]> {
+  const results = await db
+    .with(
+      'interpolated_values',
+      (db) => db
+        .selectFrom('chargebot_inverter')
+        // @ts-expect-error implicit any
+        .select(() => [
+          sql`time_bucket_gapfill('5 minute', "timestamp") AS bucket`,
+          'variable',
+          sql`interpolate(max(coalesce(value_int, value_long, value_float, value_double))) as value`,
+        ])
+        .where('device_id', '=', bot_uuid)
+        .where('variable', 'in', [
+          InverterVariable.GRID_CURRENT,
+          InverterVariable.SOLAR_CURRENT,
+          InverterVariable.GRID_CHARGE_CURRENT
+        ])
+        // Get interpolated data for 1 hour before start time
+        // so it can interpolate with last values from previous hour
+        .where((eb) => eb.between('timestamp', DateTime.fromJSDate(from).minus({hour: 1}).toJSDate(), to))
+        .groupBy(['bucket', 'variable'])
+        .orderBy('bucket', 'asc')
+        .orderBy('variable', 'asc')
+    )
+    .selectFrom("interpolated_values")
+    .select(() => [
+      'bucket as date',
+      'variable',
+      sql`value as value`,
+    ])
+    .where((eb) => eb.between('bucket', from, to))
+    .execute();
+
+    // @ts-expect-error not overloads match
+    return results;
+}
+
+export async function getConnectionStatus(bot_uuid: string): Promise<{
+  timestamp: Date,
+  connected: boolean
+}> {
+  // @ts-expect-error not overloads match
+  return db
+    .selectFrom("chargebot_inverter")
+    // @ts-expect-error not overloads match
+    .select(() => [
+      sql`max(timestamp) as timestamp`,
+      sql`
+      CASE
+          WHEN max(timestamp) < NOW() - INTERVAL '30 minutes' THEN false
+          ELSE true
+      END as connected`
+    ])
+    .where('device_id', '=', bot_uuid)
+    .orderBy('timestamp', 'desc')
+    .limit(1)
+    .executeTakeFirst()
 }
 
 export async function getTodayTotals(bot_uuid: string, variable: InverterVariable[]): Promise<{

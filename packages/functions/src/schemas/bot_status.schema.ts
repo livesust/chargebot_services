@@ -3,6 +3,8 @@ import {  JsonResponseSchemaDef } from "../shared/schemas";
 
 const BotStatusSchemaDef = {
     bot_uuid: Joi.string().allow(null, ''),
+    temperature: Joi.number().allow(null),
+    fan_status: Joi.bool().allow(null),
     battery_level: Joi.number().allow(null),
     battery_status: Joi.string().allow(null, ''),
     output_current: Joi.number().allow(null),

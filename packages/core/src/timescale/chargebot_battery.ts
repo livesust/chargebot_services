@@ -39,6 +39,8 @@ export enum BatteryVariables {
   CUMULATIVE_DISCHARGE_KWH = 'cumulative_discharge_kWh',
   CUMULATIVE_DISCHARGE_TIME = 'cumulative_discharge_time',
   CYCLE_COUNTS = 'cycle_counts',
+  VOLTAGE = 'momentary_voltage',
+  CURRENT = 'momentary_current',
 }
 
 export enum BatteryFirmwareState {

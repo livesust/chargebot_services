@@ -14,12 +14,6 @@ import { processBotDiscovery } from "./bot_discovery";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
-  // payload will come on body when called from API
-  // but direct on event when from IoT
-  const body = event.body ?? event;
-
-  Log.debug("System Shadow Connection Status from bot", { body });
-
   // bot_uuid from IoT, device_id from API
   const data = event.state;
   const device_id = data.device_id ?? event.thingName;
@@ -29,7 +23,7 @@ const handler = async (event) => {
       return createError(400, "bot uuid not provided", { expose: true });
     }
 
-    const connectedStatus = await ChargebotSystem.updateConnectionStatus({
+    await ChargebotSystem.updateConnectionStatus({
       device_id: device_id,
       device_version: data.device_version ?? "unknown",
       timestamp: new Date(),
@@ -38,8 +32,6 @@ const handler = async (event) => {
       value_boolean: data.connected === "true",
       data_type: "boolean"
     });
-
-    Log.debug("Status registered", {connectedStatus});
 
     await processBotDiscovery(device_id, data.device_version);
 

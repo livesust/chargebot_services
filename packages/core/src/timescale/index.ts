@@ -8,6 +8,8 @@ import { ChargebotErrorTable } from "./chargebot_error";
 import { ChargebotAlertTable } from "./chargebot_alert";
 import { ChargebotGeocodingTable } from "./chargebot_geocoding";
 import { ChargebotSystemTable } from "./chargebot_system";
+import { ChargebotTemperatureTable } from "./chargebot_temperature";
+import { ChargebotFanTable } from "./chargebot_fan";
 import { ChargebotAssetTrackerTable } from "./chargebot_asset_tracker";
 import { Config } from "sst/node/config";
 import { ChargebotBatteryLevelAggregate } from "./chargebot_battery_level_aggregate";
@@ -21,6 +23,8 @@ export interface AnalyticsDatabase {
     chargebot_alert: ChargebotAlertTable,
     chargebot_geocoding: ChargebotGeocodingTable,
     chargebot_system: ChargebotSystemTable,
+    chargebot_temperature: ChargebotTemperatureTable,
+    chargebot_fan: ChargebotFanTable,
     chargebot_battery_level_aggregate: ChargebotBatteryLevelAggregate,
     chargebot_asset_tracker: ChargebotAssetTrackerTable,
 }
@@ -37,11 +41,13 @@ const psqlDialect = new PostgresDialect({
         port: +Config.TIMESCALE_PORT,
         // maximum number of clients the pool should contain
         // by default this is set to 10.
-        max: 50,
+        max: 25,
         // number of milliseconds a client must sit idle in the pool and not be checked out
         // before it is disconnected from the backend and discarded
         // default is 10000 (10 seconds) - set to 0 to disable auto-disconnection of idle clients
-        idleTimeoutMillis: 30000
+        idleTimeoutMillis: 30000,
+        // timeout for new connections
+        connectionTimeoutMillis: 2000
     })
 })
 
