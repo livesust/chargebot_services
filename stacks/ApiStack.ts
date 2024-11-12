@@ -144,21 +144,28 @@ export function ApiStack({ app, stack }: StackContext) {
       "GET /bot/status/summary": {
         function: {
           handler: "packages/functions/src/api/bot_status_summary.main",
-          memorySize: "2 GB"
+          memorySize: "1 GB"
         }
       },
       "GET /bot/{bot_uuid}/status": {
         function: {
           handler: "packages/functions/src/api/bot_status.main",
-          memorySize: "2 GB"
+          memorySize: "1 GB"
+        }
+      },
+      "GET /bot/{bot_uuid}/status_v2": {
+        function: {
+          handler: "packages/functions/src/api/bot_status_v2.main",
+          memorySize: "1 GB"
         }
       },
       "GET /bot/{bot_uuid}/status/encrypted": "packages/functions/src/api/bot_status_encrypted.main",
       "GET /bot/{bot_uuid}/hardware_status": "packages/functions/src/api/bot_hardware_status.main",
+      "GET /bot/{bot_uuid}/hardware_status_v2": "packages/functions/src/api/bot_hardware_status_v2.main",
       "GET /bot/{bot_uuid}/pdu/from/{from}/to/{to}": {
         function: {
           handler: "packages/functions/src/api/bot_pdu_history.main",
-          memorySize: "2 GB"
+          memorySize: "1 GB"
         }
       },
       "GET /bot/{bot_uuid}/inverter/from/{from}/to/{to}": {

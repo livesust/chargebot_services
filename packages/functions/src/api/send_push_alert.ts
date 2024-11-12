@@ -67,7 +67,7 @@ const handler = async (event) => {
     return createSuccessResponse({ "response": "success" });
 
   } catch (error) {
-    Log.error("ERROR", { error });
+    Log.error("ERROR", { error, alert });
     if (error instanceof HttpError) {
       // re-throw when is a http error generated above
       throw error;
