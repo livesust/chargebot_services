@@ -35,7 +35,7 @@ const handler = async (event) => {
   console.log('GPS Parked Report', gpsLocation.lat, gpsLocation.lon);
 
   // search for an existent geocoding entry for lat/lon
-  const exists = await ChargebotGeocoding.getByLatLon(gpsLocation.lat, gpsLocation.lon);
+  const exists = await ChargebotGeocoding.exists(gpsLocation.lat, gpsLocation.lon);
 
   if (exists) {
     console.log('GPS Position already geocoded');
@@ -58,9 +58,7 @@ const handler = async (event) => {
 
   if (geocoding) {
     // append GPS lat/long to current geocoding place id
-    geocoding.latitudes = geocoding.latitudes ? [...geocoding.latitudes, gpsLocation.lat] : [gpsLocation.lat];
-    geocoding.longitudes = geocoding.longitudes ? [...geocoding.longitudes, gpsLocation.lon] : [gpsLocation.lon];
-    await ChargebotGeocoding.update(geocoding.id, geocoding);
+    await ChargebotGeocoding.addLatLong(geocoding.id, gpsLocation.lat, gpsLocation.lon);
     console.log('GPS Reverse Geocoding Updated lats/lons');
   } else {
     // create new geocoding for the lat/lon and place id

@@ -64,7 +64,7 @@ export const handler = async (event) => {
       // re-throw when is a http error generated above
       throw error;
     }
-    const httpError = createError(406, "cannot assign equipment to outlet", { expose: true });
+    const httpError = createError(406, "cannot control outlet", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;
   }
