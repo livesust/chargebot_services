@@ -32,6 +32,7 @@ const handler = async (event) => {
 
   // bot_uuid from IoT, device_id from API
   const bot_uuid = alert.bot_uuid ?? alert.device_id;
+  Log.info("Process Alert: ", {bot_uuid, alert});
 
   try {
     if (!bot_uuid) {
@@ -54,9 +55,14 @@ const handler = async (event) => {
 
     const usersByBot = await BotUser.findByCriteria({ bot_id: bot.id });
     const user_ids = usersByBot.map(ub => ub.user_id);
+
+    if (user_ids?.length === 0) {
+      Log.info("No users to be notified");
+      return createSuccessResponse({ "response": "success" });
+    }
+
     const appInstalls = await AppInstall.getAppsToNotify(user_ids);
     const pushTokens = appInstalls?.map(ai => ai.push_token!);
-
     if (pushTokens && pushTokens.length > 0) {
       Log.info("SENT ALERT", { title: notification.title, pushTokens });
       ExpoPush.send_push_notifications(pushTokens, notification)

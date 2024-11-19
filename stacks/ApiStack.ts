@@ -265,6 +265,24 @@ export function ApiStack({ app, stack }: StackContext) {
           bind: [IOT_ENDPOINT],
         }
       },
+      "POST /bot/{bot_uuid}/pdu_shutdown": {
+        function: {
+          handler: "packages/functions/src/api/pdu_shutdown.main",
+          timeout,
+          // @ts-expect-error ignore check
+          role: iotRole,
+          bind: [IOT_ENDPOINT],
+        }
+      },
+      "POST /bot/{bot_uuid}/pdu_startup": {
+        function: {
+          handler: "packages/functions/src/api/pdu_startup.main",
+          timeout,
+          // @ts-expect-error ignore check
+          role: iotRole,
+          bind: [IOT_ENDPOINT],
+        }
+      },
       "GET /bot/{bot_uuid}/configs": { 
         function: {
           handler: "packages/functions/src/api/bot_get_shadow_configs.main",
@@ -366,13 +384,11 @@ export function ApiStack({ app, stack }: StackContext) {
         }
       },
       "GET /components/bot/{bot_id}": "packages/functions/src/api/get_components_by_bot.main",
-      // UNCOMMENT JUST FOR TESTING IN DEV MODE
-      // IN OTHER CASE THE Throttling will cause errors when processing from Kafka
-      // "POST /test-gps-geocoding": {
-      //   cdk: {
-      //     function: functions.processIotGpsParkedFunction,
-      //   }
-      // }
+      "POST /process-gps-geocoding": {
+        cdk: {
+          function: functions.processIotGpsParkedFunction,
+        }
+      }
     }
   });
 

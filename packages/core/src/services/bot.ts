@@ -18,6 +18,7 @@ export function withBotModel(eb: ExpressionBuilder<Database, 'bot'>) {
 export function withBotFirmwareVersion(eb: ExpressionBuilder<Database, 'bot'>) {
     return jsonObjectFrom(
       eb.selectFrom('bot_firmware_version')
+        .distinct()
         .innerJoin('bot_firmware_install', 'bot_firmware_install.bot_firmware_version_id', 'bot_firmware_version.id')
         .selectAll("bot_firmware_version")
         .whereRef('bot_firmware_install.bot_id', '=', 'bot.id')

@@ -1,10 +1,8 @@
 import middy from "@middy/core";
 import warmup from "@middy/warmup";
-import Log from '@dazn/lambda-powertools-logger';
 import { createError, HttpError } from '@middy/util';
+import Log from '@dazn/lambda-powertools-logger';
 import httpErrorHandler from "@middy/http-error-handler";
-import { PathParamSchema } from "../schemas/get_components_by_bot.schema";
-import { ArrayResponseSchema } from "../schemas/component.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import httpSecurityHeaders from '@middy/http-security-headers';
@@ -12,22 +10,35 @@ import httpEventNormalizer from '@middy/http-event-normalizer';
 // import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
-import { Component } from "@chargebot-services/core/services/component";
+import { BotUUIDPathParamSchema, SuccessResponseSchema } from "src/shared/schemas";
+import { IoTData } from "@chargebot-services/core/services/aws/iot_data";
 
 // @ts-expect-error ignore any type for event
-const handler = async (event) => {
-  const bot_id = +event.pathParameters!.bot_id!;
+export const handler = async (event) => {
+  const bot_uuid = event.pathParameters!.bot_uuid!;
 
   try {
-    const components = await Component.findByBot(bot_id);
-    return createSuccessResponse(components);
+    const payload = {
+      "command": "pdu_startup"
+    };
+
+    const topic = `chargebot/control/${bot_uuid}/pdu`;
+
+    const sent = await IoTData.publish(topic, payload);
+
+    if (sent) {
+      return createSuccessResponse({ "response": "success" });
+    } else {
+      throw createError(406, "error publishing command to device", { expose: true });
+    }
+
   } catch (error) {
     Log.error("ERROR", { error });
     if (error instanceof HttpError) {
       // re-throw when is a http error generated above
       throw error;
     }
-    const httpError = createError(406, "cannot get components by bot", { expose: true });
+    const httpError = createError(406, "cannot control pdu", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;
   }
@@ -39,11 +50,13 @@ export const main = middy(handler)
   // .use(executionTimeLogger())
   .use(httpEventNormalizer())
   // .use(logTimeout())
-  .use(validator({ pathParametersSchema: PathParamSchema }))
+  .use(validator({
+    pathParametersSchema: BotUUIDPathParamSchema
+  }))
   // after: inverse order execution
   .use(jsonBodySerializer())
   .use(httpSecurityHeaders())
-  .use(validator({ responseSchema: ArrayResponseSchema }))
+  .use(validator({ responseSchema: SuccessResponseSchema }))
   // httpErrorHandler must be the last error handler attached, first to execute.
   // When non-http errors (those without statusCode) occur they will be returned with a 500 status code.
   .use(httpErrorHandler());
