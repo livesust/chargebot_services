@@ -33,6 +33,7 @@ function getBotInstance() {
         "bot_uuid": getRandom('text'),
         "initials": getRandom('varchar', 2),
         "name": getRandom('varchar', 255),
+        "notes": getRandom('text'),
         "pin_color": getRandom('varchar', 100),
         // @ts-expect-error ignore any type error
         "bot_status_id": bot_status.id,

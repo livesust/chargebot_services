@@ -382,6 +382,13 @@ function getCriteriaQuery(query: any, criteria: Partial<Bot>): any {
       criteria.name === null ? null : `%${ criteria.name }%`
     );
   }
+  if (criteria.notes !== undefined) {
+    query = query.where(
+      'bot.notes', 
+      criteria.notes === null ? 'is' : 'like', 
+      criteria.notes === null ? null : `%${ criteria.notes }%`
+    );
+  }
   if (criteria.pin_color !== undefined) {
     query = query.where(
       'bot.pin_color', 

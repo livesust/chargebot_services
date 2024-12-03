@@ -15,6 +15,7 @@ const BotSchemaDef = {
     bot_uuid: Joi.string(),
     initials: Joi.string().max(2),
     name: Joi.string().max(255),
+    notes: Joi.string().allow(null, ''),
     pin_color: Joi.string().max(100).allow(null, ''),
 };
 

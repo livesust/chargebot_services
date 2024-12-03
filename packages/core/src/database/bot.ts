@@ -9,6 +9,7 @@ export interface BotTable extends AuditedEntity {
   bot_uuid: string;
   initials: string;
   name: string;
+  notes?: string;
   pin_color?: string;
   bot_status_id: number;
   bot_model_id: number;
