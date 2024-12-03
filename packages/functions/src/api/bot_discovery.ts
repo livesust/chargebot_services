@@ -13,6 +13,7 @@ import { BotFirmwareVersion } from "@chargebot-services/core/services/bot_firmwa
 import { BotFirmwareInstall } from "@chargebot-services/core/services/bot_firmware_install";
 import { EventBus } from "@chargebot-services/core/services/aws/event_bus";
 import { BotModel } from "@chargebot-services/core/services/bot_model";
+import { BotStatus } from "@chargebot-services/core/services/bot_status";
 
 export const processBotDiscovery = async (bot_uuid: string, device_version: string) => {
   try {
@@ -20,9 +21,10 @@ export const processBotDiscovery = async (bot_uuid: string, device_version: stri
       return createError(400, "bot uuid not provided", { expose: true });
     }
 
-    const [bot, botModel] = await Promise.all([
+    const [bot, botModel, botStatus] = await Promise.all([
       Bot.findOneByCriteria({ bot_uuid }),
-      BotModel.findOneByCriteria({name: 'Trailblazer'})
+      BotModel.findOneByCriteria({name: 'Trailblazer'}),
+      BotStatus.findOneByCriteria({name: 'In Warehouse'})
     ])
 
     let botFirmwareVersion = await BotFirmwareVersion.findOneByCriteria({version_number: device_version})
@@ -41,7 +43,8 @@ export const processBotDiscovery = async (bot_uuid: string, device_version: stri
         bot_uuid,
         name: bot_uuid,
         initials: bot_uuid.substring(0, 2),
-        bot_model_id: botModel!.id!
+        bot_model_id: botModel!.id!,
+        bot_status_id: botStatus!.id!,
       });
       // Associate the version
       await BotFirmwareInstall.create({

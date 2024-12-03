@@ -6,6 +6,15 @@ import { BusinessError } from "../errors/business_error";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { Bot, BotUpdate, NewBot } from "../database/bot";
 
+export function withBotStatus(eb: ExpressionBuilder<Database, 'bot'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('bot_status')
+        .selectAll()
+        .whereRef('bot_status.id', '=', 'bot.bot_status_id')
+        .where('bot_status.deleted_by', 'is', null)
+    ).as('bot_status')
+}
+
 export function withBotModel(eb: ExpressionBuilder<Database, 'bot'>) {
     return jsonObjectFrom(
       eb.selectFrom('bot_model')
@@ -25,6 +34,7 @@ export function withBotFirmwareVersion(eb: ExpressionBuilder<Database, 'bot'>) {
         .where('bot_firmware_install.active', 'is', true)
         .where('bot_firmware_version.deleted_by', 'is', null)
         .where('bot_firmware_install.deleted_by', 'is', null)
+        .limit(1)
     ).as('bot_firmware_version')
 }
 
@@ -171,6 +181,7 @@ export async function list(): Promise<Bot[]> {
     return db
         .selectFrom("bot")
         .selectAll("bot")
+        .select((eb) => withBotStatus(eb))
         .select((eb) => withBotModel(eb))
         .select((eb) => withBotFirmwareVersion(eb))
         .select((eb) => withVehicle(eb))
@@ -193,6 +204,7 @@ export async function paginate(page: number, pageSize: number, sort: OrderByDire
   const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("bot").where('bot.deleted_by', 'is', null);
   return query
       .selectAll("bot")
+      .select((eb) => withBotStatus(eb))
       .select((eb) => withBotModel(eb))
       .select((eb) => withBotFirmwareVersion(eb))
       .select((eb) => withVehicle(eb))
@@ -216,6 +228,7 @@ export async function get(id: number): Promise<Bot | undefined> {
     return db
         .selectFrom("bot")
         .selectAll("bot")
+        .select((eb) => withBotStatus(eb))
         .select((eb) => withBotModel(eb))
         .select((eb) => withBotFirmwareVersion(eb))
         .select((eb) => withVehicle(eb))
@@ -258,12 +271,13 @@ export async function findBotByEquipment(equipment_id: number): Promise<Bot | un
     .where('outlet.deleted_by', 'is', null)
     .where('outlet_equipment.deleted_by', 'is', null)
     .selectAll('bot')
-    .executeTakeFirst();
+        .executeTakeFirst();
 }
 
 export async function findByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
   return buildSelectQuery(criteria)
     .selectAll("bot")
+    .select((eb) => withBotStatus(eb))
     .select((eb) => withBotModel(eb))
     .select((eb) => withBotFirmwareVersion(eb))
     .select((eb) => withVehicle(eb))
@@ -280,6 +294,7 @@ export async function lazyFindByCriteria(criteria: Partial<Bot>): Promise<Bot[]>
 export async function findOneByCriteria(criteria: Partial<Bot>): Promise<Bot | undefined> {
   return buildSelectQuery(criteria)
     .selectAll("bot")
+    .select((eb) => withBotStatus(eb))
     .select((eb) => withBotModel(eb))
     .select((eb) => withBotFirmwareVersion(eb))
     .select((eb) => withVehicle(eb))
@@ -375,6 +390,9 @@ function getCriteriaQuery(query: any, criteria: Partial<Bot>): any {
     );
   }
 
+  if (criteria.bot_status_id) {
+    query = query.where('bot.bot_status_id', '=', criteria.bot_status_id);
+  }
   if (criteria.bot_model_id) {
     query = query.where('bot.bot_model_id', '=', criteria.bot_model_id);
   }

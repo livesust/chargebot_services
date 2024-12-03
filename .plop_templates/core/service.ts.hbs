@@ -249,7 +249,7 @@ export async function paginate(page: number, pageSize: number, sort: OrderByDire
 export async function lazyGet(id: number): Promise<{{pascalCase name}} | undefined> {
     return db
         .selectFrom("{{snakeCase name}}")
-        .selectAll()
+        .selectAll("{{snakeCase name}}")
         .where('{{snakeCase name}}.id', '=', id)
         .where('{{snakeCase name}}.deleted_by', 'is', null)
         .executeTakeFirst();
@@ -258,7 +258,7 @@ export async function lazyGet(id: number): Promise<{{pascalCase name}} | undefin
 export async function get(id: number): Promise<{{pascalCase name}} | undefined> {
     return db
         .selectFrom("{{snakeCase name}}")
-        .selectAll()
+        .selectAll("{{snakeCase name}}")
         {{#each relationships}}
           {{#when relation_type 'eq' 'many-to-one'}}
             {{#if eager}}

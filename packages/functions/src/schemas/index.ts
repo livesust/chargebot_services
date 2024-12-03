@@ -37,6 +37,7 @@ import * as BotFirmwareVersion from "./bot_firmware_version.schema";
 import * as BotModel from "./bot_model.schema";
 import * as BotModelComponent from "./bot_model_component.schema";
 import * as ComponentAttribute from "./component_attribute.schema";
+import * as BotStatus from "./bot_status.schema";
 // DO NOT REMOVE THIS LINE: PLOP SCHEMA IMPORT
 
 export const loadSchemas = (entity_name: string) => {
@@ -79,6 +80,7 @@ export const loadSchemas = (entity_name: string) => {
     if ("bot_model" === entity_name) { schema = BotModel; }
     if ("bot_model_component" === entity_name) { schema = BotModelComponent; }
     if ("component_attribute" === entity_name) { schema = ComponentAttribute; }
+    if ("bot_status" === entity_name) { schema = BotStatus; }
 // DO NOT REMOVE THIS LINE: PLOP SCHEMA IF
 
   if (!schema) {
