@@ -39,6 +39,7 @@ import { BotFirmwareVersionTable } from "./bot_firmware_version";
 import { BotModelTable } from "./bot_model";
 import { BotModelComponentTable } from "./bot_model_component";
 import { ComponentAttributeTable } from "./component_attribute";
+import { BotStatusTable } from "./bot_status";
 // DO NOT REMOVE THIS LINE: PLOP ENTITY IMPORT
 
 export function json<T>(value: T): RawBuilder<T> {
@@ -82,6 +83,7 @@ export interface Database {
   bot_model: BotModelTable,
   bot_model_component: BotModelComponentTable,
   component_attribute: ComponentAttributeTable,
+  bot_status: BotStatusTable,
 // DO NOT REMOVE THIS LINE: PLOP ENTITY LIST
 }
 

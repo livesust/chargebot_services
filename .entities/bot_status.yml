@@ -1,0 +1,13 @@
+name: bot_status
+attributes:
+  - attribute: name
+    type: text
+    tsType: string
+    unique: false
+    not_null: true
+  - attribute: display_on_dashboard
+    type: boolean
+    tsType: boolean
+    unique: false
+    not_null: false
+relationships: []

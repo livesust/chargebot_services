@@ -37,6 +37,7 @@ import { BotFirmwareVersion } from "./bot_firmware_version";
 import { BotModel } from "./bot_model";
 import { BotModelComponent } from "./bot_model_component";
 import { ComponentAttribute } from "./component_attribute";
+import { BotStatus } from "./bot_status";
 // DO NOT REMOVE THIS LINE: PLOP SERVICE IMPORT
 
 export const loadService = async (entity_name: string) => {
@@ -79,6 +80,7 @@ export const loadService = async (entity_name: string) => {
     if ("bot_model" === entity_name) { service = BotModel; }
     if ("bot_model_component" === entity_name) { service = BotModelComponent; }
     if ("component_attribute" === entity_name) { service = ComponentAttribute; }
+    if ("bot_status" === entity_name) { service = BotStatus; }
 // DO NOT REMOVE THIS LINE: PLOP SERVICE IF
 
   if (!service) {

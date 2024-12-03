@@ -1,7 +1,7 @@
 import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import httpErrorHandler from "@middy/http-error-handler";
-import { ResponseSchema } from "../schemas/bot_status.schema";
+import { ResponseSchema } from "../schemas/bot_current_status.schema";
 import validator from "../shared/middlewares/joi-validator";
 import encrypt from "../shared/middlewares/encrypt";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
