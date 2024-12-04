@@ -17,6 +17,7 @@ const BotSchemaDef = {
     name: Joi.string().max(255),
     notes: Joi.string().allow(null, ''),
     pin_color: Joi.string().max(100).allow(null, ''),
+    attachments: Joi.array().items(Joi.string())
 };
 
 export const EntitySchema = Joi.object({

@@ -17,6 +17,9 @@ const {{pascalCase name}}SchemaDef = {
     {{#when tsType 'eq' 'string'}}
     {{snakeCase attribute}}: Joi.string(){{#when varchar_length "gt" 0}}.max({{varchar_length}}){{/when}}{{#when not_null 'eq' false}}.allow(null, ''){{/when}},
     {{/when}}
+    {{#when tsType 'eq' 'string[]'}}
+    {{snakeCase attribute}}: Joi.array().items(Joi.string()),
+    {{/when}}
     {{#when tsType 'eq' 'number'}}
     {{snakeCase attribute}}: Joi.number(){{#when not_null 'eq' false}}.allow(null){{/when}},
     {{/when}}

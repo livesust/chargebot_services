@@ -23,8 +23,9 @@ export function ApiStack({ app, stack }: StackContext) {
   // lambda functions timeout
   const timeout = app.stage === "prod" ? "30 seconds" : "60 seconds";
 
-  // S3 Bucket
-  const bucket = new Bucket(stack, "userProfile");
+  // S3 Buckets
+  const bucketUserProfile = new Bucket(stack, "userProfile");
+  const bucketBotAttachments = new Bucket(stack, "botAttachments");
 
   // Create an IAM role
   // @ts-expect-error implicit any
@@ -313,7 +314,7 @@ export function ApiStack({ app, stack }: StackContext) {
       "GET /user/{cognito_id}/profile": {
         function: {
           handler: "packages/functions/src/api/get_user_profile.main",
-          bind: [bucket]
+          bind: [bucketUserProfile]
         }
       },
       "PUT /user/{cognito_id}/photo": {
@@ -324,7 +325,24 @@ export function ApiStack({ app, stack }: StackContext) {
           nodejs: {
             install: ["sharp"],
           },
-          bind: [bucket],
+          bind: [bucketUserProfile],
+        },
+      },
+      "GET /bot/{bot_id}/attachments": {
+        function: {
+          handler: "packages/functions/src/api/get_bot_attachments.main",
+          bind: [bucketBotAttachments]
+        }
+      },
+      "PUT /bot/{bot_id}/attachments": {
+        function: {
+          handler: "packages/functions/src/api/upload_bot_attachment.main",
+          // @ts-expect-error ignore type errors
+          layers: [lambdaLayers.sharpLayer],
+          nodejs: {
+            install: ["sharp"],
+          },
+          bind: [bucketBotAttachments],
         },
       },
       "POST /user/{cognito_id}/register_app_install": "packages/functions/src/api/register_app_install.main",
@@ -401,7 +419,7 @@ export function ApiStack({ app, stack }: StackContext) {
   stack.addOutputs({
     ApiEndpoint: api.url,
     ApiDomainUrl: api.customDomainUrl,
-    BucketName: bucket.bucketName,
+    BucketName: bucketUserProfile.bucketName,
     GpsParkedLambdaArn: functions.processIotGpsParkedFunction.functionArn,
   });
 }
