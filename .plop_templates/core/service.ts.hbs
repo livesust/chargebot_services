@@ -2,7 +2,7 @@ export * as {{pascalCase name}} from "./{{snakeCase name}}";
 import { OrderByDirection } from "kysely/dist/cjs/parser/order-by-parser";
 import db{{#if relationships}}, { Database{{#any attributes 'type' 'eq' 'json'}}, json{{/any}} }{{/if}} from '../database';
 {{#if relationships}}
-import { ExpressionBuilder, UpdateResult } from "kysely";
+import { ExpressionBuilder, sql, UpdateResult } from "kysely";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 {{else}}
 import { UpdateResult } from "kysely";
@@ -380,10 +380,17 @@ function getCriteriaQuery(query: any, criteria: Partial<{{pascalCase name}}>): a
     );
   }
   {{/when}}
+  {{#when tsType 'eq' 'string[]'}}
+  if (criteria.{{snakeCase attribute}} !== undefined) {
+    query = query.where(sql`array_position('{{snakeCase ../name}}.{{snakeCase attribute}}', ${ criteria.{{snakeCase attribute}} }) IS NOT NULL`);
+  }
+  {{/when}}
   {{#when tsType 'neq' 'string'}}
+    {{#when tsType 'neq' 'string[]'}}
   if (criteria.{{snakeCase attribute}}) {
     query = query.where('{{snakeCase ../name}}.{{snakeCase attribute}}', '=', criteria.{{snakeCase attribute}});
   }
+    {{/when}}
   {{/when}}
 {{/each}}
 

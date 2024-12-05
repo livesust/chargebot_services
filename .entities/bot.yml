@@ -15,10 +15,20 @@ attributes:
     varchar_length: '255'
     tsType: string
     not_null: true
+  - attribute: notes
+    type: text
+    tsType: string
+    unique: false
+    not_null: false
   - attribute: pin color
     type: varchar
     varchar_length: '100'
     tsType: string
+    not_null: false
+  - attribute: attachments
+    type: text[]
+    tsType: string[]
+    unique: false
     not_null: false
 relationships:
   - entity: bot_status
