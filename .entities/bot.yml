@@ -26,8 +26,8 @@ attributes:
     tsType: string
     not_null: false
   - attribute: attachments
-    type: 'text[]'
-    tsType: 'string[]'
+    type: text[]
+    tsType: string[]
     unique: false
     not_null: false
 relationships:

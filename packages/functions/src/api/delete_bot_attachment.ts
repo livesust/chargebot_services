@@ -1,5 +1,4 @@
 import middy from "@middy/core";
-import sharp from "sharp";
 import warmup from "@middy/warmup";
 import Log from '@dazn/lambda-powertools-logger';
 import { createError, HttpError } from '@middy/util';
@@ -13,18 +12,13 @@ import httpEventNormalizer from '@middy/http-event-normalizer';
 import { createNotFoundResponse, createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { S3 } from "@chargebot-services/core/services/aws/s3";
 import { Bucket } from "sst/node/bucket";
-import parser from "lambda-multipart-parser";
 import Joi from "joi";
 import { Bot } from "@chargebot-services/core/services/bot";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
   const bot_id = +event.pathParameters!.bot_id!;
-  const fileContent = await parser.parse(event);  
-
-  if (fileContent?.files?.length == 0) {
-    return createNotFoundResponse("file missing");
-  }
+  const filename = event.pathParameters!.filename!;
 
   const bot = await Bot.get(bot_id)
   if (!bot) {
@@ -33,25 +27,13 @@ const handler = async (event) => {
   }
 
   try {
-    const file = fileContent.files[0];
-    let fileBuffer = file.content;
-    if (file.contentType !== 'application/pdf') {
-      // Sharp images
-      fileBuffer = await sharp(fileBuffer)
-      .resize({
-        fit: "inside"
-      })
-      .jpeg({ mozjpeg: true })
-      .toBuffer();
-    }
-    
-    const upload = await S3.putObject(Bucket.botAttachments.bucketName, `bot_${bot.bot_uuid}_${file.filename}`, fileBuffer, file.contentType !== 'application/pdf' ? 'image/jpeg' : 'application/pdf');
+    const deleted = await S3.deleteObject(Bucket.botAttachments.bucketName, filename);
 
-    if (upload) {
-      await Bot.addAttachment(bot.id!, `bot_${bot.bot_uuid}_${file.filename}`);
+    if (deleted) {
+      await Bot.removeAttachment(bot.id!, filename);
     }
 
-    return upload ? createSuccessResponse({ "response": "success" }) : createError(406, "Error uploading file to S3");
+    return deleted ? createSuccessResponse({ "response": "success" }) : createError(406, "Error removing file from S3");
 
   } catch (error) {
     Log.error("ERROR", { error });
@@ -59,7 +41,7 @@ const handler = async (event) => {
       // re-throw when is a http error generated above
       throw error;
     }
-    const httpError = createError(406, "cannot upload bot attachment", { expose: true });
+    const httpError = createError(406, "cannot remove bot attachment", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;
   }
@@ -72,7 +54,8 @@ export const main = middy(handler)
   .use(httpEventNormalizer())
   // .use(logTimeout())
   .use(validator({ pathParametersSchema: Joi.object({
-    bot_id: Joi.string().required()
+    bot_id: Joi.string().required(),
+    filename: Joi.string().required()
   }) }))
   // after: inverse order execution
   .use(jsonBodySerializer())

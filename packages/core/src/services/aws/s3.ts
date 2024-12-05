@@ -1,11 +1,11 @@
 export * as S3 from "./s3";
-import { S3Client, GetObjectCommand, PutObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const s3Client = new S3Client({});
 
 // Get URL to directly PUT an image into S3
-export const getUploadUrl = async (bucket: string, key: string): Promise<unknown> => {
+export const getUploadUrl = async (bucket: string, key: string): Promise<string> => {
   const command = new PutObjectCommand({
     Bucket: bucket,
     Key: key,
@@ -15,7 +15,7 @@ export const getUploadUrl = async (bucket: string, key: string): Promise<unknown
 }
 
 // Get URL to directly GET an image from S3
-export const getDownloadUrl = async (bucket: string, key: string): Promise<unknown> => {
+export const getDownloadUrl = async (bucket: string, key: string): Promise<string> => {
   const command = new GetObjectCommand({
     Bucket: bucket,
     Key: key
@@ -57,6 +57,24 @@ export const putObject = async (bucket: string, key: string, body: Uint8Array, c
     const response = await s3Client.send(command);
     // The Body object also has 'transformToByteArray' and 'transformToWebStream' methods.
     return response?.$metadata.httpStatusCode == 200;
+  } catch (err) {
+    console.error(err);
+  }
+
+  return undefined;
+}
+
+// Delete Object from S3
+export const deleteObject = async (bucket: string, key: string): Promise<boolean | undefined> => {
+  const command = new DeleteObjectCommand({
+    Bucket: bucket,
+    Key: key,
+  });
+
+
+  try {
+    const response = await s3Client.send(command);
+    return response?.$metadata.httpStatusCode == 204;
   } catch (err) {
     console.error(err);
   }

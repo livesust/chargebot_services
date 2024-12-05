@@ -334,7 +334,7 @@ export function ApiStack({ app, stack }: StackContext) {
           bind: [bucketBotAttachments]
         }
       },
-      "PUT /bot/{bot_id}/attachments": {
+      "PUT /bot/{bot_id}/attachment": {
         function: {
           handler: "packages/functions/src/api/upload_bot_attachment.main",
           // @ts-expect-error ignore type errors
@@ -342,6 +342,12 @@ export function ApiStack({ app, stack }: StackContext) {
           nodejs: {
             install: ["sharp"],
           },
+          bind: [bucketBotAttachments],
+        },
+      },
+      "DELETE /bot/{bot_id}/attachment/{filename}": {
+        function: {
+          handler: "packages/functions/src/api/delete_bot_attachment.main",
           bind: [bucketBotAttachments],
         },
       },
