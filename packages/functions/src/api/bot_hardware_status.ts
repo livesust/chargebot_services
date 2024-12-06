@@ -1,3 +1,5 @@
+
+
 import middy from "@middy/core";
 import warmup from "@middy/warmup";
 import { createError } from '@middy/util';
@@ -11,79 +13,59 @@ import httpEventNormalizer from '@middy/http-event-normalizer';
 // import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import { createSuccessResponse, getNumber, isWarmingUp } from "../shared/rest_utils";
-import { ChargebotTemperature } from "@chargebot-services/core/services/analytics/chargebot_temperature";
 import { BotUUIDPathParamSchema } from "src/shared/schemas";
 import { DateTime } from "luxon";
-import { ChargebotSystem } from "@chargebot-services/core/services/analytics/chargebot_system";
+import { ChargebotAnalysis } from "@chargebot-services/core/services/analytics/chargebot_analysis";
 import { SystemVariables } from "@chargebot-services/core/timescale/chargebot_system";
-import { ChargebotInverter } from "@chargebot-services/core/services/analytics/chargebot_inverter";
-import { ChargebotBattery } from "@chargebot-services/core/services/analytics/chargebot_battery";
-import { ChargebotPDU } from "@chargebot-services/core/services/analytics/chargebot_pdu";
-import { ChargebotGps } from "@chargebot-services/core/services/analytics/chargebot_gps";
-import { ChargebotFan } from "@chargebot-services/core/services/analytics/chargebot_fan";
 
 // @ts-expect-error ignore any type for event
 export const handler = async (event) => {
   const bot_uuid = event.pathParameters!.bot_uuid!;
 
   try {
-    const [
-        systemStatus, inverterStatus, batteryStatus, pduStatus, gpsStatus, temperatureStatus, fanStatus
-    ] = await Promise.all([
-      ChargebotSystem.getSystemStatus(bot_uuid),
-      ChargebotInverter.getConnectionStatus(bot_uuid),
-      ChargebotBattery.getConnectionStatus(bot_uuid),
-      ChargebotPDU.getConnectionStatus(bot_uuid),
-      ChargebotGps.getConnectionStatus(bot_uuid),
-      ChargebotTemperature.getConnectionStatus(bot_uuid),
-      ChargebotFan.getConnectionStatus(bot_uuid),
-    ]);
-
-    const systemVariables: { [key: string]: unknown } = systemStatus.reduce((acc: { [key: string]: unknown }, obj) => {
-      acc[obj.variable] = obj.value ?? obj.value_boolean;
-      return acc;
-    }, {});
+    const hardwareStatus = await ChargebotAnalysis.getHardwareStatus(bot_uuid);
 
     // convert values from kWh to Wh
-    const iotConnectedTime = systemStatus.filter(s => s.variable === SystemVariables.CONNECTED)[0]?.timestamp;
+    const connected = hardwareStatus.find(s => s.variable === SystemVariables.CONNECTED);
+    const iotConnectedTime = connected?.timestamp;
     
     const response = {
       bot_uuid,
       iot: {
-        connected: systemVariables[SystemVariables.CONNECTED] ?? false,
+        connected: connected?.value === 1 ?? false,
         last_seen: iotConnectedTime ? DateTime.fromJSDate(iotConnectedTime).setZone('UTC').toISO() : null
       },
       pi: {
-        cpu: getNumber(systemVariables[SystemVariables.CPU]),
-        memory: getNumber(systemVariables[SystemVariables.MEMORY]),
-        disk: getNumber(systemVariables[SystemVariables.DISK]),
-        temperature: getNumber(systemVariables[SystemVariables.TEMPERATURE]),
-        uptime: getNumber(systemVariables[SystemVariables.UPTIME_MINUTES]),
-        undervoltage: getNumber(systemVariables[SystemVariables.UNVERVOLTAGE]),
+        cpu: getNumber(hardwareStatus.find(s => s.variable === SystemVariables.CPU)?.value),
+        memory: getNumber(hardwareStatus.find(s => s.variable === SystemVariables.MEMORY)?.value),
+        disk: getNumber(hardwareStatus.find(s => s.variable === SystemVariables.DISK)?.value),
+        temperature: getNumber(hardwareStatus.find(s => s.variable === SystemVariables.TEMPERATURE)?.value),
+        uptime: getNumber(hardwareStatus.find(s => s.variable === SystemVariables.UPTIME_MINUTES)?.value),
+        undervoltage: getNumber(hardwareStatus.find(s => s.variable === SystemVariables.UNVERVOLTAGE)?.value),
       },
       inverter: {
-        connected: inverterStatus.connected,
-        last_seen: inverterStatus.timestamp,
+        connected: hardwareStatus.find(s => s.variable === 'inverter_last_seen')?.value === 1,
+        last_seen: hardwareStatus.find(s => s.variable === 'inverter_last_seen')?.timestamp,
       },
       battery: {
-        connected: batteryStatus.connected,
-        last_seen: batteryStatus.timestamp,
+        connected: hardwareStatus.find(s => s.variable === 'battery_last_seen')?.value === 1,
+        last_seen: hardwareStatus.find(s => s.variable === 'battery_last_seen')?.timestamp,
       },
       pdu: {
-        connected: pduStatus.connected,
-        last_seen: pduStatus.timestamp,
+        connected: hardwareStatus.find(s => s.variable === 'pdu_last_seen')?.value === 1,
+        last_seen: hardwareStatus.find(s => s.variable === 'pdu_last_seen')?.timestamp,
       },
       gps: {
-        connected: gpsStatus.connected,
-        last_seen: gpsStatus.timestamp,
+        connected: hardwareStatus.find(s => s.variable === 'gps_last_seen')?.value === 1,
+        last_seen: hardwareStatus.find(s => s.variable === 'gps_last_seen')?.timestamp,
       },
       temperature_sensor: {
-        connected: temperatureStatus.connected,
-        last_seen: temperatureStatus.timestamp,
+        connected: hardwareStatus.find(s => s.variable === 'temperature_last_seen')?.value === 1,
+        last_seen: hardwareStatus.find(s => s.variable === 'temperature_last_seen')?.timestamp,
       },
       fan: {
-        connected: fanStatus.connected,
-        last_seen: fanStatus.timestamp,
+        connected: hardwareStatus.find(s => s.variable === 'fan_last_seen')?.value === 1,
+        last_seen: hardwareStatus.find(s => s.variable === 'fan_last_seen')?.timestamp,
       }
     };
 
@@ -91,8 +73,8 @@ export const handler = async (event) => {
   } catch (error) {
     Log.error("ERROR", { error });
     // create and throw database errors
-    const httpError = createError(406, "cannot query bot hardware status", { expose: true });
-    httpError.details = (<Error>error).message;
+    const httpError = createError(406, `cannot query bot hardware status: ${error}`, { expose: true });
+    httpError.details = error;
     throw httpError;
   }
 };
