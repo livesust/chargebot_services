@@ -14,6 +14,7 @@ import { createSuccessResponse, isWarmingUp } from "../shared/rest_utils";
 import { SuccessResponseSchema } from "src/shared/schemas";
 import { BotCompany } from "@chargebot-services/core/services/bot_company";
 import { BotUser } from "@chargebot-services/core/services/bot_user";
+import { Bot } from "@chargebot-services/core/services/bot";
 
 
 // @ts-expect-error ignore any type for event
@@ -23,7 +24,12 @@ const handler = async (event) => {
   const user_id = event.requestContext?.authorizer?.jwt.claims.sub;
 
   try {
-    const [existentBotCompany, existentBotUsers] = await Promise.all([BotCompany.lazyFindByCriteria({ bot_id }), BotUser.lazyFindByCriteria({ bot_id })]);
+    const [bot, existentBotCompany, countByCompany, existentBotUsers] = await Promise.all([
+      Bot.lazyGet(bot_id),
+      BotCompany.lazyFindByCriteria({ bot_id }),
+      BotCompany.count({ company_id }),
+      BotUser.lazyFindByCriteria({ bot_id }),      
+    ]);
 
     if (existentBotCompany.some(bc => bc.company_id === company_id)) {
       return createSuccessResponse({ "response": "bot already assigned to company" });
@@ -40,6 +46,12 @@ const handler = async (event) => {
       existentBotUsers.map(async (bu) => {
         promises.push(BotUser.remove(bu.id!, user_id))
       });
+    }
+
+    if (bot?.id) {
+      promises.push(Bot.update(bot.id, {
+        name: `My Chargebot #${countByCompany+1}`
+      }))
     }
 
     const now = new Date();

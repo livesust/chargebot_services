@@ -425,7 +425,8 @@ export function ApiStack({ app, stack }: StackContext) {
   stack.addOutputs({
     ApiEndpoint: api.url,
     ApiDomainUrl: api.customDomainUrl,
-    BucketName: bucketUserProfile.bucketName,
+    BucketUserProfileName: bucketUserProfile.bucketName,
+    BucketBotAttachmentsName: bucketBotAttachments.bucketName,
     GpsParkedLambdaArn: functions.processIotGpsParkedFunction.functionArn,
   });
 }
