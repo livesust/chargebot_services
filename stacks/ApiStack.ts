@@ -141,6 +141,11 @@ export function ApiStack({ app, stack }: StackContext) {
           handler: "packages/functions/src/api/bot_location.main",
           memorySize: "1 GB"
         }
+      },"GET /bot/{bot_uuid}/home_location": {
+        function: {
+          handler: "packages/functions/src/api/bot_home_location.main",
+          memorySize: "1 GB"
+        }
       },
       "GET /bot/status/summary": {
         function: {
