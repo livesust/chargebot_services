@@ -15,8 +15,7 @@ export async function getSystemStatus(bot_uuid: string): Promise<{
     .where('timestamp', '>', sql`now() - interval '15 minutes'`)
     .where('code', 'in', [
       ErrorCode.DEVICE_CONNECTION,
-      ErrorCode.DEVICE_CONFIG,
-      ErrorCode.DEVICE_CONNECTION
+      ErrorCode.DEVICE_CONFIG
     ])
     .executeTakeFirst();
 }
