@@ -45,18 +45,18 @@ const psqlDialect = new PostgresDialect({
         // default is 10000 (10 seconds) - set to 0 to disable auto-disconnection of idle clients
         idleTimeoutMillis: 30000,
         // timeout for new connections
-        connectionTimeoutMillis: 2000
+        connectionTimeoutMillis: 10000
     })
 })
 
 export default new Kysely<AnalyticsDatabase>({
     dialect: psqlDialect,
     plugins: [new ParseJSONResultsPlugin()],
-    // log(event): void {
-    //   if (event.level === 'query') {
-    //     console.log(`TimescaleDB Time: ${Math.round(event.queryDurationMillis)}ms
-    //       SQL: ${event.query.sql}
-    //       Params: ${JSON.stringify(event.query.parameters, null, 2)}`);
-    //   }
-    // },
+    log(event): void {
+      if (event.level === 'query') {
+        console.log(`TimescaleDB Time: ${Math.round(event.queryDurationMillis)}ms
+          SQL: ${event.query.sql}
+          Params: ${JSON.stringify(event.query.parameters, null, 2)}`);
+      }
+    },
 });

@@ -81,9 +81,32 @@ export async function getConnectionStatus(bot_uuid: string): Promise<{
       END as connected`
     ])
     .where('device_id', '=', bot_uuid)
-    .orderBy('timestamp', 'desc')
-    .limit(1)
+    // .orderBy('timestamp', 'desc')
+    // .limit(1)
     .executeTakeFirst()
+}
+
+export async function getConnectionStatusByBots(bot_uuids: string[]): Promise<{
+  bot_uuid: string,
+  timestamp: Date,
+  connected: boolean
+}[]> {
+  // @ts-expect-error not overloads match
+  return db
+    .selectFrom("chargebot_inverter")
+    // @ts-expect-error not overloads match
+    .select(() => [
+      'device_id as bot_uuid',
+      sql`max(timestamp) as timestamp`,
+      sql`
+      CASE
+          WHEN max(timestamp) < NOW() - INTERVAL '30 minutes' THEN false
+          ELSE true
+      END as connected`
+    ])
+    .where('device_id', 'in', bot_uuids)
+    .groupBy('device_id')
+    .execute()
 }
 
 export async function getTodayTotals(bot_uuid: string, variable: InverterVariable[]): Promise<{

@@ -20,7 +20,7 @@ const handler = async (event) => {
   const bot_uuid = event.pathParameters!.bot_uuid!;
 
   try {
-    const alerts = await ChargebotAlert.getWarningAlerts(bot_uuid);
+    const alerts = await ChargebotAlert.getActiveWarningAlertsByBot(bot_uuid);
     
     const response = alerts?.map(alert => {
       const content = typeof(alert.message) === "string" ? JSON.parse(alert.message) : alert.message;

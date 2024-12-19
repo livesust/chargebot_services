@@ -60,9 +60,58 @@ export async function getConnectionStatus(bot_uuid: string): Promise<{
       END as connected`
     ])
     .where('device_id', '=', bot_uuid)
-    .orderBy('timestamp', 'desc')
-    .limit(1)
+    // .orderBy('timestamp', 'desc')
+    // .limit(1)
     .executeTakeFirst();
+}
+
+export async function getConnectionStatusByBots(bot_uuids: string[]): Promise<{
+  bot_uuid: string,
+  timestamp: Date,
+  connected: boolean
+}[]> {
+  // @ts-expect-error not overloads match
+  return db
+    .selectFrom("chargebot_gps")
+    // @ts-expect-error not overloads match
+    .select(() => [
+      'device_id as bot_uuid',
+      sql`max(timestamp) as timestamp`,
+      sql`
+      CASE
+          WHEN max(timestamp) < NOW() - INTERVAL '60 minutes' THEN false
+          ELSE true
+      END as connected`
+    ])
+    .where('device_id', 'in', bot_uuids)
+    .groupBy('device_id')
+    // .orderBy('timestamp', 'desc')
+    // .limit(1)
+    .execute()
+}
+
+export async function getLastPositionByBots(botUuids: string[]): Promise<ChargebotGps[]> {
+  return db
+    .with(
+      'latest_position',
+      (db) => db
+        .selectFrom('chargebot_gps')
+        .select(({ fn }) => [
+          fn.max('timestamp').as('latest_timestamp'),
+          'device_id'
+        ])
+        .where('device_id', '=', sql`ANY(${botUuids})`)
+        .groupBy('device_id')
+    )
+    .selectFrom('chargebot_gps')
+    .selectAll('chargebot_gps')
+    .innerJoin('latest_position', 'latest_position.device_id', 'chargebot_gps.device_id')
+    .where('chargebot_gps.timestamp', '=', sql`latest_position.latest_timestamp`)
+    .execute()
+    .catch(error => {
+      console.log(error);
+      throw error;
+    });
 }
 
 export async function getLastPositionByBot(bot_uuid: string): Promise<ChargebotLocation | undefined> {

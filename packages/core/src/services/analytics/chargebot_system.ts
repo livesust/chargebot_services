@@ -21,10 +21,36 @@ export async function getSystemStatus(bot_uuid: string): Promise<ChargebotSystem
     .select(() => [
       'device_id',
       'variable',
+      sql`max("timestamp") as timestamp`,
       sql`last(coalesce (value_int, value_long, value_float, value_double), "timestamp") as value`,
       sql`last(value_boolean, "timestamp") as value_boolean`,
     ])
     .where('device_id', '=', bot_uuid)
+    .where('variable', 'in', [
+      SystemVariables.CONNECTED,
+      SystemVariables.CPU,
+      SystemVariables.MEMORY,
+      SystemVariables.DISK,
+      SystemVariables.TEMPERATURE,
+      SystemVariables.UPTIME_MINUTES,
+      SystemVariables.UNVERVOLTAGE
+    ])
+    .groupBy(['device_id', 'variable'])
+    .execute();
+}
+
+export async function getSystemStatusByBots(bot_uuids: string[]): Promise<ChargebotSystem[]> {
+  return db
+    .selectFrom("chargebot_system")
+    // @ts-expect-error ignore type
+    .select(() => [
+      'device_id',
+      'variable',
+      sql`max("timestamp") as timestamp`,
+      sql`last(coalesce (value_int, value_long, value_float, value_double), "timestamp") as value`,
+      sql`last(value_boolean, "timestamp") as value_boolean`,
+    ])
+    .where('device_id', 'in', bot_uuids)
     .where('variable', 'in', [
       SystemVariables.CONNECTED,
       SystemVariables.CPU,
@@ -45,6 +71,7 @@ export async function getSystemStatuses(bot_uuids: string[]): Promise<ChargebotS
     .select(() => [
       'device_id',
       'variable',
+      sql`max("timestamp") as timestamp`,
       sql`last(coalesce (value_int, value_long, value_float, value_double), "timestamp") as value`,
       sql`last(value_boolean, "timestamp") as value_boolean`,
     ])
@@ -62,7 +89,7 @@ export async function getSystemStatuses(bot_uuids: string[]): Promise<ChargebotS
     .execute();
 }
 
-export async function getSystemSummary(): Promise<{
+export async function getSystemSummary(device_ids: string[]): Promise<{
   offline_bots: number;
   min_cpu: number;
   max_cpu: number;
@@ -98,6 +125,7 @@ export async function getSystemSummary(): Promise<{
           end as value
           `,
         ])
+        .where('device_id', 'in', device_ids)
         .where('variable', 'in', [
           SystemVariables.CONNECTED,
           SystemVariables.CPU,
@@ -130,4 +158,76 @@ export async function getSystemSummary(): Promise<{
       sql`avg(case when variable = 'uptime_minutes' then value end) as avg_uptime`,
     ])
     .executeTakeFirst();
+}
+
+export async function getBotsWithSystemFailure(device_ids: string[], days_ago: number = 7): Promise<{
+  device_id: string;
+  timestamp: number;
+  is_online: number;
+  avg_cpu: number;
+  avg_memory: number;
+  avg_disk: number;
+  avg_temperature: number;
+  max_uptime: number;
+}[]> {
+  // @ts-expect-error ignore type
+  return db
+    .with(
+      'latest_values',
+      (db) => db
+        .selectFrom('chargebot_system')
+        // @ts-expect-error ignore
+        .select(() => [
+          'device_id',
+          'variable',
+          'timestamp',
+          sql`
+          case 
+              when variable = 'connected' then value_boolean::int
+              else coalesce(value_int::float, value_long::float, value_float, value_double)
+          end as value
+          `,
+        ])
+        .where('device_id', 'in', device_ids)
+        .where('variable', 'in', [
+          SystemVariables.CONNECTED,
+          SystemVariables.CPU,
+          SystemVariables.MEMORY,
+          SystemVariables.DISK,
+          SystemVariables.TEMPERATURE,
+          SystemVariables.UPTIME_MINUTES
+        ])
+        .where('timestamp', '>=', sql`date_trunc('day', NOW() - interval ${sql.lit(`${days_ago} days`)})`)
+    )
+    .with(
+      'system_metrics',
+      (db) => db
+        .selectFrom('latest_values')
+        .select(() => [
+          'device_id',
+          sql`max(timestamp) as timestamp`,
+          sql`last(case when variable = 'connected' and value = 1 then 1 else 0 end, timestamp) as is_online`,
+          sql`avg(case when variable = 'cpu_percent' then value end) as avg_cpu`,
+          sql`avg(case when variable = 'memory_info' then value end) as avg_memory`,
+          sql`avg(case when variable = 'disk' then value end) as avg_disk`,
+          sql`avg(case when variable = 'temperature' then value end) as avg_temperature`,
+          sql`max(case when variable = 'uptime_minutes' then value end) as max_uptime`,
+        ])
+        .groupBy('device_id')
+    )
+    .selectFrom('system_metrics')
+    .selectAll('system_metrics')
+    .where((eb) => eb.or([
+      eb('is_online', '=', 0),
+      eb('avg_cpu', '>', 80),
+      eb('avg_memory', '>', 90),
+      eb('avg_disk', '>', 90),
+      eb('avg_temperature', '>', 70),
+      eb('max_uptime', '<', days_ago * 24 * 60)
+    ]))
+    .execute()
+    .catch(error => {
+      console.log(error);
+      throw error;
+    });
 }
