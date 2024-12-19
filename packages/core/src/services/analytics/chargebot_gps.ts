@@ -161,6 +161,49 @@ export async function getLastPositionByBot(bot_uuid: string): Promise<ChargebotL
   }
 }
 
+export async function getLastHomePositionByBot(bot_uuid: string): Promise<ChargebotLocation | undefined> {
+  const location: ChargebotGps | undefined = await db
+  .selectFrom("chargebot_gps")
+  .selectAll()
+  .where('device_id', '=', bot_uuid)
+  .where('vehicle_status', '=', VehicleStatus.AT_HOME)
+  .orderBy('timestamp', 'desc')
+  .limit(1)
+  .executeTakeFirst();
+  if (location) {
+    const [arrived_at, geocoding] = await Promise.all([
+      getArrivedAtWhenAtHome(location),
+      getLastParkedAtHomePosition(bot_uuid)
+    ])
+
+    return {
+      device_id: location.device_id,
+      timestamp: location.timestamp,
+      vehicle_status: location.vehicle_status,
+      lat: location.lat,
+      lon: location.lon,
+      altitude: location.altitude,
+      speed: location.speed,
+      bearing: location.bearing,
+      distance: location.distance,
+      arrived_at: arrived_at?.timestamp ?? undefined,
+      left_at: undefined,
+      address: geocoding?.address,
+      country: geocoding?.country,
+      state: geocoding?.state,
+      county: geocoding?.county,
+      city: geocoding?.city,
+      neighborhood: geocoding?.neighborhood,
+      street: geocoding?.street,
+      address_number: geocoding?.address_number,
+      postal_code: geocoding?.postal_code,
+      place_id: geocoding?.place_id,
+      timezone: geocoding?.timezone,
+      timezone_offset: geocoding?.timezone_offset
+    };
+  }
+}
+
 export async function getRouteByBot(bot_uuid: string, from: Date, to: Date): Promise<ChargebotGpsPosition[] | undefined> {
   // @ts-expect-error ignore overload not mapping
   return await db
