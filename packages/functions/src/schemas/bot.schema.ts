@@ -61,6 +61,7 @@ export const SearchSchema = Joi.object({
     bot_model_id: Joi.number(),
     vehicle_id: Joi.number(),
     assigned: Joi.string(),
+    display_on_dashboard: Joi.boolean(),
     company_name: Joi.string(),
     ...BotSchemaDef
 });

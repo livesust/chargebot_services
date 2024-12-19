@@ -33,8 +33,7 @@ const handler = async (event) => {
   let count = 0;
 
   try {
-    records = await service.paginate(+page, +pageSize, sort, filters);
-    count = await service.count(filters);
+    [records, count] = await Promise.all([service.paginate(+page, +pageSize, sort, filters), service.count(filters)]);
   } catch (error) {
     Log.error("Cannot paginate entity", { entity_name, error });
     const httpError = createError(406, "cannot paginate " + entity_name, { expose: true });

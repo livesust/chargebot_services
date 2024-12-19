@@ -47,7 +47,7 @@ export async function getBatteryStatuses(bot_uuids: string[]): Promise<Chargebot
     .execute();
 }
 
-export async function getLowBatteryBots(): Promise<{
+export async function getLowBatteryBots(device_ids: string[]): Promise<{
   device_id: string;
   battery_level: number;
   battery_state: number;
@@ -65,6 +65,7 @@ export async function getLowBatteryBots(): Promise<{
           'variable',
           sql`coalesce(value_int, value_long, value_float, value_double) as value`,
         ])
+        .where('device_id', 'in', device_ids)
         .where('variable', 'in', [
           BatteryVariables.STATE,
           BatteryVariables.LEVEL_SOC
@@ -82,7 +83,11 @@ export async function getLowBatteryBots(): Promise<{
     .groupBy('device_id')
     .having(sql`max(case when variable = 'state_of_charge' then value end)`, '<', 12)
     .having(sql`max(case when variable = 'battery_state' then value end)`, '=', BatteryFirmwareState.DISCHARGING)
-    .execute();
+    .execute()
+    .catch(error => {
+      console.log(error);
+      throw error;
+    });
 }
 
 export async function getConnectionStatus(bot_uuid: string): Promise<{
@@ -102,9 +107,32 @@ export async function getConnectionStatus(bot_uuid: string): Promise<{
       END as connected`
     ])
     .where('device_id', '=', bot_uuid)
-    .orderBy('timestamp', 'desc')
-    .limit(1)
+    // .orderBy('timestamp', 'desc')
+    // .limit(1)
     .executeTakeFirst();
+}
+
+export async function getConnectionStatusByBots(bot_uuids: string[]): Promise<{
+  bot_uuid: string,
+  timestamp: Date,
+  connected: boolean
+}[]> {
+  // @ts-expect-error not overloads match
+  return db
+    .selectFrom("chargebot_battery")
+    // @ts-expect-error not overloads match
+    .select(() => [
+      'device_id as bot_uuid',
+      sql`max(timestamp) as timestamp`,
+      sql`
+      CASE
+          WHEN max(timestamp) < NOW() - INTERVAL '30 minutes' THEN false
+          ELSE true
+      END as connected`
+    ])
+    .where('device_id', 'in', bot_uuids)
+    .groupBy('device_id')
+    .execute()
 }
 
 export async function getLastBatteryLevel(bot_uuid: string, from: Date, to: Date): Promise<number> {

@@ -21,7 +21,39 @@ export async function getSystemStatus(bot_uuid: string): Promise<{
     .executeTakeFirst();
 }
 
-export async function getActiveErrors(bot_uuid: string): Promise<ChargebotError[] | undefined> {
+export async function getTodayActiveErrorsByBot(bot_uuid: string): Promise<ChargebotError[] | undefined> {
+  return getErrorsByBot(bot_uuid, ErrorStatus.ACTIVE, '24 hours')
+}
+
+export async function getTodayPastErrorsByBot(bot_uuid: string): Promise<ChargebotError[] | undefined> {
+  return getErrorsByBot(bot_uuid, ErrorStatus.RESOLVED, '24 hours');
+}
+
+export async function getTodayActiveErrorsByBots(bot_uuids: string[]): Promise<ChargebotError[] | undefined> {
+  return getErrorsByBots(bot_uuids, ErrorStatus.ACTIVE, '24 hours')
+}
+
+export async function getTodayPastErrorsByBots(bot_uuids: string[]): Promise<ChargebotError[] | undefined> {
+  return getErrorsByBots(bot_uuids, ErrorStatus.RESOLVED, '24 hours');
+}
+
+export async function getActiveErrorsByBot(bot_uuid: string): Promise<ChargebotError[] | undefined> {
+  return getErrorsByBot(bot_uuid, ErrorStatus.ACTIVE, '7 days')
+}
+
+export async function getPastErrorsByBot(bot_uuid: string): Promise<ChargebotError[] | undefined> {
+  return getErrorsByBot(bot_uuid, ErrorStatus.RESOLVED, '7 days');
+}
+
+export async function getActiveErrorsByBots(bot_uuids: string[]): Promise<ChargebotError[] | undefined> {
+  return getErrorsByBots(bot_uuids, ErrorStatus.ACTIVE, '7 days')
+}
+
+export async function getPastErrorsByBots(bot_uuids: string[]): Promise<ChargebotError[] | undefined> {
+  return getErrorsByBots(bot_uuids, ErrorStatus.RESOLVED, '7 days');
+}
+
+export async function getErrorsByBot(bot_uuid: string, error_status: ErrorStatus, interval: string): Promise<ChargebotError[] | undefined> {
   // @ts-expect-error ignore
   return db
     .with(
@@ -45,23 +77,24 @@ export async function getActiveErrors(bot_uuid: string): Promise<ChargebotError[
     )
     .selectFrom('block_errors')
     .selectAll()
-    .where('error_status', '=', ErrorStatus.ACTIVE)
-    .where('timestamp', '>', sql`now() - interval '7 days'`)
+    .where('error_status', '=', error_status as string)
+    .where('timestamp', '>=', sql`date_trunc('day', NOW() - interval ${sql.lit(interval)})`)
     .orderBy('timestamp', 'desc')
     .orderBy('level', 'desc')
     .execute()
 }
 
-export async function getPastErrors(bot_uuid: string): Promise<ChargebotError[] | undefined> {
+export async function getErrorsByBots(bot_uuids: string[], error_status: ErrorStatus, interval: string): Promise<ChargebotError[] | undefined> {
   // @ts-expect-error ignore
   return db
     .with(
       'block_errors',
       (db) => db
         .selectFrom('chargebot_error')
-        // @ts-expect-error ignore overload not mapping
+        // @ts-expect-error ignore
         .select([
           sql`max(timestamp) as timestamp`,
+          'device_id',
           'module',
           'level',
           'code',
@@ -71,14 +104,18 @@ export async function getPastErrors(bot_uuid: string): Promise<ChargebotError[] 
           sql`max(message) as message`,
           sql`max(occurrence_count) as occurrence_count`
         ])
-        .where('device_id', '=', bot_uuid)
-        .groupBy(['module', 'level', 'code', 'name'])
+        .where('device_id', 'in', bot_uuids)
+        .groupBy(['device_id', 'module', 'level', 'code', 'name'])
     )
     .selectFrom('block_errors')
     .selectAll()
-    .where('error_status', '=', ErrorStatus.RESOLVED)
-    .where('timestamp', '>', sql`now() - interval '7 days'`)
+    .where('error_status', '=', error_status as string)
+    .where('timestamp', '>=', sql`date_trunc('day', NOW() - interval ${sql.lit(interval)})`)
     .orderBy('timestamp', 'desc')
     .orderBy('level', 'desc')
     .execute()
+    .catch(error => {
+      console.log(error);
+      throw error;
+    });
 }

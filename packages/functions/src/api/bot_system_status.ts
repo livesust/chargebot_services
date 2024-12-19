@@ -3,7 +3,7 @@ import warmup from "@middy/warmup";
 import { createError } from '@middy/util';
 import Log from '@dazn/lambda-powertools-logger';
 import httpErrorHandler from "@middy/http-error-handler";
-import { ResponseSchema } from "../schemas/bot_hardware_status.schema";
+import { ResponseSchema } from "../schemas/bot_system_status.schema";
 import validator from "../shared/middlewares/joi-validator";
 import jsonBodySerializer from "../shared/middlewares/json-serializer";
 import httpSecurityHeaders from '@middy/http-security-headers';
@@ -11,15 +11,18 @@ import httpEventNormalizer from '@middy/http-event-normalizer';
 // import executionTimeLogger from '../shared/middlewares/time-log';
 // import logTimeout from '@dazn/lambda-powertools-middleware-log-timeout';
 import { createSuccessResponse, getNumber, isWarmingUp } from "../shared/rest_utils";
-import { ChargebotTemperature } from "@chargebot-services/core/services/analytics/chargebot_temperature";
 import { BotUUIDPathParamSchema } from "src/shared/schemas";
-import { DateTime } from "luxon";
 import { ChargebotSystem } from "@chargebot-services/core/services/analytics/chargebot_system";
 import { SystemVariables } from "@chargebot-services/core/timescale/chargebot_system";
-import { ChargebotInverter } from "@chargebot-services/core/services/analytics/chargebot_inverter";
-import { ChargebotBattery } from "@chargebot-services/core/services/analytics/chargebot_battery";
-import { ChargebotPDU } from "@chargebot-services/core/services/analytics/chargebot_pdu";
 import { ChargebotGps } from "@chargebot-services/core/services/analytics/chargebot_gps";
+import { ChargebotAlert } from "@chargebot-services/core/services/analytics/chargebot_alert";
+import { ChargebotError } from "@chargebot-services/core/services/analytics/chargebot_error";
+import { DateTime } from "luxon";
+import { ChargebotBattery, translateBatteryState } from "@chargebot-services/core/services/analytics/chargebot_battery";
+import { BatteryVariables } from "@chargebot-services/core/timescale/chargebot_battery";
+import { ChargebotInverter } from "@chargebot-services/core/services/analytics/chargebot_inverter";
+import { ChargebotPDU } from "@chargebot-services/core/services/analytics/chargebot_pdu";
+import { ChargebotTemperature } from "@chargebot-services/core/services/analytics/chargebot_temperature";
 import { ChargebotFan } from "@chargebot-services/core/services/analytics/chargebot_fan";
 
 // @ts-expect-error ignore any type for event
@@ -28,9 +31,27 @@ export const handler = async (event) => {
 
   try {
     const [
-        systemStatus, inverterStatus, batteryStatus, pduStatus, gpsStatus, temperatureStatus, fanStatus
+      systemStatus,
+      batteryStatus,
+      location,
+      activeAlerts,
+      activeErrors,
+      last24hActiveAlerts,
+      last24hActiveErrors,
+      inverterConnStatus,
+      batteryConnStatus,
+      pduConnStatus,
+      gpsConnStatus,
+      temperatureConnStatus,
+      fanConnStatus,
     ] = await Promise.all([
       ChargebotSystem.getSystemStatus(bot_uuid),
+      ChargebotBattery.getBatteryStatus(bot_uuid),
+      ChargebotGps.getLastPositionByBot(bot_uuid),
+      ChargebotAlert.getActiveWarningAlertsByBot(bot_uuid),
+      ChargebotError.getActiveErrorsByBot(bot_uuid),
+      ChargebotAlert.getTodayWarningAlertsByBot(bot_uuid),
+      ChargebotError.getTodayActiveErrorsByBot(bot_uuid),
       ChargebotInverter.getConnectionStatus(bot_uuid),
       ChargebotBattery.getConnectionStatus(bot_uuid),
       ChargebotPDU.getConnectionStatus(bot_uuid),
@@ -38,60 +59,33 @@ export const handler = async (event) => {
       ChargebotTemperature.getConnectionStatus(bot_uuid),
       ChargebotFan.getConnectionStatus(bot_uuid),
     ]);
-
-    const systemVariables: { [key: string]: unknown } = systemStatus.reduce((acc: { [key: string]: unknown }, obj) => {
-      acc[obj.variable] = obj.value ?? obj.value_boolean;
-      return acc;
-    }, {});
-
-    // convert values from kWh to Wh
-    const iotConnectedTime = systemStatus.find(s => s.variable === SystemVariables.CONNECTED)?.timestamp;
     
+    const connected = systemStatus.find(s => s.variable === SystemVariables.CONNECTED);
+
     const response = {
       bot_uuid,
-      iot: {
-        connected: systemVariables[SystemVariables.CONNECTED] ?? false,
-        last_seen: iotConnectedTime ? DateTime.fromJSDate(iotConnectedTime).setZone('UTC').toISO() : null
-      },
-      pi: {
-        cpu: getNumber(systemVariables[SystemVariables.CPU]),
-        memory: getNumber(systemVariables[SystemVariables.MEMORY]),
-        disk: getNumber(systemVariables[SystemVariables.DISK]),
-        temperature: getNumber(systemVariables[SystemVariables.TEMPERATURE]),
-        uptime: getNumber(systemVariables[SystemVariables.UPTIME_MINUTES]),
-        undervoltage: getNumber(systemVariables[SystemVariables.UNVERVOLTAGE]),
-      },
-      inverter: {
-        connected: inverterStatus.connected,
-        last_seen: inverterStatus.timestamp,
-      },
-      battery: {
-        connected: batteryStatus.connected,
-        last_seen: batteryStatus.timestamp,
-      },
-      pdu: {
-        connected: pduStatus.connected,
-        last_seen: pduStatus.timestamp,
-      },
-      gps: {
-        connected: gpsStatus.connected,
-        last_seen: gpsStatus.timestamp,
-      },
-      temperature_sensor: {
-        connected: temperatureStatus.connected,
-        last_seen: temperatureStatus.timestamp,
-      },
-      fan: {
-        connected: fanStatus.connected,
-        last_seen: fanStatus.timestamp,
-      }
+      online: connected?.value_boolean ?? false,
+      uptime: getNumber(systemStatus?.find(s => s.variable === SystemVariables.UPTIME_MINUTES)?.value),
+      last_seen: connected?.timestamp ? DateTime.fromJSDate(connected.timestamp).setZone('UTC').toISO() : null,
+      location_status: location?.vehicle_status,
+      address: `${location?.address_number}, ${location?.street}, ${location?.city}`,
+      active_alerts: getNumber(activeAlerts?.length) + getNumber(activeErrors?.length),
+      active_alerts_24h: getNumber(last24hActiveAlerts?.length) + getNumber(last24hActiveErrors?.length),
+      battery_level: getNumber(batteryStatus?.find(b => b.variable === BatteryVariables.LEVEL_SOC)?.value),
+      battery_status: translateBatteryState(batteryStatus?.find(b => b.variable === BatteryVariables.STATE)?.value as number),
+      inverter_connected: inverterConnStatus.connected,
+      battery_connected: batteryConnStatus.connected,
+      pdu_connected: pduConnStatus.connected,
+      gps_connected: gpsConnStatus.connected,
+      temperature_connected: temperatureConnStatus.connected,
+      fan_connected: fanConnStatus.connected,
     };
 
     return createSuccessResponse(response);
   } catch (error) {
     Log.error("ERROR", { error });
     // create and throw database errors
-    const httpError = createError(406, "cannot query bot hardware status", { expose: true });
+    const httpError = createError(406, "cannot query bot system status", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;
   }

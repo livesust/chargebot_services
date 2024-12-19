@@ -5,6 +5,7 @@ import { ExpressionBuilder, sql, UpdateResult } from "kysely";
 import { BusinessError } from "../errors/business_error";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { Bot, BotUpdate, NewBot } from "../database/bot";
+import { withCustomer } from "./company";
 
 export function withBotStatus(eb: ExpressionBuilder<Database, 'bot'>) {
     return jsonObjectFrom(
@@ -52,11 +53,20 @@ export function withBotCompany(eb: ExpressionBuilder<Database, 'bot'>) {
       eb.selectFrom('company')
         .innerJoin('bot_company', 'bot_company.bot_id', 'bot.id')
         .selectAll('company')
+        .select((eb) => withCustomer(eb))
         .whereRef('company.id', '=', 'bot_company.company_id')
         .where('bot_company.deleted_by', 'is', null)
         .where('company.deleted_by', 'is', null)
     ).as('company')
 }
+
+export type BotCriteria = Partial<Bot> & {
+  display_on_dashboard?: boolean;
+  assigned?: string;
+  customer_name?: string;
+  company_name?: string;
+  bot_uuid_array?: string[];
+};
 
 async function canAssignEquipment(bot_id: number | null, vehicle_id: number): Promise<boolean> {
   const count: { value: number; } | undefined = await db
@@ -164,7 +174,7 @@ export async function remove(id: number, user_id: string): Promise<{
   };
 }
 
-export async function removeByCriteria(criteria: Partial<Bot>, user_id: string): Promise<UpdateResult[]> {
+export async function removeByCriteria(criteria: BotCriteria, user_id: string): Promise<UpdateResult[]> {
     return buildUpdateQuery(criteria)
         .set({ deleted_date: new Date(), deleted_by: user_id })
         .execute();
@@ -190,7 +200,7 @@ export async function list(): Promise<Bot[]> {
         .execute();
 }
 
-export async function count(criteria?: Partial<Bot>): Promise<number> {
+export async function count(criteria?: BotCriteria): Promise<number> {
   const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("bot").where('bot.deleted_by', 'is', null);
   const count: { value: number; } | undefined = await query
         .select(({ fn }) => [
@@ -200,7 +210,7 @@ export async function count(criteria?: Partial<Bot>): Promise<number> {
   return count?.value ?? 0;
 }
 
-export async function paginate(page: number, pageSize: number, sort: OrderByDirection, criteria?: Partial<Bot>): Promise<Bot[]> {
+export async function paginate(page: number, pageSize: number, sort: OrderByDirection, criteria?: BotCriteria): Promise<Bot[]> {
   const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("bot").where('bot.deleted_by', 'is', null);
   return query
       .selectAll("bot")
@@ -211,7 +221,9 @@ export async function paginate(page: number, pageSize: number, sort: OrderByDire
       .select((eb) => withBotCompany(eb))
       .limit(pageSize)
       .offset(page * pageSize)
-      .orderBy('created_date', sort)
+      // .orderBy('bot.company.customer.name', sort)
+      // .orderBy('bot.company.name', sort)
+      .orderBy('bot.bot_uuid', sort)
       .execute();
 }
 
@@ -274,7 +286,7 @@ export async function findBotByEquipment(equipment_id: number): Promise<Bot | un
         .executeTakeFirst();
 }
 
-export async function findByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
+export async function findByCriteria(criteria: BotCriteria): Promise<Bot[]> {
   return buildSelectQuery(criteria)
     .selectAll("bot")
     .select((eb) => withBotStatus(eb))
@@ -285,13 +297,13 @@ export async function findByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
     .execute();
 }
 
-export async function lazyFindByCriteria(criteria: Partial<Bot>): Promise<Bot[]> {
+export async function lazyFindByCriteria(criteria: BotCriteria): Promise<Bot[]> {
   return buildSelectQuery(criteria)
     .selectAll("bot")
     .execute();
 }
 
-export async function findOneByCriteria(criteria: Partial<Bot>): Promise<Bot | undefined> {
+export async function findOneByCriteria(criteria: BotCriteria): Promise<Bot | undefined> {
   return buildSelectQuery(criteria)
     .selectAll("bot")
     .select((eb) => withBotStatus(eb))
@@ -303,7 +315,7 @@ export async function findOneByCriteria(criteria: Partial<Bot>): Promise<Bot | u
     .executeTakeFirst();
 }
 
-export async function lazyFindOneByCriteria(criteria: Partial<Bot>): Promise<Bot | undefined> {
+export async function lazyFindOneByCriteria(criteria: BotCriteria): Promise<Bot | undefined> {
   return buildSelectQuery(criteria)
     .selectAll("bot")
     .limit(1)
@@ -337,51 +349,70 @@ export async function removeAttachment(id: number, attachment: string): Promise<
         .executeTakeFirst();
 }
 
-function buildSelectQuery(criteria: Partial<Bot>) {
+function buildSelectQuery(criteria: BotCriteria) {
   let query = db.selectFrom('bot');
   query = getCriteriaQuery(query, criteria);
   return query;
 }
 
-function buildUpdateQuery(criteria: Partial<Bot>) {
+function buildUpdateQuery(criteria: BotCriteria) {
   let query = db.updateTable('bot');
   query = getCriteriaQuery(query, criteria);
   return query;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getCriteriaQuery(query: any, criteria: Partial<Bot>): any {
+function getCriteriaQuery(query: any, criteria: BotCriteria): any {
   query = query.where('bot.deleted_by', 'is', null);
 
-  const assigned = Reflect.get(criteria, "assigned") as string;
-  const companyName = Reflect.get(criteria, "company_name") as string;
+  if (criteria.display_on_dashboard) {
+    query = query.leftJoin('bot_status', 'bot.bot_status_id', 'bot_status.id')
+      .where('bot_status.deleted_by', 'is', null)
+      .where('bot_status.display_on_dashboard', 'is', criteria.display_on_dashboard);
+  }
 
-  if (assigned && companyName) {
+  if (criteria.customer_name) {
+    query = query.leftJoin('bot_company', 'bot_company.bot_id', 'bot.id')
+      .leftJoin('company', 'company.id', 'bot_company.company_id')
+      .leftJoin('customer', 'customer.id', 'company.customer_id')
+      .where('bot_company.deleted_by', 'is', null)
+      .where('company.deleted_by', 'is', null)
+      .where('customer.deleted_by', 'is', null)
+      .where('customer.name', 'like', `%${criteria.customer_name}%`); 
+  }
+
+  if (criteria.assigned && criteria.company_name) {
     query = query.leftJoin('bot_company', 'bot_company.bot_id', 'bot.id');
-    if (assigned === 'assigned') {
-      if (companyName) {
+    if (criteria.assigned === 'assigned') {
+      if (criteria.company_name) {
         query = query.leftJoin('company', 'company.id', 'bot_company.company_id')
-          .where('company.name', 'like', `%${companyName}%`);
+          .where('company.name', 'like', `%${criteria.company_name}%`);
       }
 
       query = query.where('bot_company.id', 'is not', null)
         .where('bot_company.deleted_by', 'is', null);
-    } else if (assigned === 'pending') {
+    } else if (criteria.assigned === 'pending') {
       query = query.where('bot_company.id', 'is', null);
     }
-  } else if (assigned) {
+  } else if (criteria.assigned) {
     query = query.leftJoin('bot_company', 'bot_company.bot_id', 'bot.id')
-    if (assigned === 'assigned') {
+    if (criteria.assigned === 'assigned') {
       query = query.where('bot_company.id', 'is not', null)
         .where('bot_company.deleted_by', 'is', null);
-    } else if (assigned === 'pending') {
+    } else if (criteria.assigned === 'pending') {
       query = query.where('bot_company.id', 'is', null);
     }
-  } else if (companyName) {
+  } else if (criteria.company_name) {
     query = query.leftJoin('bot_company', 'bot_company.bot_id', 'bot.id')
       .leftJoin('company', 'company.id', 'bot_company.company_id')
       .where('bot_company.deleted_by', 'is', null)
-      .where('company.name', 'like', `%${companyName}%`);    
+      .where('company.name', 'like', `%${criteria.company_name}%`); 
+  }
+
+  if (criteria.bot_uuid_array && criteria.bot_uuid_array.length > 0) {
+    query = query.where(
+      'bot.bot_uuid', 'in', criteria.bot_uuid_array
+    );
   }
 
   if (criteria.id) {

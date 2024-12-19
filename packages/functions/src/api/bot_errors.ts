@@ -23,9 +23,9 @@ const handler = async (event) => {
 
   try {
     const [active, past, activeAlerts] = await Promise.all([
-      ChargebotError.getActiveErrors(bot_uuid),
-      ChargebotError.getPastErrors(bot_uuid),
-      ChargebotAlert.getWarningAlerts(bot_uuid)
+      ChargebotError.getActiveErrorsByBot(bot_uuid),
+      ChargebotError.getPastErrorsByBot(bot_uuid),
+      ChargebotAlert.getActiveWarningAlertsByBot(bot_uuid)
     ]);
     
     const response = {

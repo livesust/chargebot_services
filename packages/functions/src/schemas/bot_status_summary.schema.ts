@@ -3,23 +3,14 @@ import {  JsonResponseSchemaDef } from "../shared/schemas";
 
 const BotStatusSummarySchemaDef = {
     total_bots: Joi.number().allow(null),
-    low_battery_bots: Joi.number().allow(null),
     offline_bots: Joi.number().allow(null),
-    avg_cpu: Joi.number().allow(null),
-    max_cpu: Joi.number().allow(null),
-    min_cpu: Joi.number().allow(null),
-    avg_memory: Joi.number().allow(null),
-    max_memory: Joi.number().allow(null),
-    min_memory: Joi.number().allow(null),
-    avg_disk: Joi.number().allow(null),
-    max_disk: Joi.number().allow(null),
-    min_disk: Joi.number().allow(null),
-    avg_temperature: Joi.number().allow(null),
-    max_temperature: Joi.number().allow(null),
-    min_temperature: Joi.number().allow(null),
-    avg_uptime: Joi.number().allow(null),
-    max_uptime: Joi.number().allow(null),
-    min_uptime: Joi.number().allow(null),
+    low_battery_bots: Joi.number().allow(null),
+    active_alerts: Joi.number().allow(null),
+    active_alerts_24h: Joi.number().allow(null),
+    system_error_bots: Joi.number().allow(null),
+    bots_at_home: Joi.number().allow(null),
+    bots_in_transit: Joi.number().allow(null),
+    bots_on_location: Joi.number().allow(null),
 };
 
 export const EntitySchema = Joi.object({
