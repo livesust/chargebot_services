@@ -219,10 +219,13 @@ export async function paginate(page: number, pageSize: number, sort: OrderByDire
       .select((eb) => withBotFirmwareVersion(eb))
       .select((eb) => withVehicle(eb))
       .select((eb) => withBotCompany(eb))
+      .leftJoin('bot_company', 'bot_company.bot_id', 'bot.id')
+      .leftJoin('company', 'company.id', 'bot_company.company_id')
+      .leftJoin('customer', 'customer.id', 'company.customer_id')
       .limit(pageSize)
       .offset(page * pageSize)
-      // .orderBy('bot.company.customer.name', sort)
-      // .orderBy('bot.company.name', sort)
+      .orderBy('customer.name', sort)
+      .orderBy('company.name', sort)
       .orderBy('bot.bot_uuid', sort)
       .execute();
 }
