@@ -231,3 +231,49 @@ export async function getBotsWithSystemFailure(device_ids: string[], days_ago: n
       throw error;
     });
 }
+
+export async function getConnectionStatus(bot_uuids: string[]): Promise<{
+  device_id: string,
+  connected: boolean
+}[]> {
+  // @ts-expect-error ignore type
+  return db
+    .selectFrom("chargebot_system")
+    // @ts-expect-error ignore type
+    .select(() => [
+      'device_id',
+      sql`last(value_boolean, "timestamp") as connected`,
+    ])
+    .where('device_id', 'in', bot_uuids)
+    .where('variable', '=', SystemVariables.CONNECTED)
+    .groupBy(['device_id', 'variable'])
+    .execute();
+}
+
+export async function countConnectionStatus(bot_uuids: string[], conn_status: boolean): Promise<number> {
+  const count: { value: number; } | undefined = await db
+    .with(
+      'bot_connection_status',
+      (db) => db
+        .selectFrom("chargebot_system")
+        // @ts-expect-error ignore type
+        .select(() => [
+          'device_id',
+          sql`last(value_boolean, "timestamp") as connected`,
+        ])
+        .where('device_id', 'in', bot_uuids)
+        .where('variable', '=', SystemVariables.CONNECTED)
+        .groupBy(['device_id', 'variable'])
+    )
+    .selectFrom('bot_connection_status')
+    .select(({ fn }) => [
+      fn.count<number>('device_id').as('value'),
+    ])
+    .where('connected', '=', conn_status)
+    .executeTakeFirst()
+    .catch(error => {
+      console.log(error);
+      throw error;
+    });
+  return count?.value ?? 0;
+}

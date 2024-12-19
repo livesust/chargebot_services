@@ -22,7 +22,6 @@ import { ChargebotInverter } from "@chargebot-services/core/services/analytics/c
 import { ChargebotPDU } from "@chargebot-services/core/services/analytics/chargebot_pdu";
 import { ChargebotTemperature } from "@chargebot-services/core/services/analytics/chargebot_temperature";
 import { ChargebotFan } from "@chargebot-services/core/services/analytics/chargebot_fan";
-import { SystemVariables } from "@chargebot-services/core/timescale/chargebot_system";
 
 export const handler = async () => {
   try {
@@ -36,44 +35,41 @@ export const handler = async () => {
       last24hActiveAlerts,
       last24hActiveErrors,
       lastLocationsByBot,
-      systemStatus,
-      inverterConnStatues,
-      batteryConnStatues,
-      pduConnStatues,
-      gpsConnStatues,
-      temperatureConnStatues,
-      fanConnStatues,
+      offlineBots,
+      offlineInverters,
+      offlineBatteries,
+      offlinePdus,
+      offlineGps,
+      offlineTemperature,
+      offlineFan,
     ] = await Promise.all([
-      ChargebotBattery.getLowBatteryBots(botUuids),
-      ChargebotAlert.getActiveWarningAlertsByBots(botUuids),
-      ChargebotError.getActiveErrorsByBots(botUuids),
-      ChargebotAlert.getTodayWarningAlertsByBots(botUuids),
-      ChargebotError.getTodayActiveErrorsByBots(botUuids),
+      ChargebotBattery.countLowBatteryBots(botUuids),
+      ChargebotAlert.countActiveWarningAlertsByBots(botUuids),
+      ChargebotError.countActiveErrorsByBots(botUuids),
+      ChargebotAlert.countTodayWarningAlertsByBots(botUuids),
+      ChargebotError.countTodayActiveErrorsByBots(botUuids),
       ChargebotGps.getLastPositionByBots(botUuids),
-      ChargebotSystem.getSystemStatusByBots(botUuids),
-      ChargebotInverter.getConnectionStatusByBots(botUuids),
-      ChargebotBattery.getConnectionStatusByBots(botUuids),
-      ChargebotPDU.getConnectionStatusByBots(botUuids),
-      ChargebotGps.getConnectionStatusByBots(botUuids),
-      ChargebotTemperature.getConnectionStatusByBots(botUuids),
-      ChargebotFan.getConnectionStatusByBots(botUuids),
+      ChargebotSystem.countConnectionStatus(botUuids, false),
+      ChargebotInverter.countConnectionStatusByBots(botUuids, false),
+      ChargebotBattery.countConnectionStatusByBots(botUuids, false),
+      ChargebotPDU.countConnectionStatusByBots(botUuids, false),
+      ChargebotGps.countConnectionStatusByBots(botUuids, false),
+      ChargebotTemperature.countConnectionStatusByBots(botUuids, false),
+      ChargebotFan.countConnectionStatusByBots(botUuids, false),
     ]);
-    const botsWithSystemComponentsOffline = [...new Set([
-      ...(inverterConnStatues?.filter(b => !b.connected).map(b => b.bot_uuid) ?? []),
-      ...(batteryConnStatues?.filter(b => !b.connected).map(b => b.bot_uuid) ?? []),
-      ...(pduConnStatues?.filter(b => !b.connected).map(b => b.bot_uuid) ?? []),
-      ...(gpsConnStatues?.filter(b => !b.connected).map(b => b.bot_uuid) ?? []),
-      ...(temperatureConnStatues?.filter(b => !b.connected).map(b => b.bot_uuid) ?? []),
-      ...(fanConnStatues?.filter(b => !b.connected).map(b => b.bot_uuid) ?? []),
-    ])]; //   => remove duplication
 
     const response = {
       total_bots: bots.length,
-      offline_bots: getNumber(systemStatus.filter(s => s.variable === SystemVariables.CONNECTED && !s.value_boolean)?.length),
-      low_battery_bots: getNumber(lowBatteries.length),
-      active_alerts: getNumber(activeAlerts?.length) + getNumber(activeErrors?.length),
-      active_alerts_24h: getNumber(last24hActiveAlerts?.length) + getNumber(last24hActiveErrors?.length),
-      system_error_bots: getNumber(botsWithSystemComponentsOffline?.length),
+      offline_bots: getNumber(offlineBots),
+      low_battery_bots: getNumber(lowBatteries),
+      active_alerts: getNumber(activeAlerts) + getNumber(activeErrors),
+      active_alerts_24h: getNumber(last24hActiveAlerts) + getNumber(last24hActiveErrors),
+      system_error_bots: getNumber(offlineInverters)
+        + getNumber(offlineBatteries)
+        + getNumber(offlinePdus)
+        + getNumber(offlineGps)
+        + getNumber(offlineTemperature)
+        + getNumber(offlineFan),
       bots_at_home: getNumber(lastLocationsByBot.filter(l => l.vehicle_status === VehicleStatus.AT_HOME)?.length),
       bots_in_transit: getNumber(lastLocationsByBot.filter(l => l.vehicle_status === VehicleStatus.MOVING || l.vehicle_status === VehicleStatus.STOPPED)?.length),
       bots_on_location: getNumber(lastLocationsByBot.filter(l => l.vehicle_status === VehicleStatus.PARKED)?.length),

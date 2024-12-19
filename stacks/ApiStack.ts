@@ -136,68 +136,22 @@ export function ApiStack({ app, stack }: StackContext) {
         }
       },
       "GET /bot/assigned": "packages/functions/src/api/bots_assigned.main",
-      "GET /bot/{bot_uuid}/location": {
-        function: {
-          handler: "packages/functions/src/api/bot_location.main",
-          memorySize: "1 GB"
-        }
-      },
-      "GET /bot/status/summary": {
-        function: {
-          handler: "packages/functions/src/api/bot_status_summary.main",
-          memorySize: "2 GB"
-        }
-      },
-      "POST /bot/status/page/{page}/pageSize/{pageSize}/sort/{sort}": {
-        function: {
-          handler: "packages/functions/src/api/bot_status_list.main",
-          memorySize: "2 GB"
-        }
-      },
-      "GET /bot/{bot_uuid}/status": {
-        function: {
-          handler: "packages/functions/src/api/bot_status.main",
-          memorySize: "2 GB"
-        }
-      },
+      "GET /bot/{bot_uuid}/location": "packages/functions/src/api/bot_location.main",
+      "GET /bot/status/summary": "packages/functions/src/api/bot_status_summary.main",
+      "POST /bot/status/page/{page}/pageSize/{pageSize}/sort/{sort}": "packages/functions/src/api/bot_status_list.main",
+      "GET /bot/{bot_uuid}/status": "packages/functions/src/api/bot_status.main",
       "GET /bot/{bot_uuid}/status/encrypted": "packages/functions/src/api/bot_status_encrypted.main",
       "GET /bot/{bot_uuid}/hardware_status": "packages/functions/src/api/bot_hardware_status.main",
       "GET /bot/{bot_uuid}/system_status": "packages/functions/src/api/bot_system_status.main",
-      "GET /bot/{bot_uuid}/pdu/from/{from}/to/{to}": {
-        function: {
-          handler: "packages/functions/src/api/bot_pdu_history.main",
-          memorySize: "2 GB"
-        }
-      },
-      "GET /bot/{bot_uuid}/inverter/from/{from}/to/{to}": {
-        function: {
-          handler: "packages/functions/src/api/bot_inverter_history.main",
-          memorySize: "1 GB"
-        }
-      },
-      "GET /bot/connection/status": {
-        function: {
-          handler: "packages/functions/src/api/bot_connection_status.main",
-          memorySize: "1 GB"
-        }
-      },
-      "GET /bot/{bot_uuid}/assets/status": {
-        function: {
-          handler: "packages/functions/src/api/bot_asset_tracker_status.main",
-          memorySize: "1 GB"
-        }
-      },
-      "GET /bot/{bot_uuid}/outlets": {
-        function: {
-          handler: "packages/functions/src/api/bot_outlets.main",
-          memorySize: "1 GB"
-        }
-      },
+      "GET /bot/{bot_uuid}/pdu/from/{from}/to/{to}": "packages/functions/src/api/bot_pdu_history.main",
+      "GET /bot/{bot_uuid}/inverter/from/{from}/to/{to}": "packages/functions/src/api/bot_inverter_history.main",
+      "GET /bot/connection/status": "packages/functions/src/api/bot_connection_status.main",
+      "GET /bot/{bot_uuid}/assets/status": "packages/functions/src/api/bot_asset_tracker_status.main",
+      "GET /bot/{bot_uuid}/outlets": "packages/functions/src/api/bot_outlets.main",
       "GET /bot/{bot_uuid}/errors": "packages/functions/src/api/bot_errors.main",
       "GET /bot/{bot_uuid}/warning_alerts": {
         function: {
           handler: "packages/functions/src/api/bot_warning_alerts.main",
-          memorySize: "1 GB",
           // @ts-expect-error ignore type errors
           layers: [lambdaLayers.i18nLayer],
           nodejs: {
@@ -205,38 +159,13 @@ export function ApiStack({ app, stack }: StackContext) {
           },
         }
       },
-      "GET /bot/{bot_uuid}/outlet/{outlet_id}": {
-        function: {
-          handler: "packages/functions/src/api/bot_outlet_details.main",
-          memorySize: "1 GB"
-        }
-      },
-      "GET /bot/{bot_uuid}/location/from/{from}/to/{to}": {
-        function: {
-          handler: "packages/functions/src/api/bot_location_history.main",
-          memorySize: "1 GB"
-        }
-      },
+      "GET /bot/{bot_uuid}/outlet/{outlet_id}": "packages/functions/src/api/bot_outlet_details.main",
+      "GET /bot/{bot_uuid}/location/from/{from}/to/{to}": "packages/functions/src/api/bot_location_history.main",
       "GET /bot/{bot_uuid}/location/days_info/from/{from}/to/{to}": "packages/functions/src/api/bot_location_days_info.main",
-      "GET /bot/{bot_uuid}/usage/totals": {
-        function: {
-          handler: "packages/functions/src/api/bot_usage_totals.main",
-          memorySize: "1 GB"
-        }
-      },
-      "GET /bot/{bot_uuid}/usage/day/{date}": {
-        function: {
-          handler: "packages/functions/src/api/bot_usage_by_day.main",
-          memorySize: "1 GB"
-        }
-      },
+      "GET /bot/{bot_uuid}/usage/totals": "packages/functions/src/api/bot_usage_totals.main",
+      "GET /bot/{bot_uuid}/usage/day/{date}": "packages/functions/src/api/bot_usage_by_day.main",
       "GET /bot/{bot_uuid}/usage/days_info/from/{from}/to/{to}": "packages/functions/src/api/bot_usage_days_info.main",
-      "GET /bot/{bot_uuid}/usage/interval/from/{from}/to/{to}": {
-        function: {
-          handler: "packages/functions/src/api/bot_usage_days_history.main",
-          memorySize: "1 GB"
-        }
-      },
+      "GET /bot/{bot_uuid}/usage/interval/from/{from}/to/{to}": "packages/functions/src/api/bot_usage_days_history.main",
       "POST /bot/{bot_id}/company/{company_id}": "packages/functions/src/api/assign_bot_company.main",
       "GET /equipment/customer/{customer_id}": "packages/functions/src/api/equipments_by_customer.main",
       "POST /equipment/{equipment_id}/outlet/{outlet_id}": {

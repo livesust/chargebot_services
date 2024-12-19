@@ -90,6 +90,40 @@ export async function getLowBatteryBots(device_ids: string[]): Promise<{
     });
 }
 
+export async function countLowBatteryBots(device_ids: string[]): Promise<number> {
+  const count: { value: number; } | undefined = await db
+    .with(
+      'latest_values',
+      (db) => db
+        .selectFrom('chargebot_battery')
+        .distinctOn(['device_id', 'variable'])
+        // @ts-expect-error implicit any
+        .select(() => [
+          sql`device_id`,
+          'variable',
+          sql`coalesce(value_int, value_long, value_float, value_double) as value`,
+        ])
+        .where('device_id', 'in', device_ids)
+        .where('variable', 'in', [
+          BatteryVariables.STATE,
+          BatteryVariables.LEVEL_SOC
+        ])
+    )
+    .selectFrom("latest_values")
+    .select(({ fn }) => [
+      fn.count<number>('device_id').as('value'),
+    ])
+    .groupBy('device_id')
+    .having(sql`max(case when variable = 'state_of_charge' then value end)`, '<', 12)
+    .having(sql`max(case when variable = 'battery_state' then value end)`, '=', BatteryFirmwareState.DISCHARGING)
+    .executeTakeFirst()
+    .catch(error => {
+      console.log(error);
+      throw error;
+    });
+  return count?.value ?? 0;
+}
+
 export async function getConnectionStatus(bot_uuid: string): Promise<{
   timestamp: Date,
   connected: boolean
@@ -133,6 +167,37 @@ export async function getConnectionStatusByBots(bot_uuids: string[]): Promise<{
     .where('device_id', 'in', bot_uuids)
     .groupBy('device_id')
     .execute()
+}
+
+export async function countConnectionStatusByBots(bot_uuids: string[], conn_status: boolean): Promise<number> {
+  const count: { value: number; } | undefined = await db
+    .with(
+      'connection_status',
+      (db) => db
+        .selectFrom("chargebot_battery")
+        // @ts-expect-error not overloads match
+        .select(() => [
+          'device_id',
+          sql`
+          CASE
+              WHEN max(timestamp) < NOW() - INTERVAL '30 minutes' THEN false
+              ELSE true
+          END as connected`
+        ])
+        .where('device_id', 'in', bot_uuids)
+        .groupBy('device_id')
+    )
+    .selectFrom('connection_status')
+    .select(({ fn }) => [
+      fn.count<number>('device_id').as('value'),
+    ])
+    .where('connected', '=', conn_status)
+    .executeTakeFirst()
+    .catch(error => {
+      console.log(error);
+      throw error;
+    });
+    return count?.value ?? 0;
 }
 
 export async function getLastBatteryLevel(bot_uuid: string, from: Date, to: Date): Promise<number> {

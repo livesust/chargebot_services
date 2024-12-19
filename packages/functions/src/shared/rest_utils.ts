@@ -113,5 +113,5 @@ export const getNumber = (value: unknown, default_value = 0):number => {
   if (!value || isNaN(value as number)) {
     return default_value;
   }
-  return value as number;
+  return +value as number;
 }

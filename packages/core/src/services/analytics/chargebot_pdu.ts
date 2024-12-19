@@ -64,6 +64,37 @@ export async function getConnectionStatusByBots(bot_uuids: string[]): Promise<{
     .execute()
 }
 
+export async function countConnectionStatusByBots(bot_uuids: string[], conn_status: boolean): Promise<number> {
+  const count: { value: number; } | undefined = await db
+    .with(
+      'connection_status',
+      (db) => db
+        .selectFrom("chargebot_pdu")
+        // @ts-expect-error not overloads match
+        .select(() => [
+          'device_id',
+          sql`
+          CASE
+              WHEN max(timestamp) < NOW() - INTERVAL '30 minutes' THEN false
+              ELSE true
+          END as connected`
+        ])
+        .where('device_id', 'in', bot_uuids)
+        .groupBy('device_id')
+    )
+    .selectFrom('connection_status')
+    .select(({ fn }) => [
+      fn.count<number>('device_id').as('value'),
+    ])
+    .where('connected', '=', conn_status)
+    .executeTakeFirst()
+    .catch(error => {
+      console.log(error);
+      throw error;
+    });
+    return count?.value ?? 0;
+}
+
 export async function getOutletsStatus(bot_uuid: string): Promise<{
   timestamp: Date,
   pdu_outlet_number: number,
