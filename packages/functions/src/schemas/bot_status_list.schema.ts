@@ -19,7 +19,7 @@ export const FiltersSchema = Joi.object({
     has_system_error: Joi.boolean().allow(null),
     has_low_battery: Joi.boolean().allow(null),
     has_alerts: Joi.boolean().allow(null),
-    hast_24h_alerts: Joi.boolean().allow(null),
+    has_24h_alerts: Joi.boolean().allow(null),
     is_at_home: Joi.boolean().allow(null),
     is_in_transit: Joi.boolean().allow(null),
     is_on_location: Joi.boolean().allow(null),

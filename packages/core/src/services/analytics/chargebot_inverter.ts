@@ -1,16 +1,17 @@
 export * as ChargebotInverter from "./chargebot_inverter";
 import { sql } from "kysely";
 import db from '../../timescale';
-import { ChargebotInverter, InverterVariable } from "../../timescale/chargebot_inverter";
+import { InverterVariable } from "../../timescale/chargebot_inverter";
 import { DateTime } from "luxon";
+import { ChargebotInverterAggregate } from "../../timescale/chargebot_inverter_aggregate";
 
-export async function getInverterStatus(bot_uuid: string): Promise<ChargebotInverter[]> {
+export async function getInverterStatus(bot_uuid: string): Promise<ChargebotInverterAggregate[]> {
   return db
-    .selectFrom("chargebot_inverter")
+    .selectFrom("chargebot_inverter_aggregate")
     // @ts-expect-error not overloads match
     .select(() => [
       'variable',
-      sql`last(coalesce (value_int, value_long, value_float, value_double), "timestamp") as value`,
+      sql`last(value, "bucket") as value`,
     ])
     .where('device_id', '=', bot_uuid)
     .where('variable', 'in', [
@@ -31,12 +32,12 @@ export async function getHistory(bot_uuid: string, from: Date, to: Date): Promis
     .with(
       'interpolated_values',
       (db) => db
-        .selectFrom('chargebot_inverter')
+        .selectFrom('chargebot_inverter_aggregate')
         // @ts-expect-error implicit any
         .select(() => [
-          sql`time_bucket_gapfill('5 minute', "timestamp") AS bucket`,
+          sql`time_bucket_gapfill('5 minute', "bucket") AS bucket_gapfill`,
           'variable',
-          sql`interpolate(max(coalesce(value_int, value_long, value_float, value_double))) as value`,
+          sql`interpolate(max(value)) as value`,
         ])
         .where('device_id', '=', bot_uuid)
         .where('variable', 'in', [
@@ -46,18 +47,18 @@ export async function getHistory(bot_uuid: string, from: Date, to: Date): Promis
         ])
         // Get interpolated data for 1 hour before start time
         // so it can interpolate with last values from previous hour
-        .where((eb) => eb.between('timestamp', DateTime.fromJSDate(from).minus({hour: 1}).toJSDate(), to))
-        .groupBy(['bucket', 'variable'])
-        .orderBy('bucket', 'asc')
+        .where((eb) => eb.between('bucket', DateTime.fromJSDate(from).minus({hour: 1}).toJSDate(), to))
+        .groupBy(['bucket_gapfill', 'variable'])
+        .orderBy('bucket_gapfill', 'asc')
         .orderBy('variable', 'asc')
     )
     .selectFrom("interpolated_values")
     .select(() => [
-      'bucket as date',
+      'bucket_gapfill as date',
       'variable',
       sql`value as value`,
     ])
-    .where((eb) => eb.between('bucket', from, to))
+    .where((eb) => eb.between('bucket_gapfill', from, to))
     .execute();
 
     // @ts-expect-error not overloads match
@@ -70,19 +71,17 @@ export async function getConnectionStatus(bot_uuid: string): Promise<{
 }> {
   // @ts-expect-error not overloads match
   return db
-    .selectFrom("chargebot_inverter")
+    .selectFrom("chargebot_inverter_aggregate")
     // @ts-expect-error not overloads match
     .select(() => [
-      sql`max(timestamp) as timestamp`,
+      sql`max(bucket) as timestamp`,
       sql`
       CASE
-          WHEN max(timestamp) < NOW() - INTERVAL '30 minutes' THEN false
+          WHEN max(bucket) < NOW() - INTERVAL '30 minutes' THEN false
           ELSE true
       END as connected`
     ])
     .where('device_id', '=', bot_uuid)
-    // .orderBy('timestamp', 'desc')
-    // .limit(1)
     .executeTakeFirst()
 }
 
@@ -93,14 +92,14 @@ export async function getConnectionStatusByBots(bot_uuids: string[]): Promise<{
 }[]> {
   // @ts-expect-error not overloads match
   return db
-    .selectFrom("chargebot_inverter")
+    .selectFrom("chargebot_inverter_aggregate")
     // @ts-expect-error not overloads match
     .select(() => [
       'device_id as bot_uuid',
-      sql`max(timestamp) as timestamp`,
+      sql`max(bucket) as timestamp`,
       sql`
       CASE
-          WHEN max(timestamp) < NOW() - INTERVAL '30 minutes' THEN false
+          WHEN max(bucket) < NOW() - INTERVAL '30 minutes' THEN false
           ELSE true
       END as connected`
     ])
@@ -114,13 +113,13 @@ export async function countConnectionStatusByBots(bot_uuids: string[], conn_stat
     .with(
       'connection_status',
       (db) => db
-        .selectFrom("chargebot_inverter")
+        .selectFrom("chargebot_inverter_aggregate")
         // @ts-expect-error not overloads match
         .select(() => [
           'device_id',
           sql`
           CASE
-              WHEN max(timestamp) < NOW() - INTERVAL '30 minutes' THEN false
+              WHEN max(bucket) < NOW() - INTERVAL '30 minutes' THEN false
               ELSE true
           END as connected`
         ])
@@ -147,52 +146,36 @@ export async function getTodayTotals(bot_uuid: string, variable: InverterVariabl
 }[]> {
   // @ts-expect-error not overloads match
   return db
-    .selectFrom("chargebot_inverter")
+    .selectFrom("chargebot_inverter_hourly_aggregate")
     // @ts-expect-error not overloads match
     .select(({ fn }) => [
-      // data is stored in UTC and
-      // time_bucket function uses UTC as default timezone for buckets definition
-      sql`time_bucket('1 day', "timestamp") as "day"`,
+      sql`max(bucket) as "day"`,
       'variable',
-      fn.sum(
-        fn.coalesce(
-          'value_int',
-          'value_long',
-          'value_float',
-          'value_double'
-        )
-      ).as('value'),
+      fn.sum('value').as('value'),
     ])
     .where('device_id', '=', bot_uuid)
     .where('variable', 'in', variable)
-    .where('timestamp', '>', sql`date_trunc('day', current_date at time zone 'UTC')`)
-    .groupBy(['day', 'variable'])
+    .where('bucket', '>', sql`date_trunc('day', current_date at time zone 'UTC')`)
+    .groupBy('variable')
     .orderBy('day', 'desc')
     .limit(variable.length)
     .execute();
 }
 
-export async function getTotalEnergyUsage(bot_uuid: string, from: Date, to: Date): Promise<ChargebotInverter[]> {
+export async function getTotalEnergyUsage(bot_uuid: string, from: Date, to: Date): Promise<ChargebotInverterAggregate[]> {
   // @ts-expect-error not overloads match
   return db
     .with(
       'block_data',
       // Get report data
       (db) => db
-        .selectFrom("chargebot_inverter")
+        .selectFrom("chargebot_inverter_hourly_aggregate")
         .select(({ fn }) => [
           'variable',
-          fn.sum(
-            fn.coalesce(
-              'value_int',
-              'value_long',
-              'value_float',
-              'value_double'
-            )
-          ).as('value'),
+          fn.sum('value').as('value'),
         ])
         .where('device_id', '=', bot_uuid)
-        .where((eb) => eb.between('timestamp', from, to))
+        .where((eb) => eb.between('bucket', from, to))
         .where('variable', 'in', [
           InverterVariable.BATTERY_CHARGE_DIFF,
           InverterVariable.BATTERY_DISCHARGE_DIFF,
@@ -226,22 +209,15 @@ export async function getEnergyUsageByHourBucket(bot_uuid: string, from: Date, t
       'block_data',
       // Get report data
       (db) => db
-        .selectFrom("chargebot_inverter")
+        .selectFrom("chargebot_inverter_hourly_aggregate")
         // @ts-expect-error not overloads match
         .select(({ fn }) => [
-          sql`time_bucket_gapfill('1 hour', "timestamp") as "hour"`,
+          sql`time_bucket_gapfill('1 hour', "bucket") as "hour"`,
           'variable',
-          fn.sum(
-            fn.coalesce(
-              'value_int',
-              'value_long',
-              'value_float',
-              'value_double'
-            )
-          ).as('value'),
+          fn.sum('value').as('value'),
         ])
         .where('device_id', '=', bot_uuid)
-        .where((eb) => eb.between('timestamp', from, to))
+        .where((eb) => eb.between('bucket', from, to))
         .where('variable', 'in', [
           InverterVariable.SOLAR_CHARGE_DIFF,
           InverterVariable.GRID_CHARGE_DIFF,
@@ -273,24 +249,17 @@ export async function getMonthlyEnergyUsage(bot_uuid: string, from: Date, to: Da
 }> {
   // @ts-expect-error not overloads match
   return db
-    .selectFrom("chargebot_inverter")
+    .selectFrom("chargebot_inverter_monthly_aggregate")
     // @ts-expect-error not overloads match
     .select(({ fn }) => [
-      sql`time_bucket('1 month', "timestamp") as "time"`,
+      sql`max("bucket") as "time"`,
       'variable',
-      fn.sum(
-        fn.coalesce(
-          'value_int',
-          'value_long',
-          'value_float',
-          'value_double'
-        )
-      ).as('value'),
+      fn.sum('value').as('value'),
     ])
     .where('device_id', '=', bot_uuid)
     .where('variable', '=', InverterVariable.ENERGY_USAGE)
-    .where((eb) => eb.between('timestamp', from, to))
-    .groupBy(['time', 'variable'])
+    .where((eb) => eb.between('bucket', from, to))
+    .groupBy('variable')
     .executeTakeFirst();
 }
 
@@ -305,22 +274,15 @@ export async function getMonthlyEnergyUsageByDay(bot_uuid: string, from: Date, t
       'block_data',
       // Get report data
       (db) => db
-        .selectFrom("chargebot_inverter")
+        .selectFrom("chargebot_inverter_daily_aggregate")
         // @ts-expect-error not overloads match
         .select(({ fn }) => [
-          sql`time_bucket_gapfill('1 day', "timestamp") as "time"`,
+          sql`time_bucket_gapfill('1 day', "bucket") as "time"`,
           'variable',
-          fn.sum(
-            fn.coalesce(
-              'value_int',
-              'value_long',
-              'value_float',
-              'value_double'
-            )
-          ).as('value'),
+          fn.sum('value').as('value'),
         ])
         .where('device_id', '=', bot_uuid)
-        .where((eb) => eb.between('timestamp', from, to))
+        .where((eb) => eb.between('bucket', from, to))
         .where('variable', '=', InverterVariable.ENERGY_USAGE)
         .groupBy(['time', 'variable'])
         .orderBy('time', 'asc')
@@ -346,24 +308,17 @@ export async function getYearlyEnergyUsage(bot_uuid: string, from: Date, to: Dat
 }> {
   // @ts-expect-error not overloads match
   return db
-    .selectFrom("chargebot_inverter")
+    .selectFrom("chargebot_inverter_yearly_aggregate")
     // @ts-expect-error not overloads match
     .select(({ fn }) => [
-      sql`time_bucket('1 year', "timestamp") as "time"`,
+      sql`max("bucket") as "time"`,
       'variable',
-      fn.sum(
-        fn.coalesce(
-          'value_int',
-          'value_long',
-          'value_float',
-          'value_double'
-        )
-      ).as('value'),
+      fn.sum('value').as('value'),
     ])
     .where('device_id', '=', bot_uuid)
     .where('variable', '=', InverterVariable.ENERGY_USAGE)
-    .where((eb) => eb.between('timestamp', from, to))
-    .groupBy(['time', 'variable'])
+    .where((eb) => eb.between('bucket', from, to))
+    .groupBy('variable')
     .executeTakeFirst();
 }
 
@@ -378,22 +333,15 @@ export async function getYearlyEnergyUsageByMonth(bot_uuid: string, from: Date, 
       'block_data',
       // Get report data
       (db) => db
-        .selectFrom("chargebot_inverter")
+        .selectFrom("chargebot_inverter_monthly_aggregate")
         // @ts-expect-error not overloads match
         .select(({ fn }) => [
-          sql`time_bucket_gapfill('1 month', "timestamp") as "time"`,
+          sql`time_bucket_gapfill('1 month', "bucket") as "time"`,
           'variable',
-          fn.sum(
-            fn.coalesce(
-              'value_int',
-              'value_long',
-              'value_float',
-              'value_double'
-            )
-          ).as('value'),
+          fn.sum('value').as('value'),
         ])
         .where('device_id', '=', bot_uuid)
-        .where((eb) => eb.between('timestamp', from, to))
+        .where((eb) => eb.between('bucket', from, to))
         .where('variable', '=', InverterVariable.ENERGY_USAGE)
         .groupBy(['time', 'variable'])
         .orderBy('time', 'asc')
@@ -421,25 +369,25 @@ export async function getDaysWithData(bot_uuid: string, from: Date, to: Date): P
       'block_data',
       // Get report data
       (db) => db
-        .selectFrom("chargebot_inverter")
+        .selectFrom("chargebot_inverter_daily_aggregate")
         // @ts-expect-error not overloads match
         .select(({ fn }) => [
-          sql`time_bucket_gapfill('1 day', "timestamp") AS bucket`,
-          fn.count<number>('id').as('number_of_records'),
+          sql`time_bucket_gapfill('1 day', "bucket") AS bucket_gapfill`,
+          fn.count<number>('device_id').as('number_of_records'),
         ])
         .where('device_id', '=', bot_uuid)
-        .where((eb) => eb.between('timestamp', from, to))
+        .where((eb) => eb.between('bucket', from, to))
         .where('variable', 'in', [
           InverterVariable.SOLAR_CHARGE_DIFF,
           InverterVariable.GRID_CHARGE_DIFF,
           InverterVariable.ENERGY_USAGE
         ])
-        .groupBy('bucket')
-        .orderBy('bucket', 'asc')
+        .groupBy('bucket_gapfill')
+        .orderBy('bucket_gapfill', 'asc')
     )
     .selectFrom('block_data')
     .select([
-      'bucket',
+      'bucket_gapfill as bucket',
       sql`
         case 
           when number_of_records is not NULL then number_of_records

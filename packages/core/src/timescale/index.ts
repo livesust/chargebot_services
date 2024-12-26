@@ -11,6 +11,13 @@ import { ChargebotSystemTable } from "./chargebot_system";
 import { ChargebotTemperatureTable } from "./chargebot_temperature";
 import { ChargebotFanTable } from "./chargebot_fan";
 import { ChargebotAssetTrackerTable } from "./chargebot_asset_tracker";
+import { ChargebotBatteryAggregateTable } from "./chargebot_battery_aggregate";
+import { ChargebotFanAggregateTable } from "./chargebot_fan_aggregate";
+import { ChargebotGpsAggregateTable } from "./chargebot_gps_aggregate";
+import { ChargebotInverterAggregateTable } from "./chargebot_inverter_aggregate";
+import { ChargebotPDUAggregateTable } from "./chargebot_pdu_aggregate";
+import { ChargebotTemperatureAggregateTable } from "./chargebot_temperature_aggregate";
+import { ChargebotSystemAggregateTable } from "./chargebot_system_aggregate";
 import { Config } from "sst/node/config";
 
 export interface AnalyticsDatabase {
@@ -25,6 +32,17 @@ export interface AnalyticsDatabase {
     chargebot_temperature: ChargebotTemperatureTable,
     chargebot_fan: ChargebotFanTable,
     chargebot_asset_tracker: ChargebotAssetTrackerTable,
+    chargebot_battery_aggregate: ChargebotBatteryAggregateTable,
+    chargebot_fan_aggregate: ChargebotFanAggregateTable,
+    chargebot_inverter_aggregate: ChargebotInverterAggregateTable,
+    chargebot_inverter_hourly_aggregate: ChargebotInverterAggregateTable,
+    chargebot_inverter_daily_aggregate: ChargebotInverterAggregateTable,
+    chargebot_inverter_monthly_aggregate: ChargebotInverterAggregateTable,
+    chargebot_inverter_yearly_aggregate: ChargebotInverterAggregateTable,
+    chargebot_pdu_aggregate: ChargebotPDUAggregateTable,
+    chargebot_temperature_aggregate: ChargebotTemperatureAggregateTable,
+    chargebot_gps_aggregate: ChargebotGpsAggregateTable,
+    chargebot_system_aggregate: ChargebotSystemAggregateTable
 }
 
 // Configs secrets are set with the following command

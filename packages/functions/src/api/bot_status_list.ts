@@ -81,7 +81,7 @@ const handler = async (event) => {
       botUuids = alertedBots.map(b => b.device_id);
     }
 
-    if (filters.hast_24h_alerts) {
+    if (filters.has_24h_alerts) {
       // filter to return only bots with active alerts/errors in last 24h
       const todayAlertsBots = await ChargebotAlert.getTodayWarningAlertsByBots(botUuids) ?? [];
       todayAlertsBots.push(...(await ChargebotError.getTodayActiveErrorsByBots(botUuids) ?? []));
@@ -94,6 +94,13 @@ const handler = async (event) => {
       botUuids = filters.is_at_home ? lastPositions.filter(b => b.vehicle_status === VehicleStatus.AT_HOME).map(b => b.device_id) : botUuids;
       botUuids = filters.is_in_transit ? lastPositions.filter(b => b.vehicle_status === VehicleStatus.MOVING || b.vehicle_status === VehicleStatus.STOPPED).map(b => b.device_id) : botUuids;
       botUuids = filters.is_on_location ? lastPositions.filter(b => b.vehicle_status === VehicleStatus.PARKED).map(b => b.device_id) : botUuids;
+    }
+
+    if (botUuids?.length === 0) {
+      return createSuccessResponse({
+        records: [],
+        count: 0
+      });
     }
 
     const criteria: BotCriteria = {

@@ -101,15 +101,15 @@ export async function getWarningAlertsByBot(botUuid: string, interval: string): 
     });
 }
 
-export async function getActiveWarningAlertsByBots(botUuids: string[]): Promise<ChargebotAlert[] | undefined> {
+export async function getActiveWarningAlertsByBots(botUuids: string[]): Promise<{device_id: string}[] | undefined> {
   return getWarningAlertsByBots(botUuids, '1 year')
 }
 
-export async function getTodayWarningAlertsByBots(botUuids: string[]): Promise<ChargebotAlert[] | undefined> {
+export async function getTodayWarningAlertsByBots(botUuids: string[]): Promise<{device_id: string}[] | undefined> {
   return getWarningAlertsByBots(botUuids, '24 hours')
 }
 
-export async function getWarningAlertsByBots(botUuids: string[], interval: string): Promise<ChargebotAlert[] | undefined> {
+export async function getWarningAlertsByBots(botUuids: string[], interval: string): Promise<{device_id: string}[] | undefined> {
   return db
     .with(
       'last_battery_charging',
@@ -141,58 +141,76 @@ export async function getWarningAlertsByBots(botUuids: string[], interval: strin
       'battery_critical',
       (db) => db
         .selectFrom(['chargebot_alert', 'last_battery_charging'])
-        .selectAll('chargebot_alert')
+        // @ts-expect-error not overloads match
+        .select(() => [
+          sql`chargebot_alert.device_id`,
+          sql`max(chargebot_alert.timestamp) as timestamp`
+        ])
         .where('chargebot_alert.device_id', 'in', botUuids)
         .where('chargebot_alert.name', '=', 'battery_critical')
         .where('chargebot_alert.timestamp', '>=', sql`date_trunc('day', NOW() - interval ${sql.lit(interval)})`)
         .where(sql`chargebot_alert.timestamp > (select lbc.timestamp from last_battery_charging lbc where lbc.device_id = chargebot_alert.device_id)`)
-        .orderBy('chargebot_alert.timestamp', 'desc')
-        .limit(1)
+        .groupBy('chargebot_alert.device_id')
     )
     .with(
       'battery_low',
       (db) => db
         .selectFrom(['chargebot_alert', 'last_battery_charging', 'battery_critical'])
-        .selectAll('chargebot_alert')
+        .select(() => [
+          sql`chargebot_alert.device_id`,
+          sql`max(chargebot_alert.timestamp) as timestamp`
+        ])
         .where('chargebot_alert.device_id', 'in', botUuids)
         .where('chargebot_alert.name', '=', 'battery_low')
         .where('chargebot_alert.timestamp', '>=', sql`date_trunc('day', NOW() - interval ${sql.lit(interval)})`)
         .where(sql`chargebot_alert.timestamp > (select lbc.timestamp from last_battery_charging lbc where lbc.device_id = chargebot_alert.device_id)`)
         .where(sql`chargebot_alert.timestamp > (select bc.timestamp from battery_critical bc where bc.device_id = chargebot_alert.device_id)`)
-        .orderBy('chargebot_alert.timestamp', 'desc')
-        .limit(1)
+        .groupBy('chargebot_alert.device_id')
     )
     .with(
       'battery_temperature_critical',
       (db) => db
         .selectFrom(['chargebot_alert', 'last_battery_temperature_normalized'])
-        .selectAll('chargebot_alert')
+        // @ts-expect-error not overloads match
+        .select(() => [
+          sql`chargebot_alert.device_id`,
+          sql`max(chargebot_alert.timestamp) as timestamp`
+        ])
         .where('chargebot_alert.device_id', 'in', botUuids)
         .where('chargebot_alert.name', '=', 'battery_temperature_critical')
         .where('chargebot_alert.timestamp', '>=', sql`date_trunc('day', NOW() - interval ${sql.lit(interval)})`)
         .where(sql`chargebot_alert.timestamp > last_battery_temperature_normalized.timestamp`)
         .where(sql`chargebot_alert.timestamp > (select lbn.timestamp from last_battery_temperature_normalized lbn where lbn.device_id = chargebot_alert.device_id)`)
-        .orderBy('chargebot_alert.timestamp', 'desc')
-        .limit(1)
+        .groupBy('chargebot_alert.device_id')
     )
     .with(
       'battery_temperature_low',
       (db) => db
         .selectFrom(['chargebot_alert', 'last_battery_temperature_normalized', 'battery_temperature_critical'])
-        .selectAll('chargebot_alert')
+        .select(() => [
+          sql`chargebot_alert.device_id`,
+          sql`max(chargebot_alert.timestamp) as timestamp`
+        ])
         .where('chargebot_alert.device_id', 'in', botUuids)
         .where('chargebot_alert.name', '=', 'battery_temperature_low')
         .where('chargebot_alert.timestamp', '>=', sql`date_trunc('day', NOW() - interval ${sql.lit(interval)})`)
         .where(sql`chargebot_alert.timestamp > (select lbn.timestamp from last_battery_temperature_normalized lbn where lbn.device_id = chargebot_alert.device_id)`)
         .where(sql`chargebot_alert.timestamp > (select bc.timestamp from battery_critical bc where bc.device_id = chargebot_alert.device_id)`)
-        .orderBy('chargebot_alert.timestamp', 'desc')
-        .limit(1)
+        .groupBy('chargebot_alert.device_id')
     )
-    .selectFrom('battery_low')
-    .unionAll((eb) => eb.selectFrom('battery_critical').selectAll())
-    .unionAll((eb) => eb.selectFrom('battery_temperature_low').selectAll())
-    .unionAll((eb) => eb.selectFrom('battery_temperature_critical').selectAll())
-    .selectAll()
+    .with(
+      'all_alerts',
+      (db) => db
+        .selectFrom('battery_critical')
+        .select('device_id')
+        // @ts-expect-error not overloads match
+        .unionAll((eb) => eb.selectFrom('battery_low').select('device_id'))
+        .unionAll((eb) => eb.selectFrom('battery_temperature_critical').select('device_id'))
+        // @ts-expect-error not overloads match
+        .unionAll((eb) => eb.selectFrom('battery_temperature_low').select('device_id'))
+    )
+    .selectFrom('all_alerts')
+    .select('device_id')
     .execute()
     .catch(error => {
       console.log(error);
@@ -209,7 +227,7 @@ export async function countTodayWarningAlertsByBot(botUuid: string): Promise<num
 }
 
 export async function countWarningAlertsByBot(botUuid: string, interval: string): Promise<number> {
-  const count: { value: number; } | undefined =  await db
+  const count: unknown[] =  await db
     .with(
       'last_battery_charging',
       (db) => db
@@ -296,15 +314,14 @@ export async function countWarningAlertsByBot(botUuid: string, interval: string)
         .unionAll((eb) => eb.selectFrom('battery_temperature_critical').selectAll())
     )
     .selectFrom('all_alerts')
-    .select(({ fn }) => [
-      fn.count<number>('device_id').as('value'),
-    ])
-    .executeTakeFirst()
+    .select('device_id')
+    .groupBy('device_id')
+    .execute()
     .catch(error => {
       console.log(error);
       throw error;
     });
-    return count?.value ?? 0;
+    return count?.length ?? 0;
 }
 
 export async function countActiveWarningAlertsByBots(botUuids: string[]): Promise<number> {
@@ -316,7 +333,7 @@ export async function countTodayWarningAlertsByBots(botUuids: string[]): Promise
 }
 
 export async function countWarningAlertsByBots(botUuids: string[], interval: string): Promise<number> {
-  const count: { value: number; } | undefined =  await db
+  const count: unknown[] =  await db
     .with(
       'last_battery_charging',
       (db) => db
@@ -347,70 +364,81 @@ export async function countWarningAlertsByBots(botUuids: string[], interval: str
       'battery_critical',
       (db) => db
         .selectFrom(['chargebot_alert', 'last_battery_charging'])
-        .selectAll('chargebot_alert')
+        // @ts-expect-error not overloads match
+        .select(() => [
+          sql`chargebot_alert.device_id`,
+          sql`max(chargebot_alert.timestamp) as timestamp`
+        ])
         .where('chargebot_alert.device_id', 'in', botUuids)
         .where('chargebot_alert.name', '=', 'battery_critical')
         .where('chargebot_alert.timestamp', '>=', sql`date_trunc('day', NOW() - interval ${sql.lit(interval)})`)
         .where(sql`chargebot_alert.timestamp > (select lbc.timestamp from last_battery_charging lbc where lbc.device_id = chargebot_alert.device_id)`)
-        .orderBy('chargebot_alert.timestamp', 'desc')
-        .limit(1)
+        .groupBy('chargebot_alert.device_id')
     )
     .with(
       'battery_low',
       (db) => db
         .selectFrom(['chargebot_alert', 'last_battery_charging', 'battery_critical'])
-        .selectAll('chargebot_alert')
+        .select(() => [
+          sql`chargebot_alert.device_id`,
+          sql`max(chargebot_alert.timestamp) as timestamp`
+        ])
         .where('chargebot_alert.device_id', 'in', botUuids)
         .where('chargebot_alert.name', '=', 'battery_low')
         .where('chargebot_alert.timestamp', '>=', sql`date_trunc('day', NOW() - interval ${sql.lit(interval)})`)
         .where(sql`chargebot_alert.timestamp > (select lbc.timestamp from last_battery_charging lbc where lbc.device_id = chargebot_alert.device_id)`)
         .where(sql`chargebot_alert.timestamp > (select bc.timestamp from battery_critical bc where bc.device_id = chargebot_alert.device_id)`)
-        .orderBy('chargebot_alert.timestamp', 'desc')
-        .limit(1)
+        .groupBy('chargebot_alert.device_id')
     )
     .with(
       'battery_temperature_critical',
       (db) => db
         .selectFrom(['chargebot_alert', 'last_battery_temperature_normalized'])
-        .selectAll('chargebot_alert')
+        // @ts-expect-error not overloads match
+        .select(() => [
+          sql`chargebot_alert.device_id`,
+          sql`max(chargebot_alert.timestamp) as timestamp`
+        ])
         .where('chargebot_alert.device_id', 'in', botUuids)
         .where('chargebot_alert.name', '=', 'battery_temperature_critical')
         .where('chargebot_alert.timestamp', '>=', sql`date_trunc('day', NOW() - interval ${sql.lit(interval)})`)
         .where(sql`chargebot_alert.timestamp > last_battery_temperature_normalized.timestamp`)
         .where(sql`chargebot_alert.timestamp > (select lbn.timestamp from last_battery_temperature_normalized lbn where lbn.device_id = chargebot_alert.device_id)`)
-        .orderBy('chargebot_alert.timestamp', 'desc')
-        .limit(1)
+        .groupBy('chargebot_alert.device_id')
     )
     .with(
       'battery_temperature_low',
       (db) => db
         .selectFrom(['chargebot_alert', 'last_battery_temperature_normalized', 'battery_temperature_critical'])
-        .selectAll('chargebot_alert')
+        .select(() => [
+          sql`chargebot_alert.device_id`,
+          sql`max(chargebot_alert.timestamp) as timestamp`
+        ])
         .where('chargebot_alert.device_id', 'in', botUuids)
         .where('chargebot_alert.name', '=', 'battery_temperature_low')
         .where('chargebot_alert.timestamp', '>=', sql`date_trunc('day', NOW() - interval ${sql.lit(interval)})`)
         .where(sql`chargebot_alert.timestamp > (select lbn.timestamp from last_battery_temperature_normalized lbn where lbn.device_id = chargebot_alert.device_id)`)
         .where(sql`chargebot_alert.timestamp > (select bc.timestamp from battery_critical bc where bc.device_id = chargebot_alert.device_id)`)
-        .orderBy('chargebot_alert.timestamp', 'desc')
-        .limit(1)
+        .groupBy('chargebot_alert.device_id')
     )
     .with(
       'all_alerts',
       (db) => db
-        .selectFrom('battery_low')
+        .selectFrom('battery_critical')
         .select('device_id')
-        .unionAll((eb) => eb.selectFrom('battery_critical').select('device_id'))
-        .unionAll((eb) => eb.selectFrom('battery_temperature_low').select('device_id'))
+        // @ts-expect-error not overloads match
+        .unionAll((eb) => eb.selectFrom('battery_low').select('device_id'))
         .unionAll((eb) => eb.selectFrom('battery_temperature_critical').select('device_id'))
+        // @ts-expect-error not overloads match
+        .unionAll((eb) => eb.selectFrom('battery_temperature_low').select('device_id'))
     )
     .selectFrom('all_alerts')
-    .select(({ fn }) => [
-      fn.count<number>('device_id').as('value'),
-    ])
-    .executeTakeFirst()
+    .select('device_id')
+    .groupBy('device_id')
+    .execute()
     .catch(error => {
       console.log(error);
       throw error;
     });
-    return count?.value ?? 0;
+    return count?.length ?? 0;
 }
