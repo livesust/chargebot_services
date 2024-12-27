@@ -29,47 +29,48 @@
   "push_alerts": {
     "battery_low": {
       "title": "Battery Low",
-      "message": "Your ChargeBot \"{{{device_id}}}\" battery is at {{{state_of_charge}}}% and may soon require charging."
+      "message": "ChargeBot \"{{{device_id}}}\" battery is at {{{state_of_charge}}}% and may soon require charging."
     },
     "battery_critical": {
       "title": "Battery Critical",
-      "message": "Your ChargeBot \"{{{device_id}}}\" has a critically low battery and will be unable to charge more equipment until plugged into a power source."
+      "message": "ChargeBot \"{{{device_id}}}\" has a critically low battery and will be unable to charge more equipment until plugged into a power source."
     },
     "battery_temperature_low": {
       "title": "Battery Temperature Low",
-      "message": "Your ChargeBot \"{{{device_id}}}\" temperature is currently at {{{temperature_f}}}°F, charge performance may be reduced. To protect your battery, turn off the battery breaker while temperatures are below 32°F."
+      "message": "ChargeBot \"{{{device_id}}}\" temperature is currently at {{{temperature_f}}}°F, charge performance may be reduced. To protect your battery, turn off the battery breaker while temperatures are below 32°F."
     },
     "battery_temperature_critical": {
       "title": "Battery Freeze",
-      "message": "Your ChargeBot \"{{{device_id}}}\" temperature is currently at {{{temperature_f}}}°F. Risk of battery freeze! Disconnect your battery and move it to a warmer space to prevent permanent damage!"
+      "message": "ChargeBot \"{{{device_id}}}\" temperature is currently at {{{temperature_f}}}°F. Risk of battery freeze! Disconnect your battery and move it to a warmer space to prevent permanent damage!"
     },
     "battery_temperature_normalized": {
       "title": "Battery Temperature Normal",
-      "message": "Your ChargeBot \"{{{device_id}}}\" temperature is currently at {{{temperature_f}}}°F, charge performance restored."
+      "message": "ChargeBot \"{{{device_id}}}\" temperature is currently at {{{temperature_f}}}°F, charge performance restored."
     },
     "battery_charging": {
-      "ntitleame": "Battery Charging",
-      "message": "Your ChargeBot \"{{{device_id}}}\" is charging. Battery is at {{{state_of_charge}}}%."
+      "title": "Battery Charging",
+      "message": "ChargeBot \"{{{device_id}}}\" is now charging. The battery is at {{{state_of_charge}}}%."
     },
     "battery_discharging": {
       "title": "Battery Discharging",
-      "message": "Your ChargeBot \"{{{device_id}}}\" is discharging. Battery is at {{{state_of_charge}}}%."
+      "messageFull": "ChargeBot \"{{{device_id}}}\" is done charging and your battery is at full capacity.",
+      "messageNotFull": "ChargeBot \"{{{device_id}}}\" is no longer charging and the battery is at {{{state_of_charge}}}%. If you did not stop charging, check to make sure there is not a connection problem."
     },
     "gps_arrive_home": {
       "title": "Arrived Home",
-      "message": "Your ChargeBot \"{{{device_id}}}\" has arrived home. Please make sure you plug it in to charge. "
+      "message": "ChargeBot \"{{{device_id}}}\" has arrived home. Please make sure you plug it in to charge. "
     },
     "gps_leave_home": {
       "title": "Left Home",
-      "message": "Your ChargeBot \"{{{device_id}}}\" has left home. You can track location from your App. "
+      "message": "ChargeBot \"{{{device_id}}}\" has left home. You can track location from your App. "
     },
     "gps_long_stop": {
       "title": "Long Stop",
-      "message": "Your ChargeBot \"{{{device_id}}}\" has been at {{{address}}} for more than {{{parked_time_hours}}} hours."
+      "message": "ChargeBot \"{{{device_id}}}\" has been at {{{address}}} for more than {{{parked_time_hours}}} hours."
     },
     "not_plugged_in": {
       "title": "Not Plugged In",
-      "message": "Your ChargeBot \"{{{device_id}}}\" is not charging from utility power. It may not be plugged in or a site breaker may have tripped. Please check to ensure no issues tomorrow."
+      "message": "ChargeBot \"{{{device_id}}}\" is not charging from utility power. It may not be plugged in or a site breaker may have tripped. Please check to ensure no issues tomorrow."
     },
     "nothing_charging": {
       "title": "Nothing Charging",
