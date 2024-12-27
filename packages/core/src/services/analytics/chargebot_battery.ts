@@ -1,16 +1,17 @@
 export * as ChargebotBattery from "./chargebot_battery";
 import { sql } from "kysely";
 import db from '../../timescale';
-import { ChargebotBattery, BatteryVariables, BatteryFirmwareState, BatteryState } from "../../timescale/chargebot_battery";
+import { BatteryVariables, BatteryFirmwareState, BatteryState } from "../../timescale/chargebot_battery";
 import { DateTime } from "luxon";
+import { ChargebotBatteryAggregate } from "../../timescale/chargebot_battery_aggregate";
 
-export async function getBatteryStatus(bot_uuid: string): Promise<ChargebotBattery[]> {
+export async function getBatteryStatus(bot_uuid: string): Promise<ChargebotBatteryAggregate[]> {
   return db
-    .selectFrom("chargebot_battery")
+    .selectFrom("chargebot_battery_aggregate")
     // @ts-expect-error not overloads match
     .select(() => [
       'variable',
-      sql`last(coalesce (value_int, value_long, value_float, value_double), "timestamp") as value`,
+      sql`last(value, bucket) as value`,
     ])
     .where('device_id', '=', bot_uuid)
     .where('variable', 'in', [
@@ -21,20 +22,15 @@ export async function getBatteryStatus(bot_uuid: string): Promise<ChargebotBatte
     .execute();
 }
 
-export async function getBatteryStatuses(bot_uuids: string[]): Promise<ChargebotBattery[]> {
+export async function getBatteryStatusByBots(bot_uuids: string[]): Promise<ChargebotBatteryAggregate[]> {
   // @ts-expect-error ignore type
   return db
-    .selectFrom("chargebot_battery")
+    .selectFrom("chargebot_battery_aggregate")
     .distinctOn(["device_id", "variable"])
-    .select(({ fn }) => [
+    .select([
       'device_id',
       'variable',
-      fn.coalesce(
-        'value_int',
-        'value_long',
-        'value_float',
-        'value_double'
-      ).as('value'),
+      'value',
     ])
     .where('device_id', 'in', bot_uuids)
     .where('variable', 'in', [
@@ -43,7 +39,7 @@ export async function getBatteryStatuses(bot_uuids: string[]): Promise<Chargebot
     ])
     .orderBy('device_id', 'desc')
     .orderBy('variable', 'desc')
-    .orderBy('timestamp', 'desc')
+    .orderBy('bucket', 'desc')
     .execute();
 }
 
@@ -57,13 +53,13 @@ export async function getLowBatteryBots(device_ids: string[]): Promise<{
     .with(
       'latest_values',
       (db) => db
-        .selectFrom('chargebot_battery')
+        .selectFrom('chargebot_battery_aggregate')
         .distinctOn(['device_id', 'variable'])
         // @ts-expect-error implicit any
         .select(() => [
-          sql`device_id`,
+          'device_id',
           'variable',
-          sql`coalesce(value_int, value_long, value_float, value_double) as value`,
+          'value',
         ])
         .where('device_id', 'in', device_ids)
         .where('variable', 'in', [
@@ -72,7 +68,7 @@ export async function getLowBatteryBots(device_ids: string[]): Promise<{
         ])
         .orderBy('device_id', 'asc')
         .orderBy('variable', 'asc')
-        .orderBy('timestamp', 'desc')
+        .orderBy('bucket', 'desc')
     )
     .selectFrom("latest_values")
     .select(() => [
@@ -91,37 +87,36 @@ export async function getLowBatteryBots(device_ids: string[]): Promise<{
 }
 
 export async function countLowBatteryBots(device_ids: string[]): Promise<number> {
-  const count: { value: number; } | undefined = await db
+  const result: unknown[] = await db
     .with(
       'latest_values',
       (db) => db
-        .selectFrom('chargebot_battery')
-        .distinctOn(['device_id', 'variable'])
+        .selectFrom('chargebot_battery_aggregate')
         // @ts-expect-error implicit any
         .select(() => [
-          sql`device_id`,
+          'device_id',
           'variable',
-          sql`coalesce(value_int, value_long, value_float, value_double) as value`,
+          sql`max(bucket) as timestamp`,
+          sql`last(value, bucket) AS value`,
         ])
         .where('device_id', 'in', device_ids)
         .where('variable', 'in', [
           BatteryVariables.STATE,
           BatteryVariables.LEVEL_SOC
         ])
+        .groupBy(['device_id', 'variable'])
     )
     .selectFrom("latest_values")
-    .select(({ fn }) => [
-      fn.count<number>('device_id').as('value'),
-    ])
+    .select('device_id')
     .groupBy('device_id')
     .having(sql`max(case when variable = 'state_of_charge' then value end)`, '<', 12)
     .having(sql`max(case when variable = 'battery_state' then value end)`, '=', BatteryFirmwareState.DISCHARGING)
-    .executeTakeFirst()
+    .execute()
     .catch(error => {
       console.log(error);
       throw error;
     });
-  return count?.value ?? 0;
+  return result?.length ?? 0;
 }
 
 export async function getConnectionStatus(bot_uuid: string): Promise<{
@@ -130,19 +125,17 @@ export async function getConnectionStatus(bot_uuid: string): Promise<{
 }> {
   // @ts-expect-error not overloads match
   return db
-    .selectFrom("chargebot_battery")
+    .selectFrom("chargebot_battery_aggregate")
     // @ts-expect-error not overloads match
     .select(() => [
-      sql`max(timestamp) as timestamp`,
+      sql`max(bucket) as timestamp`,
       sql`
       CASE
-          WHEN max(timestamp) < NOW() - INTERVAL '30 minutes' THEN false
+          WHEN max(bucket) < NOW() - INTERVAL '30 minutes' THEN false
           ELSE true
       END as connected`
     ])
     .where('device_id', '=', bot_uuid)
-    // .orderBy('timestamp', 'desc')
-    // .limit(1)
     .executeTakeFirst();
 }
 
@@ -153,14 +146,14 @@ export async function getConnectionStatusByBots(bot_uuids: string[]): Promise<{
 }[]> {
   // @ts-expect-error not overloads match
   return db
-    .selectFrom("chargebot_battery")
+    .selectFrom("chargebot_battery_aggregate")
     // @ts-expect-error not overloads match
     .select(() => [
       'device_id as bot_uuid',
-      sql`max(timestamp) as timestamp`,
+      sql`max(bucket) as timestamp`,
       sql`
       CASE
-          WHEN max(timestamp) < NOW() - INTERVAL '30 minutes' THEN false
+          WHEN max(bucket) < NOW() - INTERVAL '30 minutes' THEN false
           ELSE true
       END as connected`
     ])
@@ -170,17 +163,17 @@ export async function getConnectionStatusByBots(bot_uuids: string[]): Promise<{
 }
 
 export async function countConnectionStatusByBots(bot_uuids: string[], conn_status: boolean): Promise<number> {
-  const count: { value: number; } | undefined = await db
+  const count: unknown[] = await db
     .with(
       'connection_status',
       (db) => db
-        .selectFrom("chargebot_battery")
+        .selectFrom("chargebot_battery_aggregate")
         // @ts-expect-error not overloads match
         .select(() => [
           'device_id',
           sql`
           CASE
-              WHEN max(timestamp) < NOW() - INTERVAL '30 minutes' THEN false
+              WHEN max(bucket) < NOW() - INTERVAL '30 minutes' THEN false
               ELSE true
           END as connected`
         ])
@@ -188,34 +181,28 @@ export async function countConnectionStatusByBots(bot_uuids: string[], conn_stat
         .groupBy('device_id')
     )
     .selectFrom('connection_status')
-    .select(({ fn }) => [
-      fn.count<number>('device_id').as('value'),
-    ])
+    .select('device_id')
     .where('connected', '=', conn_status)
-    .executeTakeFirst()
+    .groupBy('device_id')
+    .execute()
     .catch(error => {
       console.log(error);
       throw error;
     });
-    return count?.value ?? 0;
+    return count?.length ?? 0;
 }
 
 export async function getLastBatteryLevel(bot_uuid: string, from: Date, to: Date): Promise<number> {
-  const levelSoc: ChargebotBattery | undefined = await db
-    .selectFrom("chargebot_battery")
+  const levelSoc: ChargebotBatteryAggregate | undefined = await db
+    .selectFrom("chargebot_battery_aggregate")
     // @ts-expect-error not overloads match
     .select(() => [
-      sql`round(coalesce(
-        value_int,
-        value_long,
-        value_float,
-        value_double
-      )) as value`,
+      sql`round(value) as value`,
     ])
     .where('device_id', '=', bot_uuid)
     .where('variable', '=', BatteryVariables.LEVEL_SOC)
-    .where((eb) => eb.between('timestamp', from, to))
-    .orderBy('timestamp', 'desc')
+    .where((eb) => eb.between('bucket', from, to))
+    .orderBy('bucket', 'desc')
     .executeTakeFirst();
 
   return levelSoc?.value ? levelSoc?.value as number : 0;
@@ -230,12 +217,12 @@ export async function getHistory(bot_uuid: string, from: Date, to: Date): Promis
     .with(
       'interpolated_values',
       (db) => db
-        .selectFrom('chargebot_battery')
+        .selectFrom('chargebot_battery_aggregate')
         // @ts-expect-error implicit any
         .select(() => [
-          sql`time_bucket_gapfill('5 minute', "timestamp") AS bucket`,
+          sql`time_bucket_gapfill('5 minute', "bucket") AS bucket_gapfill`,
           'variable',
-          sql`interpolate(max(coalesce(value_int, value_long, value_float, value_double))) as value`,
+          sql`interpolate(max(value)) as value`,
         ])
         .where('device_id', '=', bot_uuid)
         .where('variable', 'in', [
@@ -245,18 +232,18 @@ export async function getHistory(bot_uuid: string, from: Date, to: Date): Promis
         ])
         // Get interpolated data for 1 hour before start time
         // so it can interpolate with last values from previous hour
-        .where((eb) => eb.between('timestamp', DateTime.fromJSDate(from).minus({hour: 1}).toJSDate(), to))
-        .groupBy(['bucket', 'variable'])
-        .orderBy('bucket', 'asc')
+        .where((eb) => eb.between('bucket', DateTime.fromJSDate(from).minus({hour: 1}).toJSDate(), to))
+        .groupBy(['bucket_gapfill', 'variable'])
+        .orderBy('bucket_gapfill', 'asc')
         .orderBy('variable', 'asc')
     )
     .selectFrom("interpolated_values")
     .select(() => [
-      'bucket as date',
+      'bucket_gapfill as date',
       'variable',
       sql`value as value`,
     ])
-    .where((eb) => eb.between('bucket', from, to))
+    .where((eb) => eb.between('bucket_gapfill', from, to))
     .execute();
 
     // @ts-expect-error not overloads match
@@ -272,20 +259,15 @@ export async function getBatteryLevelByHourBucket(bot_uuid: string, from: Date, 
       'block_data',
       // Get report data
       (db) => db
-        .selectFrom("chargebot_battery")
+        .selectFrom("chargebot_battery_aggregate")
         // @ts-expect-error implicit any
         .select(() => [
-          sql`time_bucket_gapfill('1 hour', "timestamp") AS hour`,
-          sql`round(avg(coalesce(
-            value_int,
-            value_long,
-            value_float,
-            value_double
-          ))) as value`,
+          sql`time_bucket_gapfill('1 hour', "bucket") AS hour`,
+          sql`round(avg(value)) as value`,
         ])
         .where('device_id', '=', bot_uuid)
         .where('variable', '=', BatteryVariables.LEVEL_SOC)
-        .where((eb) => eb.between('timestamp', from, to))
+        .where((eb) => eb.between('bucket', from, to))
         .groupBy('hour')
         .orderBy('hour', 'asc')
     )

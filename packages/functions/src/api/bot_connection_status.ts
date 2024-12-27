@@ -25,8 +25,8 @@ export const handler = async () => {
     const [
         batteryStatus, systemStatus
     ] = await Promise.all([
-      ChargebotBattery.getBatteryStatuses(botUuids),
-      ChargebotSystem.getSystemStatuses(botUuids)
+      ChargebotBattery.getBatteryStatusByBots(botUuids),
+      ChargebotSystem.getSystemStatusByBots(botUuids)
     ]);
 
     const response: {
@@ -37,7 +37,7 @@ export const handler = async () => {
     }[] = [];
 
     botUuids.forEach(botUuid => {  
-      const iotConnected = systemStatus.find(b => b.device_id === botUuid && b.variable === SystemVariables.CONNECTED)?.value_boolean ?? false;
+      const iotConnected = getNumber(systemStatus.find(b => b.device_id === botUuid && b.variable === SystemVariables.CONNECTED)?.value) === 1;
       const battery_level = getNumber(batteryStatus.find(b => b.device_id === botUuid && b.variable === BatteryVariables.LEVEL_SOC)?.value);
       const battery_status = batteryStatus.find(b => b.device_id === botUuid && b.variable === BatteryVariables.STATE)?.value;
       response.push({

@@ -42,7 +42,7 @@ const handler = async ({ requestContext }) => {
 
     if (botsByUser) {
       const bot_uuids = botsByUser.map(b => b.bot_uuid);
-      const batteryStatus = await ChargebotBattery.getBatteryStatuses(bot_uuids);
+      const batteryStatus = await ChargebotBattery.getBatteryStatusByBots(bot_uuids);
       for (const bot of botsByUser) {
         const batteryVariables: { [key: string]: unknown } = batteryStatus?.filter(l => l?.device_id === bot.bot_uuid)
           .reduce((acc: { [key: string]: unknown }, obj) => {

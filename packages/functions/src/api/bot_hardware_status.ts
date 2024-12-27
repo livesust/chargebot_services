@@ -40,17 +40,17 @@ export const handler = async (event) => {
     ]);
 
     const systemVariables: { [key: string]: unknown } = systemStatus.reduce((acc: { [key: string]: unknown }, obj) => {
-      acc[obj.variable] = obj.value ?? obj.value_boolean;
+      acc[obj.variable] = obj.value;
       return acc;
     }, {});
 
     // convert values from kWh to Wh
-    const iotConnectedTime = systemStatus.find(s => s.variable === SystemVariables.CONNECTED)?.timestamp;
+    const iotConnectedTime = systemStatus.find(s => s.variable === SystemVariables.CONNECTED)?.bucket;
     
     const response = {
       bot_uuid,
       iot: {
-        connected: systemVariables[SystemVariables.CONNECTED] ?? false,
+        connected: getNumber(systemVariables[SystemVariables.CONNECTED]) === 1,
         last_seen: iotConnectedTime ? DateTime.fromJSDate(iotConnectedTime).setZone('UTC').toISO() : null
       },
       pi: {

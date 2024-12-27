@@ -64,11 +64,11 @@ export const handler = async (event) => {
 
     const response = {
       bot_uuid,
-      online: connected?.value_boolean ?? false,
+      online: getNumber(connected?.value) === 1,
       uptime: getNumber(systemStatus?.find(s => s.variable === SystemVariables.UPTIME_MINUTES)?.value),
-      last_seen: connected?.timestamp ? DateTime.fromJSDate(connected.timestamp).setZone('UTC').toISO() : null,
+      last_seen: connected?.bucket ? DateTime.fromJSDate(connected.bucket).setZone('UTC').toISO() : null,
       location_status: location?.vehicle_status,
-      address: `${location?.address_number}, ${location?.street}, ${location?.city}`,
+      address: `${location?.address_number ?? '-'}, ${location?.street}, ${location?.city}`,
       active_alerts: getNumber(activeAlerts) + getNumber(activeErrors),
       active_alerts_24h: getNumber(last24hActiveAlerts) + getNumber(last24hActiveErrors),
       battery_level: getNumber(batteryStatus?.find(b => b.variable === BatteryVariables.LEVEL_SOC)?.value),

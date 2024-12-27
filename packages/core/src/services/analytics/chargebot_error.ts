@@ -117,7 +117,7 @@ export async function getErrorsByBot(bot_uuid: string, error_status: ErrorStatus
 }
 
 export async function countErrorsByBot(bot_uuid: string, error_status: ErrorStatus, interval: string): Promise<number> {
-  const count: { value: number; } | undefined = await db
+  const count: unknown[] = await db
     .with(
       'block_errors',
       (db) => db
@@ -135,17 +135,16 @@ export async function countErrorsByBot(bot_uuid: string, error_status: ErrorStat
         .groupBy(['module', 'level', 'code', 'name'])
     )
     .selectFrom('block_errors')
-    .select(({ fn }) => [
-      fn.count<number>('name').as('value'),
-    ])
+    .select('name')
     .where('error_status', '=', error_status as string)
     .where('timestamp', '>=', sql`date_trunc('day', NOW() - interval ${sql.lit(interval)})`)
-    .executeTakeFirst()
+    .groupBy('name')
+    .execute()
     .catch(error => {
       console.log(error);
       throw error;
     });
-    return count?.value ?? 0;
+    return count?.length ?? 0;
 }
 
 export async function getErrorsByBots(bot_uuids: string[], error_status: ErrorStatus, interval: string): Promise<ChargebotError[] | undefined> {
@@ -185,7 +184,7 @@ export async function getErrorsByBots(bot_uuids: string[], error_status: ErrorSt
 }
 
 export async function countErrorsByBots(bot_uuids: string[], error_status: ErrorStatus, interval: string): Promise<number> {
-  const count: { value: number; } | undefined = await db
+  const count: unknown[] = await db
     .with(
       'block_errors',
       (db) => db
@@ -204,15 +203,14 @@ export async function countErrorsByBots(bot_uuids: string[], error_status: Error
         .groupBy(['device_id', 'module', 'level', 'code', 'name'])
     )
     .selectFrom('block_errors')
-    .select(({ fn }) => [
-      fn.count<number>('device_id').as('value'),
-    ])
+    .select('device_id')
     .where('error_status', '=', error_status as string)
     .where('timestamp', '>=', sql`date_trunc('day', NOW() - interval ${sql.lit(interval)})`)
-    .executeTakeFirst()
+    .groupBy('device_id')
+    .execute()
     .catch(error => {
       console.log(error);
       throw error;
     });
-    return count?.value ?? 0;
+    return count?.length ?? 0;
 }

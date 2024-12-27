@@ -72,7 +72,7 @@ export const handler = async (event) => {
     }, {});
 
     const systemVariables: { [key: string]: unknown } = systemStatus.reduce((acc: { [key: string]: unknown }, obj) => {
-      acc[obj.variable] = obj.value ?? obj.value_boolean;
+      acc[obj.variable] = obj.value;
       return acc;
     }, {});
 
@@ -83,9 +83,9 @@ export const handler = async (event) => {
     const gridCharging = getNumber(todayUsageVariables[InverterVariable.GRID_CHARGE_DIFF]) * 1000;
     const energyUsage = getNumber(todayUsageVariables[InverterVariable.ENERGY_USAGE]) * 1000;
 
-    const iotConnected = systemVariables[SystemVariables.CONNECTED] ?? false;
+    const iotConnected = getNumber(systemVariables[SystemVariables.CONNECTED]) === 1;
 
-    const iotConnectedTime = systemStatus.filter(s => s.variable === SystemVariables.CONNECTED)[0]?.timestamp;
+    const iotConnectedTime = systemStatus.filter(s => s.variable === SystemVariables.CONNECTED)[0]?.bucket;
     const inverterLastReport = inverterConnectionStatus?.timestamp ? DateTime.fromJSDate(inverterConnectionStatus?.timestamp) : null;
     const lastSeen = inverterLastReport
       ? inverterLastReport.setZone('UTC').toISO()
@@ -96,7 +96,7 @@ export const handler = async (event) => {
     const response = {
       bot_uuid,
       temperature: getNumber(temperatureStatus?.value),
-      fan_status: fanStatus?.value ?? false,
+      fan_status: fanStatus?.value === 1,
       battery_level: battery_level,
       battery_status: translateBatteryState(batteryVariables[BatteryVariables.STATE] as number),
       output_current: getNumber(pduVariables[PDUVariable.CURRENT]),

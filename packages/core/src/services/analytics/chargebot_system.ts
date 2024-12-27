@@ -2,6 +2,7 @@ export * as ChargebotSystem from "./chargebot_system";
 import { sql } from "kysely";
 import db from '../../timescale';
 import { ChargebotSystem, NewChargebotSystem, SystemVariables } from "../../timescale/chargebot_system";
+import { ChargebotSystemAggregate } from "../../timescale/chargebot_system_aggregate";
 
 export async function updateConnectionStatus(connectedStatus: NewChargebotSystem): Promise<ChargebotSystem> {
   // @ts-expect-error ignore type
@@ -14,16 +15,15 @@ export async function updateConnectionStatus(connectedStatus: NewChargebotSystem
     .executeTakeFirst();
 }
 
-export async function getSystemStatus(bot_uuid: string): Promise<ChargebotSystem[]> {
+export async function getSystemStatus(bot_uuid: string): Promise<ChargebotSystemAggregate[]> {
   return db
-    .selectFrom("chargebot_system")
+    .selectFrom("chargebot_system_aggregate")
     // @ts-expect-error ignore type
     .select(() => [
       'device_id',
       'variable',
-      sql`max("timestamp") as timestamp`,
-      sql`last(coalesce (value_int, value_long, value_float, value_double), "timestamp") as value`,
-      sql`last(value_boolean, "timestamp") as value_boolean`,
+      sql`max("bucket") as bucket`,
+      sql`last(value, bucket) as value`,
     ])
     .where('device_id', '=', bot_uuid)
     .where('variable', 'in', [
@@ -39,41 +39,15 @@ export async function getSystemStatus(bot_uuid: string): Promise<ChargebotSystem
     .execute();
 }
 
-export async function getSystemStatusByBots(bot_uuids: string[]): Promise<ChargebotSystem[]> {
+export async function getSystemStatusByBots(bot_uuids: string[]): Promise<ChargebotSystemAggregate[]> {
   return db
-    .selectFrom("chargebot_system")
+    .selectFrom("chargebot_system_aggregate")
     // @ts-expect-error ignore type
     .select(() => [
       'device_id',
       'variable',
-      sql`max("timestamp") as timestamp`,
-      sql`last(coalesce (value_int, value_long, value_float, value_double), "timestamp") as value`,
-      sql`last(value_boolean, "timestamp") as value_boolean`,
-    ])
-    .where('device_id', 'in', bot_uuids)
-    .where('variable', 'in', [
-      SystemVariables.CONNECTED,
-      SystemVariables.CPU,
-      SystemVariables.MEMORY,
-      SystemVariables.DISK,
-      SystemVariables.TEMPERATURE,
-      SystemVariables.UPTIME_MINUTES,
-      SystemVariables.UNVERVOLTAGE
-    ])
-    .groupBy(['device_id', 'variable'])
-    .execute();
-}
-
-export async function getSystemStatuses(bot_uuids: string[]): Promise<ChargebotSystem[]> {
-  return db
-    .selectFrom("chargebot_system")
-    // @ts-expect-error ignore type
-    .select(() => [
-      'device_id',
-      'variable',
-      sql`max("timestamp") as timestamp`,
-      sql`last(coalesce (value_int, value_long, value_float, value_double), "timestamp") as value`,
-      sql`last(value_boolean, "timestamp") as value_boolean`,
+      sql`max("bucket") as bucket`,
+      sql`last(value, bucket) as value`
     ])
     .where('device_id', 'in', bot_uuids)
     .where('variable', 'in', [
@@ -112,18 +86,13 @@ export async function getSystemSummary(device_ids: string[]): Promise<{
     .with(
       'latest_values',
       (db) => db
-        .selectFrom('chargebot_system')
+        .selectFrom('chargebot_system_aggregate')
         .distinctOn(['device_id', 'variable'])
         // @ts-expect-error implicit any
         .select(() => [
           sql`device_id`,
           'variable',
-          sql`
-          case 
-              when variable = 'connected' then value_boolean::int
-              else coalesce(value_int::float, value_long::float, value_float, value_double)
-          end as value
-          `,
+          'value',
         ])
         .where('device_id', 'in', device_ids)
         .where('variable', 'in', [
@@ -136,7 +105,7 @@ export async function getSystemSummary(device_ids: string[]): Promise<{
         ])
         .orderBy('device_id', 'asc')
         .orderBy('variable', 'asc')
-        .orderBy('timestamp', 'desc')
+        .orderBy('bucket', 'desc')
     )
     .selectFrom("latest_values")
     .select(() => [
@@ -175,18 +144,13 @@ export async function getBotsWithSystemFailure(device_ids: string[], days_ago: n
     .with(
       'latest_values',
       (db) => db
-        .selectFrom('chargebot_system')
+        .selectFrom('chargebot_system_aggregate')
         // @ts-expect-error ignore
         .select(() => [
           'device_id',
           'variable',
-          'timestamp',
-          sql`
-          case 
-              when variable = 'connected' then value_boolean::int
-              else coalesce(value_int::float, value_long::float, value_float, value_double)
-          end as value
-          `,
+          'bucket as timestamp',
+          'value',
         ])
         .where('device_id', 'in', device_ids)
         .where('variable', 'in', [
@@ -197,7 +161,7 @@ export async function getBotsWithSystemFailure(device_ids: string[], days_ago: n
           SystemVariables.TEMPERATURE,
           SystemVariables.UPTIME_MINUTES
         ])
-        .where('timestamp', '>=', sql`date_trunc('day', NOW() - interval ${sql.lit(`${days_ago} days`)})`)
+        .where('bucket', '>=', sql`date_trunc('day', NOW() - interval ${sql.lit(`${days_ago} days`)})`)
     )
     .with(
       'system_metrics',
@@ -238,11 +202,11 @@ export async function getConnectionStatus(bot_uuids: string[]): Promise<{
 }[]> {
   // @ts-expect-error ignore type
   return db
-    .selectFrom("chargebot_system")
+    .selectFrom("chargebot_system_aggregate")
     // @ts-expect-error ignore type
     .select(() => [
       'device_id',
-      sql`last(value_boolean, "timestamp") as connected`,
+      sql`last(value, "bucket") as connected`,
     ])
     .where('device_id', 'in', bot_uuids)
     .where('variable', '=', SystemVariables.CONNECTED)
@@ -255,21 +219,21 @@ export async function countConnectionStatus(bot_uuids: string[], conn_status: bo
     .with(
       'bot_connection_status',
       (db) => db
-        .selectFrom("chargebot_system")
+        .selectFrom("chargebot_system_aggregate")
         // @ts-expect-error ignore type
         .select(() => [
           'device_id',
-          sql`last(value_boolean, "timestamp") as connected`,
+          sql`last(value, "bucket") as connected`
         ])
         .where('device_id', 'in', bot_uuids)
         .where('variable', '=', SystemVariables.CONNECTED)
-        .groupBy(['device_id', 'variable'])
+        .groupBy(['device_id'])
     )
     .selectFrom('bot_connection_status')
     .select(({ fn }) => [
       fn.count<number>('device_id').as('value'),
     ])
-    .where('connected', '=', conn_status)
+    .where('connected', '=', conn_status ? 1 : 0)
     .executeTakeFirst()
     .catch(error => {
       console.log(error);

@@ -1,16 +1,17 @@
 export * as ChargebotTemperature from "./chargebot_temperature";
 import { sql } from "kysely";
 import db from '../../timescale';
-import { ChargebotTemperature, TemperatureVariables } from "../../timescale/chargebot_temperature";
+import { TemperatureVariables } from "../../timescale/chargebot_temperature";
+import { ChargebotTemperatureAggregate } from "../../timescale/chargebot_temperature_aggregate";
 
-export async function getTemperature(bot_uuid: string): Promise<ChargebotTemperature | undefined> {
+export async function getTemperature(bot_uuid: string): Promise<ChargebotTemperatureAggregate | undefined> {
   return db
-    .selectFrom("chargebot_temperature")
+    .selectFrom("chargebot_temperature_aggregate")
     // @ts-expect-error not overloads match
     .select([
       'device_id',
       'variable',
-      sql`last(coalesce (value_int, value_long, value_float, value_double), "timestamp") as value`,
+      sql`last(value, "bucket") as value`,
     ])
     .where('device_id', '=', bot_uuid)
     .where('variable', '=', TemperatureVariables.TEMPERATURE)
@@ -24,19 +25,17 @@ export async function getConnectionStatus(bot_uuid: string): Promise<{
 }> {
   // @ts-expect-error not overloads match
   return db
-    .selectFrom("chargebot_temperature")
+    .selectFrom("chargebot_temperature_aggregate")
     // @ts-expect-error not overloads match
     .select(() => [
-      sql`max(timestamp) as timestamp`,
+      sql`max(bucket) as timestamp`,
       sql`
       CASE
-          WHEN max(timestamp) < NOW() - INTERVAL '30 minutes' THEN false
+          WHEN max(bucket) < NOW() - INTERVAL '30 minutes' THEN false
           ELSE true
       END as connected`
     ])
     .where('device_id', '=', bot_uuid)
-    // .orderBy('timestamp', 'desc')
-    // .limit(1)
     .executeTakeFirst();
 }
 
@@ -47,14 +46,14 @@ export async function getConnectionStatusByBots(bot_uuids: string[]): Promise<{
 }[]> {
   // @ts-expect-error not overloads match
   return db
-    .selectFrom("chargebot_temperature")
+    .selectFrom("chargebot_temperature_aggregate")
     // @ts-expect-error not overloads match
     .select(() => [
       'device_id as bot_uuid',
-      sql`max(timestamp) as timestamp`,
+      sql`max(bucket) as timestamp`,
       sql`
       CASE
-          WHEN max(timestamp) < NOW() - INTERVAL '30 minutes' THEN false
+          WHEN max(bucket) < NOW() - INTERVAL '30 minutes' THEN false
           ELSE true
       END as connected`
     ])
@@ -68,13 +67,13 @@ export async function countConnectionStatusByBots(bot_uuids: string[], conn_stat
     .with(
       'connection_status',
       (db) => db
-        .selectFrom("chargebot_temperature")
+        .selectFrom("chargebot_temperature_aggregate")
         // @ts-expect-error not overloads match
         .select(() => [
           'device_id',
           sql`
           CASE
-              WHEN max(timestamp) < NOW() - INTERVAL '30 minutes' THEN false
+              WHEN max(bucket) < NOW() - INTERVAL '30 minutes' THEN false
               ELSE true
           END as connected`
         ])
