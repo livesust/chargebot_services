@@ -45,9 +45,8 @@ const handler = async (event) => {
       return createNotFoundResponse({ "response": "bot not found" });
     }
 
-    const notification = await AlertHandlerBuilder
-      .build(bot_uuid)
-      .process(alert);
+    const alertHandler = AlertHandlerBuilder.build(bot_uuid);
+    const notification = await alertHandler.process(alert);
 
     if (!notification) {
       return createSuccessResponse({ "response": "success" });
@@ -103,10 +102,11 @@ export const main = middy(handler)
 class AlertHandlerBuilder {
     static build(botUuid: string): AlertHandler {
       const policy: AlertHandler = new AlertFilterHandler(botUuid);
-      policy.setNext(new LatLongAlertHandler(botUuid));
-      policy.setNext(new LongStopAlertHandler(botUuid));
-      policy.setNext(new EquipmentAlertHandler(botUuid));
-      policy.setNext(new DefaultAlertHandler(botUuid));
+      policy.setNext(new BatteryDischargingAlertHandler(botUuid))
+        .setNext(new LatLongAlertHandler(botUuid))
+        .setNext(new LongStopAlertHandler(botUuid))
+        .setNext(new EquipmentAlertHandler(botUuid))
+        .setNext(new DefaultAlertHandler(botUuid));
       return policy;
     }
 }
@@ -140,11 +140,39 @@ export abstract class AbstractAlertHandler extends AlertHandler {
 
 export class AlertFilterHandler extends AbstractAlertHandler {
   async process(alert: Record<string, unknown>, notif?: Notification | undefined): Promise<Notification | undefined> {
-    const alertsToFilter = [AlertName.BATTERY_CHARGING, AlertName.BATTERY_DISCHARGING, AlertName.BATTERY_TEMPERATURE_NORMALIZED];
+    const alertsToFilter = [AlertName.BATTERY_TEMPERATURE_NORMALIZED];
     if (alertsToFilter.some(a => alert.name === a.toString())) {
       Log.info("Alert filtered, not sending push:", alert);
       return undefined;
     }
+    return super.process(alert, notif);
+  }
+}
+
+export class BatteryDischargingAlertHandler extends AbstractAlertHandler {
+  async process(alert: Record<string, unknown>, notif?: Notification | undefined): Promise<Notification | undefined> {
+    if (alert && alert?.name !== AlertName.BATTERY_DISCHARGING.toString()) {
+      return notif;
+    }
+
+    const message = alert['message'];
+    // merge all data
+    const data = {
+      // data coming from original alert
+      ...(typeof(message) === "string" ? JSON.parse(message) : message),
+      // data added by alert handlers
+      ...(notif?.data ?? {}),
+      // bot uuid
+      bot_uuid: this.bot_uuid
+    };
+    const stateOfCharge = data['state_of_charge'] ? Number(data['state_of_charge']) : null;
+    if (stateOfCharge) {
+      return {
+        ...(notif ?? {}),
+        message: stateOfCharge >= 95 ? i18n.__('push_alerts.battery_discharging.messageFull', data) : i18n.__('push_alerts.battery_discharging.messageNotFull', data),
+      };
+    }
+
     return super.process(alert, notif);
   }
 }
