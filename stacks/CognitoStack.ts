@@ -157,7 +157,7 @@ export function CognitoStack({ app, stack }: StackContext) {
       const emailConfiguration: cognito.CfnUserPool.EmailConfigurationProperty = {
         emailSendingAccount: 'DEVELOPER', // Use "DEVELOPER" to send from SES
         sourceArn: sesVerifiedDomainArn, // SES domain ARN
-        from: `no-reply@${domainName}`, // Custom email address
+        from: `ChargeBot by Sust Pro <no-reply@${domainName}>`, // Custom email address
       };
 
       // @ts-expect-error ignore check
