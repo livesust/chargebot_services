@@ -90,6 +90,22 @@ export async function getByPlaceId(placeId: string): Promise<ChargebotGeocoding 
   return location;
 }
 
+export async function getByAddressFields(country: string, state: string, city: string, street: string, address_number: string): Promise<ChargebotGeocoding | undefined> {
+  const location: ChargebotGeocoding | undefined = await db
+    .selectFrom("chargebot_geocoding")
+    .selectAll()
+    .where('country', '=', country)
+    .where('state', '=', state)
+    .where('city', '=', city)
+    .where('street', '=', street)
+    .where('address_number', '=', address_number)
+    .orderBy('timestamp', 'desc')
+    .limit(1)
+    .executeTakeFirst();
+
+  return location;
+}
+
 export async function getByLabel(label: string): Promise<ChargebotGeocoding | undefined> {
   const location: ChargebotGeocoding | undefined = await db
     .selectFrom("chargebot_geocoding")

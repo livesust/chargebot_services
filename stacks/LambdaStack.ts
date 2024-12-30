@@ -237,6 +237,7 @@ export function LambdaStack({ app, stack }: StackContext) {
   const processIotGpsParkedFunction = new Function(stack, "chargebotIoTGpsParkedProcess", {
     handler: "packages/functions/src/api/process_iot_gps_parked.main",
     timeout,
+    // memorySize: "2 GB",
     // @ts-expect-error ignore check
     role: geolocationAdminRole,
     bind: [

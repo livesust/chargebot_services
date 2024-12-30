@@ -51,8 +51,8 @@ const handler = async (event) => {
   }
   
   // search for an existent entry for the same place id or label
-  const geocoding = await (place.place_id
-    ? ChargebotGeocoding.getByPlaceId(place.place_id)
+  const geocoding = await (place.country && place.state && place.city && place.street && place.address_number
+    ? ChargebotGeocoding.getByAddressFields(place.country, place.state, place.city, place.street, place.address_number)
     : ChargebotGeocoding.getByLabel(place.label!)
   )
 
