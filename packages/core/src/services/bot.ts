@@ -1,11 +1,18 @@
 export * as Bot from "./bot";
 import { OrderByDirection } from "kysely/dist/cjs/parser/order-by-parser";
 import db, { Database } from '../database';
-import { ExpressionBuilder, sql, UpdateResult } from "kysely";
+import { ExpressionBuilder, SelectQueryBuilder, sql, UpdateResult } from "kysely";
 import { BusinessError } from "../errors/business_error";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { Bot, BotUpdate, NewBot } from "../database/bot";
 import { withCustomer } from "./company";
+
+function queryIncludesJoin(query: SelectQueryBuilder<Database, "bot", unknown>, tableName: string): boolean {
+  // Assuming `query._joins` is an accessible property (this may vary based on Kysely's implementation)
+  const compiledQuery = query.compile();
+  const joinRegex = new RegExp(`JOIN\\s+(["']?)${tableName}\\1`, 'i');
+  return joinRegex.test(compiledQuery.sql);
+}
 
 export function withBotStatus(eb: ExpressionBuilder<Database, 'bot'>) {
     return jsonObjectFrom(
@@ -211,7 +218,23 @@ export async function count(criteria?: BotCriteria): Promise<number> {
 }
 
 export async function paginate(page: number, pageSize: number, sort: OrderByDirection, criteria?: BotCriteria): Promise<Bot[]> {
-  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("bot").where('bot.deleted_by', 'is', null);
+  let query = criteria ? buildSelectQuery(criteria) : db.selectFrom("bot").where('bot.deleted_by', 'is', null);
+
+  if (!queryIncludesJoin(query, "bot_company")) {
+    // @ts-expect-error ignore
+    query = query.leftJoin('bot_company', 'bot_company.bot_id', 'bot.id');
+  }
+
+  if (!queryIncludesJoin(query, "company")) {
+    // @ts-expect-error ignore
+    query = query.leftJoin('company', 'company.id', 'bot_company.company_id');
+  }
+
+  if (!queryIncludesJoin(query, "customer")) {
+    // @ts-expect-error ignore
+    query = query.leftJoin('customer', 'customer.id', 'company.customer_id');
+  }
+
   return query
       .selectAll("bot")
       .select((eb) => withBotStatus(eb))
@@ -219,15 +242,11 @@ export async function paginate(page: number, pageSize: number, sort: OrderByDire
       .select((eb) => withBotFirmwareVersion(eb))
       .select((eb) => withVehicle(eb))
       .select((eb) => withBotCompany(eb))
-      .leftJoin('bot_company', 'bot_company.bot_id', 'bot.id')
-      .leftJoin('company', 'company.id', 'bot_company.company_id')
-      .leftJoin('customer', 'customer.id', 'company.customer_id')
-      .where('bot_company.deleted_by', 'is', null)
-      .where('company.deleted_by', 'is', null)
-      .where('customer.deleted_by', 'is', null)
       .limit(pageSize)
       .offset(page * pageSize)
+      // @ts-expect-error ignore
       .orderBy('customer.name', sort)
+      // @ts-expect-error ignore
       .orderBy('company.name', sort)
       .orderBy('bot.bot_uuid', sort)
       .execute();
@@ -377,42 +396,43 @@ function getCriteriaQuery(query: any, criteria: BotCriteria): any {
       .where('bot_status.display_on_dashboard', 'is', criteria.display_on_dashboard);
   }
 
-  if (criteria.customer_name) {
+  if ((criteria.customer_name || criteria.assigned || criteria.company_name) && !queryIncludesJoin(query, "bot_company")) {
     query = query.leftJoin('bot_company', 'bot_company.bot_id', 'bot.id')
-      .leftJoin('company', 'company.id', 'bot_company.company_id')
-      .leftJoin('customer', 'customer.id', 'company.customer_id')
-      .where('bot_company.deleted_by', 'is', null)
-      .where('company.deleted_by', 'is', null)
-      .where('customer.deleted_by', 'is', null)
-      .where('customer.name', 'like', `%${criteria.customer_name}%`); 
+      .where('bot_company.deleted_by', 'is', null);
+  }
+
+  if ((criteria.customer_name || criteria.assigned || criteria.company_name) && !queryIncludesJoin(query, "company")) {
+    query = query.leftJoin('company', 'company.id', 'bot_company.company_id')
+    .where('bot_company.deleted_by', 'is', null);
+  }
+
+  if (criteria.customer_name && !queryIncludesJoin(query, "customer")) {
+    query = query.leftJoin('customer', 'customer.id', 'company.customer_id')
+    .where('customer.deleted_by', 'is', null)
+  }
+
+  if (criteria.customer_name) {
+    query = query.where('customer.name', 'like', `%${criteria.customer_name}%`); 
   }
 
   if (criteria.assigned && criteria.company_name) {
-    query = query.leftJoin('bot_company', 'bot_company.bot_id', 'bot.id');
     if (criteria.assigned === 'assigned') {
       if (criteria.company_name) {
-        query = query.leftJoin('company', 'company.id', 'bot_company.company_id')
-          .where('company.name', 'like', `%${criteria.company_name}%`);
+        query = query.where('company.name', 'like', `%${criteria.company_name}%`);
       }
 
-      query = query.where('bot_company.id', 'is not', null)
-        .where('bot_company.deleted_by', 'is', null);
+      query = query.where('bot_company.id', 'is not', null);
     } else if (criteria.assigned === 'pending') {
       query = query.where('bot_company.id', 'is', null);
     }
   } else if (criteria.assigned) {
-    query = query.leftJoin('bot_company', 'bot_company.bot_id', 'bot.id')
     if (criteria.assigned === 'assigned') {
-      query = query.where('bot_company.id', 'is not', null)
-        .where('bot_company.deleted_by', 'is', null);
+      query = query.where('bot_company.id', 'is not', null);
     } else if (criteria.assigned === 'pending') {
       query = query.where('bot_company.id', 'is', null);
     }
   } else if (criteria.company_name) {
-    query = query.leftJoin('bot_company', 'bot_company.bot_id', 'bot.id')
-      .leftJoin('company', 'company.id', 'bot_company.company_id')
-      .where('bot_company.deleted_by', 'is', null)
-      .where('company.name', 'like', `%${criteria.company_name}%`); 
+    query = query.where('company.name', 'like', `%${criteria.company_name}%`); 
   }
 
   if (criteria.bot_uuid_array && criteria.bot_uuid_array.length > 0) {
