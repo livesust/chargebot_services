@@ -6,6 +6,7 @@ import { BusinessError } from "../errors/business_error";
 import { jsonObjectFrom } from 'kysely/helpers/postgres'
 import { Bot, BotUpdate, NewBot } from "../database/bot";
 import { withCustomer } from "./company";
+import Log from '@dazn/lambda-powertools-logger';
 
 export function withBotStatus(eb: ExpressionBuilder<Database, 'bot'>) {
     return jsonObjectFrom(
@@ -211,26 +212,40 @@ export async function count(criteria?: BotCriteria): Promise<number> {
 }
 
 export async function paginate(page: number, pageSize: number, sort: OrderByDirection, criteria?: BotCriteria): Promise<Bot[]> {
-  const query = criteria ? buildSelectQuery(criteria) : db.selectFrom("bot").where('bot.deleted_by', 'is', null);
-  return query
-      .selectAll("bot")
-      .select((eb) => withBotStatus(eb))
-      .select((eb) => withBotModel(eb))
-      .select((eb) => withBotFirmwareVersion(eb))
-      .select((eb) => withVehicle(eb))
-      .select((eb) => withBotCompany(eb))
-      .leftJoin('bot_company', 'bot_company.bot_id', 'bot.id')
+  let query = criteria ? buildSelectQuery(criteria) : db.selectFrom("bot").where('bot.deleted_by', 'is', null);
+  
+  query = query
+    .selectAll("bot")
+    .select((eb) => withBotStatus(eb))
+    .select((eb) => withBotModel(eb))
+    .select((eb) => withBotFirmwareVersion(eb))
+    .select((eb) => withVehicle(eb))
+    .select((eb) => withBotCompany(eb));
+
+  if (criteria?.assigned !== 'pending') {
+    // If not filtering by pending
+    // then add company/customer joins and sort by
+
+    // @ts-expect-error ignore
+    query = query.leftJoin('bot_company', 'bot_company.bot_id', 'bot.id')
       .leftJoin('company', 'company.id', 'bot_company.company_id')
       .leftJoin('customer', 'customer.id', 'company.customer_id')
       .where('bot_company.deleted_by', 'is', null)
       .where('company.deleted_by', 'is', null)
       .where('customer.deleted_by', 'is', null)
-      .limit(pageSize)
-      .offset(page * pageSize)
-      .orderBy('customer.name', sort)
-      .orderBy('company.name', sort)
-      .orderBy('bot.bot_uuid', sort)
-      .execute();
+      .orderBy('customer.name', sort ?? 'desc')
+      .orderBy('company.name', sort ?? 'desc');
+  }
+  
+  query = query
+    .orderBy('bot.bot_uuid', sort ?? 'asc')  
+    .orderBy('bot.name', sort ?? 'asc')
+    .limit(pageSize)
+    .offset(page * pageSize);
+
+  Log.info("Paginate Bots SQL:", {sql: query.compile().sql});
+  // @ts-expect-error ignore
+  return query.execute();
 }
 
 export async function lazyGet(id: number): Promise<Bot | undefined> {
@@ -377,42 +392,27 @@ function getCriteriaQuery(query: any, criteria: BotCriteria): any {
       .where('bot_status.display_on_dashboard', 'is', criteria.display_on_dashboard);
   }
 
-  if (criteria.customer_name) {
-    query = query.leftJoin('bot_company', 'bot_company.bot_id', 'bot.id')
-      .leftJoin('company', 'company.id', 'bot_company.company_id')
-      .leftJoin('customer', 'customer.id', 'company.customer_id')
-      .where('bot_company.deleted_by', 'is', null)
-      .where('company.deleted_by', 'is', null)
-      .where('customer.deleted_by', 'is', null)
-      .where('customer.name', 'like', `%${criteria.customer_name}%`); 
+  if (criteria.company_name) {
+    query = query.where('bot.id', 'in', sql`(SELECT bot_id FROM bot_company
+                                            LEFT JOIN company on company.id = bot_company.company_id
+                                            WHERE company.name like ${sql.lit('%'+criteria.company_name+'%')}
+                                            AND bot_company.deleted_by is NULL AND company.deleted_by is NULL)`);
   }
 
-  if (criteria.assigned && criteria.company_name) {
-    query = query.leftJoin('bot_company', 'bot_company.bot_id', 'bot.id');
-    if (criteria.assigned === 'assigned') {
-      if (criteria.company_name) {
-        query = query.leftJoin('company', 'company.id', 'bot_company.company_id')
-          .where('company.name', 'like', `%${criteria.company_name}%`);
-      }
+  if (criteria.customer_name) {
+    query = query.where('bot.id', 'in', sql`(SELECT bot_id FROM bot_company
+                                            LEFT JOIN company on company.id = bot_company.company_id
+                                            LEFT JOIN customer on customer.id = company.customer_id
+                                            WHERE customer.name like ${sql.lit('%'+criteria.customer_name+'%')}
+                                            AND bot_company.deleted_by is NULL
+                                            AND company.deleted_by is NULL
+                                            AND customer.deleted_by is NULL)`);
+  }
 
-      query = query.where('bot_company.id', 'is not', null)
-        .where('bot_company.deleted_by', 'is', null);
-    } else if (criteria.assigned === 'pending') {
-      query = query.where('bot_company.id', 'is', null);
-    }
-  } else if (criteria.assigned) {
-    query = query.leftJoin('bot_company', 'bot_company.bot_id', 'bot.id')
-    if (criteria.assigned === 'assigned') {
-      query = query.where('bot_company.id', 'is not', null)
-        .where('bot_company.deleted_by', 'is', null);
-    } else if (criteria.assigned === 'pending') {
-      query = query.where('bot_company.id', 'is', null);
-    }
-  } else if (criteria.company_name) {
-    query = query.leftJoin('bot_company', 'bot_company.bot_id', 'bot.id')
-      .leftJoin('company', 'company.id', 'bot_company.company_id')
-      .where('bot_company.deleted_by', 'is', null)
-      .where('company.name', 'like', `%${criteria.company_name}%`); 
+  if (criteria.assigned === 'assigned') {
+    query = query.where(sql`(SELECT COUNT(id) FROM bot_company WHERE deleted_by IS NULL AND bot_id = bot.id)`, '>', 0);
+  } else if (criteria.assigned === 'pending') {
+    query = query.where(sql`(SELECT COUNT(id) FROM bot_company WHERE deleted_by IS NULL AND bot_id = bot.id)`, '=', 0);
   }
 
   if (criteria.bot_uuid_array && criteria.bot_uuid_array.length > 0) {
