@@ -63,6 +63,7 @@ export const SearchSchema = Joi.object({
     assigned: Joi.string(),
     display_on_dashboard: Joi.boolean(),
     company_name: Joi.string(),
+    customer_name: Joi.string(),
     ...BotSchemaDef
 });
 
