@@ -1,4 +1,4 @@
-import { StackContext, Config, Api, Bucket, use } from "sst/constructs";
+import { StackContext, Config, Api, Bucket, use, Function } from "sst/constructs";
 import { TimescaleStack } from "./TimescaleStack";
 import { RDSStack } from "./RDSStack";
 import { CognitoStack } from "./CognitoStack";
@@ -13,7 +13,13 @@ export function ApiStack({ app, stack }: StackContext) {
   const { rdsCluster } = use(RDSStack);
   const { timescaleConfigs } = use(TimescaleStack);
   const { eventBus } = use(EventBusStack);
-  const { cognito, cognitoAdminRole, COGNITO_USER_POOL_ID } = use(CognitoStack);
+  const {
+    cognito,
+    emailPhoneCognito,
+    cognitoAdminRole,
+    COGNITO_USER_POOL_ID,
+    COGNITO_EMAIL_PHONE_USER_POOL_ID,
+  } = use(CognitoStack);
   const { iotRole, IOT_ENDPOINT } = use(IotStack);
   const { lambdaLayers, functions/*, setupProvisionedConcurrency*/ } = use(LambdaStack);
 
@@ -49,8 +55,10 @@ export function ApiStack({ app, stack }: StackContext) {
       jwt: {
         type: "user_pool",
         userPool: {
-          id: cognito.userPoolId,
-          clientIds: [cognito.userPoolClientId],
+          // id: cognito.userPoolId,
+          // clientIds: [cognito.userPoolClientId],
+          id: emailPhoneCognito.userPoolId,
+          clientIds: [emailPhoneCognito.userPoolClientId],
         },
       },
     },
@@ -297,7 +305,7 @@ export function ApiStack({ app, stack }: StackContext) {
           handler: "packages/functions/src/api/invite_user.main",
           // @ts-expect-error ignore check
           role: cognitoAdminRole,
-          bind: [COGNITO_USER_POOL_ID],
+          bind: [COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
         },
       },
       "PATCH /user/{cognito_id}/profile": "packages/functions/src/api/update_user_profile.main",
@@ -306,7 +314,7 @@ export function ApiStack({ app, stack }: StackContext) {
           handler: "packages/functions/src/api/reinvite_user.main",
           // @ts-expect-error ignore check
           role: cognitoAdminRole,
-          bind: [COGNITO_USER_POOL_ID],
+          bind: [COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
         },
       },
       "POST /user/expire_invitations": {
@@ -314,7 +322,7 @@ export function ApiStack({ app, stack }: StackContext) {
           handler: "packages/functions/src/api/expire_user_invitation.main",
           // @ts-expect-error ignore check
           role: cognitoAdminRole,
-          bind: [COGNITO_USER_POOL_ID],
+          bind: [COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
         },
       },
       "PATCH /user/{cognito_id}/inactivate": {
@@ -322,7 +330,7 @@ export function ApiStack({ app, stack }: StackContext) {
           handler: "packages/functions/src/api/inactivate_user.main",
           // @ts-expect-error ignore check
           role: cognitoAdminRole,
-          bind: [COGNITO_USER_POOL_ID],
+          bind: [COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
         },
       },
       "PATCH /user/{cognito_id}/activate": {
@@ -330,7 +338,7 @@ export function ApiStack({ app, stack }: StackContext) {
           handler: "packages/functions/src/api/activate_user.main",
           // @ts-expect-error ignore check
           role: cognitoAdminRole,
-          bind: [COGNITO_USER_POOL_ID],
+          bind: [COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
         },
       },
       "POST /send-alert": {
@@ -357,6 +365,7 @@ export function ApiStack({ app, stack }: StackContext) {
 
   // allowing authenticated users to access API
   cognito.attachPermissionsForAuthUsers(stack, [api]);
+  emailPhoneCognito.attachPermissionsForAuthUsers(stack, [api]);
 
   stack.addOutputs({
     ApiEndpoint: api.url,

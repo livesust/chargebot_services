@@ -25,29 +25,39 @@ const handler = async (event) => {
   const body = event.body;
   const now = new Date();
   const email_address = body.email_address;
+  const phone_number = body.phone_number;
 
   try {
-    const [existentLocal, creator, existentCognito] = await Promise.all([
+    const [existentEmail, existentPhoneNumber, creator, existentCognito] = await Promise.all([
       User.findByEmail(email_address),
+      User.findByPhone(phone_number),
       User.findByCognitoId(user_sub),
       Cognito.getUserByEmail(email_address),
       
     ]);
 
-    if (existentLocal) {
+    if (existentEmail) {
       Log.debug(`User already exists with email ${email_address}`);
       const httpError = createError(406, `A user with email '${email_address}' was already invited`, { expose: true });
       throw httpError;
     }
 
-    if (existentCognito) {
-      await Cognito.deleteUser(email_address);
+    if (existentPhoneNumber) {
+      Log.debug(`User already exists with phone number ${phone_number}`);
+      const httpError = createError(406, `A user with phone number '${phone_number}' was already invited`, { expose: true });
+      throw httpError;
     }
 
-    const cognitoUser = await Cognito.createUser(email_address);
+    if (existentCognito) {
+      if (phone_number && await Cognito.deleteUser(phone_number) === false) {
+        await Cognito.deleteUser(email_address);
+      }
+    }
+
+    const cognitoUser = await Cognito.createUser(email_address, phone_number);
     if (!cognitoUser) {
-      Log.error(`Cannot create email on cognito ${email_address}`);
-      const httpError = createError(406, `Cannot create user with email '${email_address}'`, { expose: true });
+      Log.error(`Cannot create user on cognito ${email_address} - ${phone_number}`);
+      const httpError = createError(406, `Cannot create user with email '${email_address}' or phone number '${phone_number}'`, { expose: true });
       throw httpError;
     }
 
@@ -77,6 +87,16 @@ const handler = async (event) => {
           email_address: email_address,
           user_id: new_user!.id!,
           primary: true,
+          ...audit
+        }).execute();
+
+      // insert phone number
+      await trx.insertInto('user_phone')
+        .values({
+          phone_number: phone_number,
+          user_id: new_user!.id!,
+          primary: true,
+          send_text: true,
           ...audit
         }).execute();
 

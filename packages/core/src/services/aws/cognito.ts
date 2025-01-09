@@ -18,14 +18,15 @@ import {
 import { Config } from "sst/node/config";
 
 const cognitoClient = new CognitoIdentityProviderClient({});
-const userPoolId = Config.COGNITO_USER_POOL_ID;
+const emailUserPoolId = Config.COGNITO_USER_POOL_ID;
+const emailPhoneUserPoolId = Config.COGNITO_EMAIL_PHONE_USER_POOL_ID;
 
 // Function to get an existing user by email
 export const getUserByEmail = async (username: string): Promise<AdminGetUserCommandOutput | null> => {
   try {
     // Parameters for getting user by email
     const command = new AdminGetUserCommand({
-      UserPoolId: userPoolId,
+      UserPoolId: emailPhoneUserPoolId ?? emailUserPoolId,
       Username: username,
     });
 
@@ -40,22 +41,32 @@ export const getUserByEmail = async (username: string): Promise<AdminGetUserComm
   return null;
 }
 
-export const createUser = async (username: string): Promise<UserType | undefined> => {
+export const createUser = async (email: string, phone_number: string): Promise<UserType | undefined> => {
   // Parameters for getting user by email
   try {
     const command = new AdminCreateUserCommand({
-      UserPoolId: userPoolId,
-      Username: username,
+      UserPoolId: emailPhoneUserPoolId ?? emailUserPoolId,
+      Username: phone_number ?? email,
       UserAttributes: [
         {
           Name: 'email',
-          Value: username,
+          Value: email,
+        },
+        {
+          Name: 'phone_number',
+          Value: phone_number,
         },
         {
           Name: 'email_verified',
           Value: "true",
+        },
+        {
+          Name: 'phone_number_verified',
+          Value: "true",
         }
-      ]
+      ],
+      ForceAliasCreation: true,
+      DesiredDeliveryMediums: ["SMS"],
     });
   
     const response: AdminCreateUserCommandOutput = await cognitoClient.send(command);
@@ -71,7 +82,7 @@ export const deleteUser = async (username: string): Promise<boolean | undefined>
   // Parameters for getting user by email
   try {
     const command = new AdminDeleteUserCommand({
-      UserPoolId: userPoolId,
+      UserPoolId: emailPhoneUserPoolId ?? emailUserPoolId,
       Username: username
     });
   
@@ -86,7 +97,7 @@ export const disableUser = async (username: string): Promise<boolean | undefined
   // Parameters for getting user by email
   try {
     const command = new AdminDisableUserCommand({
-      UserPoolId: userPoolId,
+      UserPoolId: emailPhoneUserPoolId ?? emailUserPoolId,
       Username: username
     });
   
@@ -102,7 +113,7 @@ export const enableUser = async (username: string): Promise<boolean | undefined>
   // Parameters for getting user by email
   try {
     const command = new AdminEnableUserCommand({
-      UserPoolId: userPoolId,
+      UserPoolId: emailPhoneUserPoolId ?? emailUserPoolId,
       Username: username
     });
   
@@ -118,7 +129,7 @@ export const resetPassword = async (username: string): Promise<boolean | undefin
   // Parameters for getting user by email
   try {
     const command = new AdminResetUserPasswordCommand({
-      UserPoolId: userPoolId,
+      UserPoolId: emailPhoneUserPoolId ?? emailUserPoolId,
       Username: username
     });
   
