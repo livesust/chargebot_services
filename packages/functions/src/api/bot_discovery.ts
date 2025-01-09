@@ -95,7 +95,7 @@ export const processBotDiscovery = async (bot_uuid: string, device_version: stri
 const handler = async (event) => {
   // payload will come on body when called from API
   // but direct on event when from IoT
-  const body = event. body ?? event;
+  const body = event.body ?? event;
 
   // bot_uuid from IoT, device_id from API
   const bot_uuid: string = body.bot_uuid ?? body.device_id;
