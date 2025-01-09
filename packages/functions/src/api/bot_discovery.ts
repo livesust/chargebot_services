@@ -24,7 +24,7 @@ export const processBotDiscovery = async (bot_uuid: string, device_version: stri
     const [bot, botModel, botStatus] = await Promise.all([
       Bot.findOneByCriteria({ bot_uuid }),
       BotModel.findOneByCriteria({name: 'Trailblazer'}),
-      BotStatus.findOneByCriteria({name: 'In Warehouse'})
+      BotStatus.findOneByCriteria({name: 'Arrived Facility'})
     ])
 
     let botFirmwareVersion = await BotFirmwareVersion.findOneByCriteria({version_number: device_version})
@@ -43,8 +43,8 @@ export const processBotDiscovery = async (bot_uuid: string, device_version: stri
         bot_uuid,
         name: bot_uuid,
         initials: bot_uuid.substring(0, 2),
-        bot_model_id: botModel!.id!,
-        bot_status_id: botStatus!.id!,
+        bot_model_id: botModel?.id,
+        bot_status_id: botStatus?.id,
       });
       // Associate the version
       await BotFirmwareInstall.create({
@@ -85,7 +85,7 @@ export const processBotDiscovery = async (bot_uuid: string, device_version: stri
       // re-throw when is a http error generated above
       throw error;
     }
-    const httpError = createError(406, "cannot send alert", { expose: true });
+    const httpError = createError(406, "cannot discover bot", { expose: true });
     httpError.details = (<Error>error).message;
     throw httpError;
   }
