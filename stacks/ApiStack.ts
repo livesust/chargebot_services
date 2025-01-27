@@ -17,7 +17,6 @@ export function ApiStack({ app, stack }: StackContext) {
     cognito,
     cognitoAdminRole,
     COGNITO_USER_POOL_ID,
-    COGNITO_EMAIL_PHONE_USER_POOL_ID,
   } = use(CognitoStack);
   const { iotRole, IOT_ENDPOINT } = use(IotStack);
   const { lambdaLayers, functions/*, setupProvisionedConcurrency*/ } = use(LambdaStack);
@@ -302,7 +301,7 @@ export function ApiStack({ app, stack }: StackContext) {
           handler: "packages/functions/src/api/invite_user.main",
           // @ts-expect-error ignore check
           role: cognitoAdminRole,
-          bind: [COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
+          bind: [COGNITO_USER_POOL_ID],
         },
       },
       "PATCH /user/{cognito_id}/profile": {
@@ -310,7 +309,7 @@ export function ApiStack({ app, stack }: StackContext) {
           handler: "packages/functions/src/api/update_user_profile.main",
           // @ts-expect-error ignore check
           role: cognitoAdminRole,
-          bind: [COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
+          bind: [COGNITO_USER_POOL_ID],
         },
       },
       "POST /user/reinvite": {
@@ -318,7 +317,7 @@ export function ApiStack({ app, stack }: StackContext) {
           handler: "packages/functions/src/api/reinvite_user.main",
           // @ts-expect-error ignore check
           role: cognitoAdminRole,
-          bind: [COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
+          bind: [COGNITO_USER_POOL_ID],
         },
       },
       "POST /user/expire_invitations": {
@@ -326,7 +325,7 @@ export function ApiStack({ app, stack }: StackContext) {
           handler: "packages/functions/src/api/expire_user_invitation.main",
           // @ts-expect-error ignore check
           role: cognitoAdminRole,
-          bind: [COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
+          bind: [COGNITO_USER_POOL_ID],
         },
       },
       "PATCH /user/{cognito_id}/inactivate": {
@@ -334,7 +333,7 @@ export function ApiStack({ app, stack }: StackContext) {
           handler: "packages/functions/src/api/inactivate_user.main",
           // @ts-expect-error ignore check
           role: cognitoAdminRole,
-          bind: [COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
+          bind: [COGNITO_USER_POOL_ID],
         },
       },
       "PATCH /user/{cognito_id}/activate": {
@@ -342,7 +341,7 @@ export function ApiStack({ app, stack }: StackContext) {
           handler: "packages/functions/src/api/activate_user.main",
           // @ts-expect-error ignore check
           role: cognitoAdminRole,
-          bind: [COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
+          bind: [COGNITO_USER_POOL_ID],
         },
       },
       "POST /send-alert": {

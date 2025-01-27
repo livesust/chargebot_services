@@ -17,7 +17,6 @@ export function LambdaStack({ app, stack }: StackContext) {
   const {
     cognitoAdminRole,
     COGNITO_USER_POOL_ID,
-    COGNITO_EMAIL_PHONE_USER_POOL_ID,
   } = use(CognitoStack);
 
   // Lambda layers
@@ -365,7 +364,7 @@ export function LambdaStack({ app, stack }: StackContext) {
     handler: "packages/functions/src/user_pool_migration.main",
     // @ts-expect-error ignore check
     role: cognitoAdminRole,
-    bind: [COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
+    bind: [COGNITO_USER_POOL_ID],
   });
 
   return {

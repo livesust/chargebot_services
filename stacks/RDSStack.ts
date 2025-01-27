@@ -7,8 +7,8 @@ export function RDSStack({ app, stack }: StackContext) {
 
   const prodConfig = {
     autoPause: false,
-    minCapacity: 'ACU_8',
-    maxCapacity: 'ACU_64',
+    minCapacity: 'ACU_2',
+    maxCapacity: 'ACU_2',
   };
 
   const stagingConfig = {
@@ -31,11 +31,6 @@ export function RDSStack({ app, stack }: StackContext) {
     types: {
       path: "backend/core/sql/types.ts",
       camelCase: true
-    },
-    cdk: {
-      cluster: {
-        
-      }
     },
     // @ts-expect-error ignore typing
     scaling: app.stage === "prod"

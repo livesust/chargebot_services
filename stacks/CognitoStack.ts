@@ -229,7 +229,6 @@ export function CognitoStack({ app, stack }: StackContext) {
 
     // Secret Keys
     const COGNITO_USER_POOL_ID = new Config.Secret(stack, "COGNITO_USER_POOL_ID");
-    const COGNITO_EMAIL_PHONE_USER_POOL_ID = new Config.Secret(stack, "COGNITO_EMAIL_PHONE_USER_POOL_ID");
 
     // Cognito admin role
     const cognitoAdminRole: iam.IRole = new iam.Role(stack, "CognitoAdminRole", {
@@ -301,7 +300,7 @@ export function CognitoStack({ app, stack }: StackContext) {
     //   handler: "packages/functions/src/authenticate_user.main",
     //   // @ts-expect-error ignore check
     //   role: cognitoAdminRole,
-    //   bind: [COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
+    //   bind: [COGNITO_USER_POOL_ID],
     // });
 
     const kmsKey = setupKms(stack);
@@ -362,7 +361,7 @@ export function CognitoStack({ app, stack }: StackContext) {
         function: {
           handler: "packages/functions/src/api/expire_user_invitation.main",
           timeout: app.stage === "prod" ? "30 seconds" : "60 seconds",
-          bind: [rdsCluster, COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
+          bind: [rdsCluster, COGNITO_USER_POOL_ID],
           // @ts-expect-error ignore check
           role: cognitoAdminRole,
         }
@@ -381,6 +380,5 @@ export function CognitoStack({ app, stack }: StackContext) {
         cognito: cognitoConfig,
         cognitoAdminRole,
         COGNITO_USER_POOL_ID,
-        COGNITO_EMAIL_PHONE_USER_POOL_ID,
     };
 }
