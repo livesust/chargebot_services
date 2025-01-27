@@ -1,0 +1,360 @@
+import { Config, Function, use, Cron } from "sst/constructs";
+import { RDSStack } from "./RDSStack";
+import { TimescaleStack } from "./TimescaleStack";
+import { LayerVersion, Code, Alias } from "aws-cdk-lib/aws-lambda";
+import { PredefinedMetric, ScalableTarget, ServiceNamespace } from "aws-cdk-lib/aws-applicationautoscaling";
+import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
+import { IotToLambda } from "@aws-solutions-constructs/aws-iot-lambda";
+import { Effect, Policy, PolicyStatement, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
+import { CfnPlaceIndex } from 'aws-cdk-lib/aws-location';
+import { EventBusStack } from "./EventBusStack";
+import { CognitoStack } from "./CognitoStack";
+export function LambdaStack({ app, stack }) {
+    const { rdsCluster } = use(RDSStack);
+    const { timescaleConfigs } = use(TimescaleStack);
+    const { eventBus } = use(EventBusStack);
+    const { cognitoAdminRole, COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID, } = use(CognitoStack);
+    // Lambda layers
+    // axios layer: to make http requests
+    // const axiosLayer = new LayerVersion(stack, "axios-layer", {
+    //   code: Code.fromAsset("layers/axios"),
+    // });
+    // crypto-es layer: to encrypt/decrypt data
+    const cryptoLayer = new LayerVersion(stack, "crypto-es-layer", {
+        code: Code.fromAsset("layers/crypto-es"),
+    });
+    // luxon layer: to manage dates
+    const luxonLayer = new LayerVersion(stack, "luxon-layer", {
+        code: Code.fromAsset("layers/luxon"),
+    });
+    // sharp layer: to resize images
+    const sharpLayer = new LayerVersion(stack, "sharp-layer", {
+        code: Code.fromAsset("layers/sharp"),
+    });
+    // sharp layer: to resize images
+    const expoServerSdkLayer = new LayerVersion(stack, "expo-server-sdk-layer", {
+        code: Code.fromAsset("layers/expo-server-sdk"),
+    });
+    // i18n layer: to manage localization
+    const i18nLayer = new LayerVersion(stack, "i18n-layer", {
+        code: Code.fromAsset("layers/i18n"),
+    });
+    // lambda functions timeout
+    const timeout = app.stage === "prod" ? "30 seconds" : "60 seconds";
+    // Expo Server Access Token for Push
+    const EXPO_ACCESS_TOKEN = new Config.Secret(stack, "EXPO_ACCESS_TOKEN");
+    // Cron function to send daily usage notifications, runs every 15min
+    const processDailyUsageAlerts = new Function(stack, "chargebotDailyUsageAlerts", {
+        handler: "packages/functions/src/api/send_daily_usage_notifications.main",
+        timeout: "180 seconds",
+        // @ts-expect-error ignore type errors
+        layers: [expoServerSdkLayer, i18nLayer, luxonLayer],
+        nodejs: {
+            install: ["expo-server-sdk", "i18n", "luxon"],
+        },
+        bind: [
+            rdsCluster,
+            timescaleConfigs.TIMESCALE_HOST,
+            timescaleConfigs.TIMESCALE_USER,
+            timescaleConfigs.TIMESCALE_PASSWORD,
+            timescaleConfigs.TIMESCALE_PORT,
+            timescaleConfigs.TIMESCALE_DATABASE,
+            EXPO_ACCESS_TOKEN
+        ],
+    });
+    new Cron(stack, "DailyUsageNotificationCron", {
+        schedule: "rate(15 minutes)",
+        job: {
+            function: processDailyUsageAlerts,
+        }
+    });
+    /**
+     * Subscribe to chargebot alerts and execute a lambda function
+     */
+    const processIotAlertsFunction = new Function(stack, "chargebotIotAlertProcess", {
+        handler: "packages/functions/src/api/send_push_alert.main",
+        timeout,
+        // @ts-expect-error ignore type errors
+        layers: [expoServerSdkLayer, i18nLayer],
+        nodejs: {
+            install: ["expo-server-sdk", "i18n"],
+        },
+        bind: [
+            rdsCluster,
+            timescaleConfigs.TIMESCALE_HOST,
+            timescaleConfigs.TIMESCALE_USER,
+            timescaleConfigs.TIMESCALE_PASSWORD,
+            timescaleConfigs.TIMESCALE_PORT,
+            timescaleConfigs.TIMESCALE_DATABASE,
+            EXPO_ACCESS_TOKEN
+        ],
+    });
+    const iotAlertLogGroup = new LogGroup(stack, `ChargebotIoTAlertLogGroup_${app.stage}`, {
+        logGroupName: `ChargebotIoTAlertLogGroup_${app.stage}`,
+        retention: RetentionDays.ONE_MONTH
+    });
+    const iotAlertErrorLogGroup = new LogGroup(stack, `ChargebotIoTAlertErrorLogGroup_${app.stage}`, {
+        logGroupName: `ChargebotIoTAlertErrorLogGroup_${app.stage}`,
+        retention: RetentionDays.ONE_MONTH
+    });
+    const iotAlertsToLambda = {
+        // @ts-expect-error ignore typing
+        existingLambdaObj: processIotAlertsFunction,
+        iotTopicRuleProps: {
+            topicRulePayload: {
+                ruleDisabled: false,
+                description: "ChargeBot alerts to Lambda",
+                sql: "SELECT * FROM 'chargebot/alert/lambda'",
+                actions: [
+                    {
+                        cloudwatchLogs: {
+                            logGroupName: iotAlertLogGroup.logGroupName,
+                            roleArn: 'arn:aws:iam::881739832873:role/livesust-iot-cluster-kms-role',
+                        }
+                    }
+                ],
+                errorAction: {
+                    cloudwatchLogs: {
+                        logGroupName: iotAlertErrorLogGroup.logGroupName,
+                        roleArn: 'arn:aws:iam::881739832873:role/livesust-iot-cluster-kms-role'
+                    }
+                }
+            }
+        }
+    };
+    new IotToLambda(stack, `ChargebotIoTAlertRuleToLambda_${app.stage}`, iotAlertsToLambda);
+    /**
+     * Subscribe to chargebot command execution results and execute a lambda function
+     */
+    const processControlOutletResponseFunction = new Function(stack, "chargebotControlOutletResponseProcess", {
+        handler: "packages/functions/src/api/control_outlet_result.main",
+        timeout,
+        bind: [rdsCluster],
+    });
+    const controlOutletResponseLogGroup = new LogGroup(stack, `ChargebotControlOutletResponseLogGroup_${app.stage}`, {
+        logGroupName: `ChargebotControlOutletResponseLogGroup_${app.stage}`,
+        retention: RetentionDays.ONE_MONTH
+    });
+    const controlOutletResponseErrorLogGroup = new LogGroup(stack, `ChargebotControlOutletResponseErrorLogGroup_${app.stage}`, {
+        logGroupName: `ChargebotControlOutletResponseErrorLogGroup_${app.stage}`,
+        retention: RetentionDays.ONE_MONTH
+    });
+    const controlOutletResponseToLambda = {
+        // @ts-expect-error ignore typing
+        existingLambdaObj: processControlOutletResponseFunction,
+        iotTopicRuleProps: {
+            topicRulePayload: {
+                ruleDisabled: false,
+                description: "ChargeBot control outlet response to Lambda",
+                sql: "SELECT * FROM 'chargebot/control/+/outlet/result'",
+                actions: [
+                    {
+                        cloudwatchLogs: {
+                            logGroupName: controlOutletResponseLogGroup.logGroupName,
+                            roleArn: 'arn:aws:iam::881739832873:role/livesust-iot-cluster-kms-role',
+                        }
+                    }
+                ],
+                errorAction: {
+                    cloudwatchLogs: {
+                        logGroupName: controlOutletResponseErrorLogGroup.logGroupName,
+                        roleArn: 'arn:aws:iam::881739832873:role/livesust-iot-cluster-kms-role'
+                    }
+                }
+            }
+        }
+    };
+    new IotToLambda(stack, `ChargebotControlOutletResponseRuleToLambda_${app.stage}`, controlOutletResponseToLambda);
+    /**
+     * Subscribe to chargebot gps parked location and execute a lambda function
+     */
+    if ("staging" === app.stage) {
+        // new CfnPlaceIndex(stack, 'ChargebotEsriPlaceIndex', {
+        //   dataSource: 'Esri',
+        //   indexName: 'ChargebotEsriPlaceIndex',
+        //   // the properties below are optional
+        //   dataSourceConfiguration: {
+        //     intendedUse: 'Storage',
+        //   },
+        //   description: 'AWS Location Esri Place Index for Chargebot',
+        // });
+        new CfnPlaceIndex(stack, 'ChargebotHerePlaceIndex', {
+            dataSource: 'Here',
+            indexName: 'ChargebotHerePlaceIndex',
+            // the properties below are optional
+            dataSourceConfiguration: {
+                intendedUse: 'Storage',
+            },
+            description: 'AWS Location Here Place Index for Chargebot',
+        });
+    }
+    const geolocationAdminRole = new Role(stack, "GeolocationAdminRole", {
+        assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
+        managedPolicies: [
+            { managedPolicyArn: "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole" },
+        ],
+    });
+    const policy = new Policy(stack, "GeolocationAdminRolePolicy", {
+        policyName: 'lambda_geolocation_policy',
+        statements: [new PolicyStatement({
+                effect: Effect.ALLOW,
+                actions: [
+                    "geo:SearchPlaceIndexForPosition",
+                    "geo:SearchPlaceIndexForText", // geocoding
+                ],
+                resources: ["*"]
+            })]
+    });
+    policy.attachToRole(geolocationAdminRole);
+    const processIotGpsParkedFunction = new Function(stack, "chargebotIoTGpsParkedProcess", {
+        handler: "packages/functions/src/api/process_iot_gps_parked.main",
+        timeout,
+        // memorySize: "2 GB",
+        // @ts-expect-error ignore check
+        role: geolocationAdminRole,
+        bind: [
+            timescaleConfigs.TIMESCALE_HOST,
+            timescaleConfigs.TIMESCALE_USER,
+            timescaleConfigs.TIMESCALE_PASSWORD,
+            timescaleConfigs.TIMESCALE_PORT,
+            timescaleConfigs.TIMESCALE_DATABASE,
+        ],
+    });
+    /**
+     * Subscribe to chargebot echo and execute a lambda function to auto discover devices
+     */
+    const processIotEchoFunction = new Function(stack, "chargebotIotEchoProcess", {
+        handler: "packages/functions/src/api/bot_discovery.main",
+        timeout,
+        bind: [rdsCluster, eventBus],
+    });
+    const iotEchoLogGroup = new LogGroup(stack, `ChargebotIoTEchoLogGroup_${app.stage}`, {
+        logGroupName: `ChargebotIoTEchoLogGroup_${app.stage}`,
+        retention: RetentionDays.ONE_MONTH
+    });
+    const iotEchoErrorLogGroup = new LogGroup(stack, `ChargebotIoTEchoErrorLogGroup_${app.stage}`, {
+        logGroupName: `ChargebotIoTEchoErrorLogGroup_${app.stage}`,
+        retention: RetentionDays.ONE_MONTH
+    });
+    const iotEchoToLambda = {
+        // @ts-expect-error ignore typing
+        existingLambdaObj: processIotEchoFunction,
+        iotTopicRuleProps: {
+            topicRulePayload: {
+                ruleDisabled: false,
+                description: "ChargeBot echo discovery to Lambda",
+                sql: "SELECT * FROM 'chargebot/+/echo'",
+                actions: [
+                    {
+                        cloudwatchLogs: {
+                            logGroupName: iotEchoLogGroup.logGroupName,
+                            roleArn: 'arn:aws:iam::881739832873:role/livesust-iot-cluster-kms-role',
+                        }
+                    }
+                ],
+                errorAction: {
+                    cloudwatchLogs: {
+                        logGroupName: iotEchoErrorLogGroup.logGroupName,
+                        roleArn: 'arn:aws:iam::881739832873:role/livesust-iot-cluster-kms-role'
+                    }
+                }
+            }
+        }
+    };
+    new IotToLambda(stack, `ChargebotIoTEchoRuleToLambda_${app.stage}`, iotEchoToLambda);
+    /**
+     * Subscribe to chargebot system shadow and execute a lambda function to update connection status
+     */
+    const processIotSystemShadowConnectedFunction = new Function(stack, "chargebotIotSystemShadowConnectedProcess", {
+        handler: "packages/functions/src/api/bot_system_shadow_connected.main",
+        timeout,
+        bind: [
+            rdsCluster,
+            eventBus,
+            timescaleConfigs.TIMESCALE_HOST,
+            timescaleConfigs.TIMESCALE_USER,
+            timescaleConfigs.TIMESCALE_PASSWORD,
+            timescaleConfigs.TIMESCALE_PORT,
+            timescaleConfigs.TIMESCALE_DATABASE,
+        ],
+    });
+    const iotSystemShadowConnectedLogGroup = new LogGroup(stack, `ChargebotIoTShadowConnectedLogGroup_${app.stage}`, {
+        logGroupName: `ChargebotIoTShadowConnectedLogGroup_${app.stage}`,
+        retention: RetentionDays.ONE_MONTH
+    });
+    const iotSystemShadowConnectedErrorLogGroup = new LogGroup(stack, `ChargebotIoTShadowConnectedErrorLogGroup_${app.stage}`, {
+        logGroupName: `ChargebotIoTShadowConnectedErrorLogGroup_${app.stage}`,
+        retention: RetentionDays.ONE_MONTH
+    });
+    const iotSystemShadowConnectedToLambda = {
+        // @ts-expect-error ignore typing
+        existingLambdaObj: processIotSystemShadowConnectedFunction,
+        iotTopicRuleProps: {
+            topicRulePayload: {
+                ruleDisabled: false,
+                description: "ChargeBot system shadow connected to Lambda",
+                sql: "SELECT state.reported as state, thingName() as thingName FROM '$aws/things/+/shadow/name/system/update'",
+                actions: [
+                    {
+                        cloudwatchLogs: {
+                            logGroupName: iotSystemShadowConnectedLogGroup.logGroupName,
+                            roleArn: 'arn:aws:iam::881739832873:role/livesust-iot-cluster-kms-role',
+                        }
+                    }
+                ],
+                errorAction: {
+                    cloudwatchLogs: {
+                        logGroupName: iotSystemShadowConnectedErrorLogGroup.logGroupName,
+                        roleArn: 'arn:aws:iam::881739832873:role/livesust-iot-cluster-kms-role'
+                    }
+                }
+            }
+        }
+    };
+    new IotToLambda(stack, `ChargebotIoTSystemShadowConnectedRuleToLambda_${app.stage}`, iotSystemShadowConnectedToLambda);
+    /**
+     * Lambda Function to migrate users to a new pool
+     */
+    new Function(stack, "migrateUserPoolUsers", {
+        handler: "packages/functions/src/user_pool_migration.main",
+        // @ts-expect-error ignore check
+        role: cognitoAdminRole,
+        bind: [COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
+    });
+    return {
+        lambdaLayers: {
+            cryptoLayer,
+            luxonLayer,
+            sharpLayer,
+            expoServerSdkLayer,
+            i18nLayer,
+        },
+        functions: {
+            processIotAlertsFunction,
+            processDailyUsageAlerts,
+            processIotGpsParkedFunction
+        },
+        setupProvisionedConcurrency,
+    };
+}
+function setupProvisionedConcurrency(stack, funct) {
+    const version = funct.currentVersion;
+    const alias = new Alias(stack, `${funct.functionName}_LiveAlias`, {
+        aliasName: "live",
+        version: version,
+        provisionedConcurrentExecutions: 1
+    });
+    // The code that defines your stack goes here
+    const target = new ScalableTarget(stack, `${funct.functionName}_ScalableTarget`, {
+        serviceNamespace: ServiceNamespace.LAMBDA,
+        maxCapacity: 5,
+        minCapacity: 1,
+        resourceId: `function:${alias.lambda.functionName}:${alias.aliasName}`,
+        scalableDimension: 'lambda:function:ProvisionedConcurrency'
+    });
+    target.node.addDependency(alias);
+    target.scaleToTrackMetric(`${funct.functionName}_PcuTracking`, {
+        targetValue: 0.8,
+        predefinedMetric: PredefinedMetric.LAMBDA_PROVISIONED_CONCURRENCY_UTILIZATION
+    });
+}

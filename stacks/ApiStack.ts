@@ -15,7 +15,6 @@ export function ApiStack({ app, stack }: StackContext) {
   const { eventBus } = use(EventBusStack);
   const {
     cognito,
-    emailPhoneCognito,
     cognitoAdminRole,
     COGNITO_USER_POOL_ID,
     COGNITO_EMAIL_PHONE_USER_POOL_ID,
@@ -55,10 +54,8 @@ export function ApiStack({ app, stack }: StackContext) {
       jwt: {
         type: "user_pool",
         userPool: {
-          // id: cognito.userPoolId,
-          // clientIds: [cognito.userPoolClientId],
-          id: emailPhoneCognito.userPoolId,
-          clientIds: [emailPhoneCognito.userPoolClientId],
+          id: cognito.userPoolId,
+          clientIds: [cognito.userPoolClientId],
         },
       },
     },
@@ -372,7 +369,6 @@ export function ApiStack({ app, stack }: StackContext) {
 
   // allowing authenticated users to access API
   cognito.attachPermissionsForAuthUsers(stack, [api]);
-  emailPhoneCognito.attachPermissionsForAuthUsers(stack, [api]);
 
   stack.addOutputs({
     ApiEndpoint: api.url,
