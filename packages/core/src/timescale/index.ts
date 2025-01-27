@@ -51,7 +51,9 @@ const psqlDialect = new PostgresDialect({
     pool: new Pool({
         database: Config.TIMESCALE_DATABASE,
         host: Config.TIMESCALE_HOST,
-        ssl: true,
+        ssl: {
+          rejectUnauthorized: false
+        },
         user: Config.TIMESCALE_USER,
         password: Config.TIMESCALE_PASSWORD,
         port: +Config.TIMESCALE_PORT,
@@ -63,7 +65,7 @@ const psqlDialect = new PostgresDialect({
         // default is 10000 (10 seconds) - set to 0 to disable auto-disconnection of idle clients
         idleTimeoutMillis: 30000,
         // timeout for new connections
-        connectionTimeoutMillis: 10000
+        connectionTimeoutMillis: 10000,
     })
 })
 

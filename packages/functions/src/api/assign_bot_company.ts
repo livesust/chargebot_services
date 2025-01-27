@@ -21,7 +21,7 @@ import { Bot } from "@chargebot-services/core/services/bot";
 const handler = async (event) => {
   const company_id = +event.pathParameters!.company_id!;
   const bot_id = +event.pathParameters!.bot_id!;
-  const user_id = event.requestContext?.authorizer?.jwt.claims.sub;
+  const user_id = event.requestContext?.authorizer?.jwt.claims['cognito:username'] ?? event.requestContext?.authorizer?.jwt.claims['username'];
 
   try {
     const [bot, existentBotCompany, countByCompany, existentBotUsers] = await Promise.all([

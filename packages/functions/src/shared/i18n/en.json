@@ -4,12 +4,14 @@
       "subject": "Welcome! Get started with ChargeBot by Sust.",
       "text": "Welcome to Sust. To get started using the ChargeBot app, click the button below to set your new password.",
       "username": "Your username:",
+      "email_or_phone": "{{{email}}} OR {{{phone_number}}}",
       "password": "Your temporary password is:",
       "button": "Activate Account",
       "get_app": "Get the ChargeBot app",
       "need_help": "Need help? Reach out any time at <a class=\"link\" href=\"mailto:hello@sust.pro\">hello@sust.pro</a> for assistance.",
       "sign": "The Sust Team",
-      "footer": "@2024 Copyrights. All rights reserved by Sust"
+      "footer": "@2024 Copyrights. All rights reserved by Sust",
+      "sms_message": "Welcome to Sust. Click the link to activate your account."
     },
     "forgot_password": {
       "subject": "Reset your ChargeBot password",
@@ -21,7 +23,8 @@
       "get_app": "Get the ChargeBot app",
       "need_help": "Need help? Reach out any time at <a class=\"link\" href=\"mailto:hello@sust.pro\">hello@sust.pro</a> for assistance.",
       "sign": "The Sust Team",
-      "footer": "@2024 Copyrights. All rights reserved by Sust"
+      "footer": "@2024 Copyrights. All rights reserved by Sust",
+      "sms_message": "We received a request to reset your Sust password. Click the link to set your new password. Your reset code is {####}"
     }
   },
   "current_location": "the current location",

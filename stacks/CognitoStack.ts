@@ -4,6 +4,226 @@ import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as ses from "aws-cdk-lib/aws-ses";
+import * as kms from "aws-cdk-lib/aws-kms";
+
+const setupCognitoEmail = (app, stack, baseUrl, signInUrl, cognitoCustomMessageFunction) => {
+  const emailOnlyCognitoConfig = new Cognito(stack, "Auth", {
+      login: ["email"],
+      triggers: {
+        customMessage: cognitoCustomMessageFunction
+      },
+      cdk: {
+          userPool: {
+              selfSignUpEnabled: app.stage !== "prod",
+              autoVerify: {
+                  email: true
+              },
+              accountRecovery: cognito.AccountRecovery.PHONE_WITHOUT_MFA_AND_EMAIL,
+              userVerification: {
+                  emailSubject: "Verify your new Sust Pro account"
+              },
+              standardAttributes: {
+                locale: { required: false, mutable: true },
+                givenName: { required: false, mutable: true },
+                familyName: { required: false, mutable: true },
+                profilePicture: { required: false, mutable: true }
+              },
+              customAttributes: {
+                  customerId: new cognito.NumberAttribute({ mutable: false })
+              },
+              passwordPolicy: {
+                minLength: 8,
+                requireDigits: false,
+                requireLowercase: false,
+                requireUppercase: false,
+                requireSymbols: false,
+                tempPasswordValidity: toCdkDuration('30 day')
+              }
+          },
+          userPoolClient: {
+              authFlows: {
+                  adminUserPassword: true,
+                  userPassword: true,
+                  userSrp: true,
+                  custom: true
+              },
+              oAuth: {
+                  flows: {
+                      authorizationCodeGrant: true
+                  },
+                  callbackUrls: [baseUrl],
+                  logoutUrls: [signInUrl],
+                  scopes: [cognito.OAuthScope.EMAIL]
+              },
+              preventUserExistenceErrors: true,
+              enableTokenRevocation: true,
+              refreshTokenValidity: toCdkDuration('180 days'),
+          }
+      }
+    });
+
+    if (app.stage === "prod") {
+      emailOnlyCognitoConfig.cdk.userPool.addDomain("chargebot", { cognitoDomain: { domainPrefix: "chargebot" } })
+    } else if (app.stage === "staging") {
+      emailOnlyCognitoConfig.cdk.userPool.addDomain("chargebotstaging", { cognitoDomain: { domainPrefix: "chargebotstaging" } })
+    } else if (app.stage === "dev") {
+      emailOnlyCognitoConfig.cdk.userPool.addDomain("chargebotdev", { cognitoDomain: { domainPrefix: "chargebotdev" } })
+    }
+
+    emailOnlyCognitoConfig.attachPermissionsForAuthUsers(stack, ["ssm"])
+    return emailOnlyCognitoConfig;
+}
+
+const setupKms = (stack) => {
+  const kmsKey = new kms.Key(stack, "CustomSenderKey", {
+    enableKeyRotation: true,
+    description: "KMS key for Cognito custom sender",
+    alias: `${stack.stackName}-custom-sender`,
+  });
+  
+  kmsKey.addToResourcePolicy(new iam.PolicyStatement({
+      actions: [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:GenerateDataKey",
+          "kms:DescribeKey",
+          "kms:CreateGrant",
+      ],
+      principals: [new iam.ServicePrincipal("cognito-idp.amazonaws.com")],
+      resources: ["*"],
+  }));
+
+  return kmsKey;
+}
+
+const setupCognitoEmailPhone = (app, stack, baseUrl, deepLinkUrl, signInUrl, cognitoCustomMessageFunction, kmsKey) => {
+    const TWILIO_ACCOUNT_SSID = new Config.Secret(stack, "TWILIO_ACCOUNT_SSID");
+    const TWILIO_AUTH_TOKEN = new Config.Secret(stack, "TWILIO_AUTH_TOKEN");
+    const TWILIO_PHONE_NUMBER = new Config.Secret(stack, "TWILIO_PHONE_NUMBER");
+    const TWILIO_SENDER_SERVICE = new Config.Secret(stack, "TWILIO_SENDER_SERVICE");
+    const COGNITO_KMS_SECRET_ALIAS = new Config.Secret(stack, "COGNITO_KMS_SECRET_ALIAS");
+    const COGNITO_KMS_SECRET_ARN = new Config.Secret(stack, "COGNITO_KMS_SECRET_ARN");
+    const COGNITO_KMS_SECRET_KEY_ID = new Config.Secret(stack, "COGNITO_KMS_SECRET_KEY_ID");
+
+    // Cognito SMS Role
+    const cognitoSmsRole: iam.IRole = new iam.Role(stack, "CognitoSMSRole", {
+      assumedBy: new iam.ServicePrincipal("cognito-idp.amazonaws.com"),
+      managedPolicies: [
+        { managedPolicyArn: "arn:aws:iam::aws:policy/AmazonSNSFullAccess" },
+      ],
+    });
+
+    // Twilio layer: sms service
+    const twilioLayer = new lambda.LayerVersion(stack, "twilio-layer", {
+      code: lambda.Code.fromAsset("layers/twilio"),
+    });
+
+    const cognitoCustomSmsSenderFunction = new Function(stack, "cognitoCustomSmsSenderFunction", {
+      handler: "packages/functions/src/api/cognito_custom_sms_sender.main",
+      timeout: app.stage === "prod" ? "30 seconds" : "60 seconds",
+      // @ts-expect-error ignore type errors
+      layers: [twilioLayer],
+      nodejs: {
+        install: ["twilio"],
+      },
+      environment: {
+        DEEP_LINK_URL: deepLinkUrl,
+      },
+      bind: [TWILIO_ACCOUNT_SSID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, TWILIO_SENDER_SERVICE, COGNITO_KMS_SECRET_ALIAS, COGNITO_KMS_SECRET_ARN, COGNITO_KMS_SECRET_KEY_ID],
+    });
+
+    cognitoCustomSmsSenderFunction.addToRolePolicy(
+      // @ts-expect-error ignore type errors
+      new iam.PolicyStatement({
+        actions: ["kms:Decrypt", "kms:GenerateDataKey"],
+        resources: [kmsKey.keyArn],
+      })
+    );
+
+    const cognitoConfig = new Cognito(stack, "EmailAndPhoneAuth", {
+        // Sign-in attributes. Usernames can be an email address, phone number, or a user-selected username.
+        // When you select only email and phone, users must select either email or phone as their username type.
+        // When username is an option, users can sign in with any options you select if they have provided a value for that option.
+        login: ["username", "email", "phone"],
+        triggers: {
+          customMessage: cognitoCustomMessageFunction,
+          customSmsSender: cognitoCustomSmsSenderFunction
+          // preAuthentication: preAuthLambda
+        },
+        cdk: {
+            userPool: {
+                selfSignUpEnabled: app.stage !== "prod",
+                autoVerify: {
+                    email: true,
+                    phone: true,
+                },
+                accountRecovery: cognito.AccountRecovery.PHONE_WITHOUT_MFA_AND_EMAIL,
+                userVerification: {
+                    emailSubject: "Verify your new Sust Pro account",
+                    // emailStyle: cognito.VerificationEmailStyle.CODE,
+                    smsMessage: "Your Sust Pro verification code is {####}",
+                },
+                standardAttributes: {
+                  locale: { required: false, mutable: true },
+                  givenName: { required: false, mutable: true },
+                  familyName: { required: false, mutable: true },
+                  profilePicture: { required: false, mutable: true },
+                  phoneNumber: { required: false, mutable: true },
+                },
+                customAttributes: {
+                    customerId: new cognito.NumberAttribute({ mutable: false }),
+                    userSub: new cognito.StringAttribute({ mutable: true }),
+                    invitationMethod: new cognito.StringAttribute({ mutable: true }),
+                },
+                passwordPolicy: {
+                  minLength: 8,
+                  requireDigits: false,
+                  requireLowercase: false,
+                  requireUppercase: false,
+                  requireSymbols: false,
+                  tempPasswordValidity: toCdkDuration('30 day')
+                },
+                signInAliases: {
+                    username: true,
+                    email: true,
+                    phone: true,
+                },
+                // @ts-expect-error ignore
+                smsRole: cognitoSmsRole,
+                customSenderKmsKey: kmsKey
+            },
+            userPoolClient: {
+                authFlows: {
+                    adminUserPassword: true,
+                    userPassword: true,
+                    userSrp: true,
+                    custom: true
+                },
+                oAuth: {
+                    flows: {
+                        authorizationCodeGrant: true
+                    },
+                    callbackUrls: [baseUrl],
+                    logoutUrls: [signInUrl],
+                    scopes: [cognito.OAuthScope.EMAIL, cognito.OAuthScope.PHONE]
+                },
+                preventUserExistenceErrors: true,
+                enableTokenRevocation: true,
+                refreshTokenValidity: toCdkDuration('180 days'),
+            }
+        }
+    });
+
+    if (app.stage === "prod") {
+      cognitoConfig.cdk.userPool.addDomain("chargebot", { cognitoDomain: { domainPrefix: "chargebot-phone" } })
+    } else if (app.stage === "staging") {
+      cognitoConfig.cdk.userPool.addDomain("chargebotstaging", { cognitoDomain: { domainPrefix: "chargebotstaging-phone" } })
+    } else if (app.stage === "dev") {
+      cognitoConfig.cdk.userPool.addDomain("chargebotdev", { cognitoDomain: { domainPrefix: "chargebotdev-phone" } })
+    }
+    cognitoConfig.attachPermissionsForAuthUsers(stack, ["ssm"])
+    return cognitoConfig;
+}
 
 export function CognitoStack({ app, stack }: StackContext) {
 
@@ -43,19 +263,23 @@ export function CognitoStack({ app, stack }: StackContext) {
     });
     policy.attachToRole(cognitoAdminRole);
 
-    // Cognito SMS Role
-    const cognitoSmsRole: iam.IRole = new iam.Role(stack, "CognitoSMSRole", {
-      assumedBy: new iam.ServicePrincipal("cognito-idp.amazonaws.com"),
-      managedPolicies: [
-        { managedPolicyArn: "arn:aws:iam::aws:policy/AmazonSNSFullAccess" },
-      ],
-    });
-
     // Cognito user pool authentication
     // @ts-expect-error ignore type errors
     const fsExtraLayer = new lambda.LayerVersion(stack, "fsExtra-layer", {
       code: lambda.Code.fromAsset("layers/fs-extra"),
     });
+
+    const baseUrl = app.stage === "prod"
+      ? "https://chargebot-web-app.vercel.app"
+      : (
+        app.stage === "dev"
+        ? "https://chargebot-web-app-livesust-daniels-projects-f33e53d9.vercel.app"//"https://localhost:3000"
+        : "https://chargebot-web-app-livesust-daniels-projects-f33e53d9.vercel.app"
+    );
+
+    const deepLinkUrl = `${baseUrl}/chargebot-app`;
+    const signInUrl = `${baseUrl}/auth/cognito/sign-in`;
+    const forgotPasswordUrl = `${baseUrl}/auth/cognito/update-password`;
 
     const cognitoCustomMessageFunction = new Function(stack, "cognitoCustomMessageFunction", {
       handler: "packages/functions/src/api/cognito_custom_message_handler.main",
@@ -67,181 +291,23 @@ export function CognitoStack({ app, stack }: StackContext) {
         install: ["fs-extra"],
       },
       environment: {
-        AUTH_SIGN_IN_URL: app.stage === "dev" ? "http://localhost:3000/auth/cognito/sign-in" : "https://chargebot-web-app.vercel.app/auth/cognito/sign-in",
-        FORGOT_PASSWORD_URL: app.stage === "dev" ? "http://localhost:3000/auth/cognito/update-password" : "https://chargebot-web-app.vercel.app/auth/cognito/update-password"
+        DEEP_LINK_URL: deepLinkUrl,
+        AUTH_SIGN_IN_URL: signInUrl,
+        FORGOT_PASSWORD_URL: forgotPasswordUrl
       }
     });
 
-    const emailOnlyCognitoConfig = new Cognito(stack, "Auth", {
-        login: ["email"],
-        triggers: {
-          customMessage: cognitoCustomMessageFunction
-        },
-        cdk: {
-            userPool: {
-                selfSignUpEnabled: app.stage !== "prod",
-                autoVerify: {
-                    email: true
-                },
-                accountRecovery: cognito.AccountRecovery.PHONE_WITHOUT_MFA_AND_EMAIL,
-                userVerification: {
-                    emailSubject: "Verify your new Sust Pro account"
-                },
-                standardAttributes: {
-                  locale: { required: false, mutable: true },
-                  givenName: { required: false, mutable: true },
-                  familyName: { required: false, mutable: true },
-                  profilePicture: { required: false, mutable: true }
-                },
-                customAttributes: {
-                    customerId: new cognito.NumberAttribute({ mutable: false })
-                },
-                passwordPolicy: {
-                  minLength: 8,
-                  requireDigits: false,
-                  requireLowercase: false,
-                  requireUppercase: false,
-                  requireSymbols: false,
-                  tempPasswordValidity: toCdkDuration('30 day')
-                }
-            },
-            userPoolClient: {
-                authFlows: {
-                    adminUserPassword: true,
-                    userPassword: true,
-                    userSrp: true,
-                    custom: true
-                },
-                oAuth: {
-                    flows: {
-                        authorizationCodeGrant: true
-                    },
-                    callbackUrls: app.stage === "prod"
-                      ? ["https://chargebot-web-app.vercel.app"]
-                      : (
-                        app.stage === "dev"
-                        ? ["http://localhost:3000"]
-                        : ["https://chargebot-web-app.vercel.app"]
-                        ),
-                    logoutUrls: app.stage === "prod"
-                      ? ["https://chargebot-web-app.vercel.app/auth/cognito/sign-in"]
-                      : (
-                        app.stage === "dev"
-                        ? ["http://localhost:3000/auth/cognito/sign-in"]
-                        : ["https://chargebot-web-app.vercel.app/cognito/sign-in"]
-                        ),
-                    scopes: [cognito.OAuthScope.EMAIL]
-                },
-                preventUserExistenceErrors: true,
-                enableTokenRevocation: true,
-                refreshTokenValidity: toCdkDuration('180 days'),
-            }
-        }
-    });    
+    // const preAuthLambda = new Function(stack, "PreAuthLambda", {
+    //   handler: "packages/functions/src/authenticate_user.main",
+    //   // @ts-expect-error ignore check
+    //   role: cognitoAdminRole,
+    //   bind: [COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
+    // });
 
-    const preAuthLambda = new Function(stack, "PreAuthLambda", {
-      handler: "packages/functions/src/authenticate_user.main",
-      // @ts-expect-error ignore check
-      role: cognitoAdminRole,
-      bind: [COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
-    });
+    const emailOnlyCognitoConfig = setupCognitoEmail(app, stack, baseUrl, signInUrl, cognitoCustomMessageFunction);
 
-    const signInUrl = app.stage === "prod"
-      ? ["https://chargebot-web-app.vercel.app/auth/cognito/sign-in"]
-      : (
-        app.stage === "dev"
-        ? ["http://localhost:3000/auth/cognito/sign-in"]
-        : ["https://chargebot-web-app.vercel.app/cognito/sign-in"]
-    );
-    const emailPhoneCognitoConfig = new Cognito(stack, "EmailPhoneAuth", {
-        login: ["email", "phone"],
-        triggers: {
-          customMessage: cognitoCustomMessageFunction,
-          // preAuthentication: preAuthLambda
-        },
-        cdk: {
-            userPool: {
-                selfSignUpEnabled: app.stage !== "prod",
-                autoVerify: {
-                    email: true,
-                    phone: true
-                },
-                accountRecovery: cognito.AccountRecovery.PHONE_WITHOUT_MFA_AND_EMAIL,
-                userVerification: {
-                    emailSubject: "Verify your new Sust Pro account",
-                    // emailStyle: cognito.VerificationEmailStyle.CODE,
-                    smsMessage: "Your Sust Pro verification code is {####}",
-                },
-                userInvitation: {
-                  smsMessage: `Your Sust Pro username is {username} and temporary password is {####} ${signInUrl}`,
-                },
-                standardAttributes: {
-                  locale: { required: false, mutable: true },
-                  givenName: { required: false, mutable: true },
-                  familyName: { required: false, mutable: true },
-                  profilePicture: { required: false, mutable: true },
-                  phoneNumber: { required: false, mutable: true },
-                },
-                customAttributes: {
-                    customerId: new cognito.NumberAttribute({ mutable: false }),
-                    userSub: new cognito.StringAttribute({ mutable: true }),
-                },
-                passwordPolicy: {
-                  minLength: 8,
-                  requireDigits: false,
-                  requireLowercase: false,
-                  requireUppercase: false,
-                  requireSymbols: false,
-                  tempPasswordValidity: toCdkDuration('30 day')
-                },
-                signInAliases: {
-                    email: true,
-                    phone: true,
-                },
-                // @ts-expect-error ignore
-                smsRole: cognitoSmsRole
-            },
-            userPoolClient: {
-                authFlows: {
-                    adminUserPassword: true,
-                    userPassword: true,
-                    userSrp: true,
-                    custom: true
-                },
-                oAuth: {
-                    flows: {
-                        authorizationCodeGrant: true
-                    },
-                    callbackUrls: app.stage === "prod"
-                      ? ["https://chargebot-web-app.vercel.app"]
-                      : (
-                        app.stage === "dev"
-                        ? ["http://localhost:3000"]
-                        : ["https://chargebot-web-app.vercel.app"]
-                        ),
-                    logoutUrls: signInUrl,
-                    scopes: [cognito.OAuthScope.EMAIL, cognito.OAuthScope.PHONE]
-                },
-                preventUserExistenceErrors: true,
-                enableTokenRevocation: true,
-                refreshTokenValidity: toCdkDuration('180 days'),
-            }
-        }
-    });
-
-    if (app.stage === "prod") {
-      emailOnlyCognitoConfig.cdk.userPool.addDomain("chargebot", { cognitoDomain: { domainPrefix: "chargebot" } })
-      emailPhoneCognitoConfig.cdk.userPool.addDomain("chargebot", { cognitoDomain: { domainPrefix: "chargebot-phone" } })
-    } else if (app.stage === "staging") {
-      emailOnlyCognitoConfig.cdk.userPool.addDomain("chargebotstaging", { cognitoDomain: { domainPrefix: "chargebotstaging" } })
-      emailPhoneCognitoConfig.cdk.userPool.addDomain("chargebotstaging", { cognitoDomain: { domainPrefix: "chargebotstaging-phone" } })
-    } else if (app.stage === "dev") {
-      emailOnlyCognitoConfig.cdk.userPool.addDomain("chargebotdev", { cognitoDomain: { domainPrefix: "chargebotdev" } })
-      emailPhoneCognitoConfig.cdk.userPool.addDomain("chargebotdev", { cognitoDomain: { domainPrefix: "chargebotdev-phone" } })
-    }
-
-    emailOnlyCognitoConfig.attachPermissionsForAuthUsers(stack, ["ssm"])
-    emailPhoneCognitoConfig.attachPermissionsForAuthUsers(stack, ["ssm"])
+    const kmsKey = setupKms(stack);
+    const emailPhoneCognitoConfig = setupCognitoEmailPhone(app, stack, baseUrl, deepLinkUrl, signInUrl, cognitoCustomMessageFunction, kmsKey);
 
     if (app.stage !== "dev") {
       // SES Verified Domain ARN
@@ -311,10 +377,13 @@ export function CognitoStack({ app, stack }: StackContext) {
         CognitoEmailPhoneUserPoolId: emailPhoneCognitoConfig.userPoolId,
         CognitoEmailPhoneIdentityPoolId: emailPhoneCognitoConfig.cognitoIdentityPoolId,
         CognitoEmailPhoneUserPoolClientId: emailPhoneCognitoConfig.userPoolClientId,
+        CognitoKmsKeyId: kmsKey.keyId,
+        CognitoKmsKeyArn: kmsKey.keyArn,
     });
 
     return {
         cognito: emailOnlyCognitoConfig,
+        // emailPhoneCognito: emailOnlyCognitoConfig,
         emailPhoneCognito: emailPhoneCognitoConfig,
         cognitoAdminRole,
         COGNITO_USER_POOL_ID,

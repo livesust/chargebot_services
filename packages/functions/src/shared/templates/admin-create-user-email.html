@@ -90,9 +90,11 @@
         <td>
           <p>{{i18n_text}}</p>
           <p>&nbsp;</p>
-          <p>{{i18n_username}} <strong><a rel="nofollow" class="username">{username}</a></strong></p>
-          <p>{{i18n_password}} <strong>{####}</strong></p>
-          <a class="button" href="{{signInUrl}}">{{i18n_button}}</a>
+          <!-- DO NOT REMOVE THE username and password hidden fields or COGNITO WILL DISCARD THIS HTML AND SEND THE PLAIN ONE-->
+          <input type="hidden" id="hiddenUsername" name="hiddenUsername" value="{username}">
+          <input type="hidden" id="hiddenPassword" name="hiddenPassword" value="{####}">
+          <p>{{i18n_username}} <strong><a rel="nofollow" class="username">{{cognito_username}}</a></strong></p>
+          <a class="button" href="{{buttonUrl}}">{{i18n_button}}</a>
           <p>{{i18n_get_app}}</p>
           <p>
             <a href="https://apps.apple.com/us/app/chargebot/id6476321432" target='_blank'><img src="https://sust-public-bucket.s3.amazonaws.com/ios-store.png" height="50"/></a>

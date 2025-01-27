@@ -203,6 +203,7 @@ export async function findByCognitoId(cognito_id: string): Promise<User | undefi
 }
 
 export async function findByEmail(email_address: string): Promise<User | undefined> {
+  if (!email_address) return undefined;
   return db
       .selectFrom("user")
       .innerJoin('user_email', 'user_email.user_id', 'user.id')
@@ -214,6 +215,7 @@ export async function findByEmail(email_address: string): Promise<User | undefin
 }
 
 export async function findByPhone(phone_number: string): Promise<User | undefined> {
+  if (!phone_number) return undefined;
   return db
       .selectFrom("user")
       .innerJoin('user_phone', 'user_phone.user_id', 'user.id')

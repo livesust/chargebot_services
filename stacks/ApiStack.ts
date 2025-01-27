@@ -1,4 +1,4 @@
-import { StackContext, Config, Api, Bucket, use, Function } from "sst/constructs";
+import { StackContext, Config, Api, Bucket, use } from "sst/constructs";
 import { TimescaleStack } from "./TimescaleStack";
 import { RDSStack } from "./RDSStack";
 import { CognitoStack } from "./CognitoStack";
@@ -308,7 +308,14 @@ export function ApiStack({ app, stack }: StackContext) {
           bind: [COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
         },
       },
-      "PATCH /user/{cognito_id}/profile": "packages/functions/src/api/update_user_profile.main",
+      "PATCH /user/{cognito_id}/profile": {
+        function: {
+          handler: "packages/functions/src/api/update_user_profile.main",
+          // @ts-expect-error ignore check
+          role: cognitoAdminRole,
+          bind: [COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
+        },
+      },
       "POST /user/reinvite": {
         function: {
           handler: "packages/functions/src/api/reinvite_user.main",

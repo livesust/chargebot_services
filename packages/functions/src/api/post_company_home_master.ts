@@ -21,7 +21,7 @@ import { StateMaster } from "@chargebot-services/core/services/state_master";
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
   const company_id = +event.pathParameters!.company_id!;
-  const user_id = event.requestContext?.authorizer?.jwt.claims.sub;
+  const user_id = event.requestContext?.authorizer?.jwt.claims['cognito:username'] ?? event.requestContext?.authorizer?.jwt.claims['username'];
   const now = new Date();
   const body = event.body;
 

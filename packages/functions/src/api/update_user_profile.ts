@@ -19,12 +19,13 @@ import jsonBodyParser from "@middy/http-json-body-parser";
 import { dateReviver } from "src/shared/middlewares/json-date-parser";
 import { UserInviteStatus } from "@chargebot-services/core/database/user";
 import { BotUser } from "@chargebot-services/core/services/bot_user";
+import { Cognito } from "@chargebot-services/core/services/aws/cognito";
 
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
   const cognito_id = event.pathParameters!.cognito_id!;
-  const user_sub = event.requestContext?.authorizer?.jwt.claims.sub;
+  const user_id = event.requestContext?.authorizer?.jwt.claims['cognito:username'] ?? event.requestContext?.authorizer?.jwt.claims['username'];
   const body = event.body;
   const now = new Date();
 
@@ -42,7 +43,7 @@ const handler = async (event) => {
       last_name: body.last_name,
       title: body.title,
       photo: body.photo,
-      modified_by: user_sub,
+      modified_by: user_id,
       modified_date: now,
       onboarding: user.onboarding,
       invite_status: user.invite_status,
@@ -81,10 +82,11 @@ const handler = async (event) => {
       } else {
         promises.push(UserEmail.update(userEmail.id!, {
             email_address: body.email_address,
-            modified_by: user_sub,
+            modified_by: user_id,
             modified_date: now,
         }));
       }
+      promises.push(Cognito.updatePhoneNumber(user_id, body.email_address));
     }
 
     // update/create primary phone
@@ -98,10 +100,11 @@ const handler = async (event) => {
       } else {
         promises.push(UserPhone.update(userPhone.id!, {
             phone_number: body.phone_number,
-            modified_by: user_sub,
+            modified_by: user_id,
             modified_date: now,
         }));
       }
+      promises.push(Cognito.updatePhoneNumber(user_id, body.phone_number));
     }
 
     // update/create role
@@ -126,15 +129,15 @@ const handler = async (event) => {
       console.log('To Assign', JSON.stringify(botsToAssign));
       console.log('To Remove', JSON.stringify(botsToRemove));
       promises.push([
-        botsToRemove.map(async (botUser) => BotUser.remove(botUser!.id!, user_sub)),
+        botsToRemove.map(async (botUser) => BotUser.remove(botUser!.id!, user_id)),
         botsToAssign.map(async (bot_id: number) =>
           BotUser.create({
             bot_id: bot_id,
             assignment_date: now,
             user_id: user.id!,
-            created_by: user_sub,
+            created_by: user_id,
             created_date: now,
-            modified_by: user_sub,
+            modified_by: user_id,
             modified_date: now,
           })
         )

@@ -23,7 +23,7 @@ import { PermissionName } from "@chargebot-services/core/database/permission";
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
   const cognito_id = event.pathParameters!.cognito_id!;
-  const user_id = event.requestContext?.authorizer?.jwt.claims.sub;
+  const user_id = event.requestContext?.authorizer?.jwt.claims['cognito:username'] ?? event.requestContext?.authorizer?.jwt.claims['username'];
   const now = new Date();
   const body = event.body;
 
