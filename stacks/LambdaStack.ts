@@ -41,7 +41,7 @@ export function LambdaStack({ app, stack }: StackContext) {
     code: Code.fromAsset("layers/sharp"),
   });
 
-  // sharp layer: to resize images
+  // expo-server-sdk layer: to resize images
   const expoServerSdkLayer = new LayerVersion(stack, "expo-server-sdk-layer", {
     code: Code.fromAsset("layers/expo-server-sdk"),
   });
