@@ -5,8 +5,27 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as ses from "aws-cdk-lib/aws-ses";
 import * as kms from "aws-cdk-lib/aws-kms";
-const setupCognitoEmail = (app, stack, baseUrl, signInUrl, cognitoCustomMessageFunction) => {
-    const emailOnlyCognitoConfig = new Cognito(stack, "Auth", {
+const setupKms = (stack) => {
+    const kmsKey = new kms.Key(stack, "CustomSenderKey", {
+        enableKeyRotation: true,
+        description: "KMS key for Cognito custom sender",
+        alias: `${stack.stackName}-custom-sender`,
+    });
+    kmsKey.addToResourcePolicy(new iam.PolicyStatement({
+        actions: [
+            "kms:Encrypt",
+            "kms:Decrypt",
+            "kms:GenerateDataKey",
+            "kms:DescribeKey",
+            "kms:CreateGrant",
+        ],
+        principals: [new iam.ServicePrincipal("cognito-idp.amazonaws.com")],
+        resources: ["*"],
+    }));
+    return kmsKey;
+};
+const setupCognitoStaging = (app, stack, baseUrl, signInUrl, cognitoCustomMessageFunction) => {
+    const stagingCognito = new Cognito(stack, "Auth", {
         login: ["email"],
         triggers: {
             customMessage: cognitoCustomMessageFunction
@@ -61,37 +80,18 @@ const setupCognitoEmail = (app, stack, baseUrl, signInUrl, cognitoCustomMessageF
         }
     });
     if (app.stage === "prod") {
-        emailOnlyCognitoConfig.cdk.userPool.addDomain("chargebot", { cognitoDomain: { domainPrefix: "chargebot" } });
+        stagingCognito.cdk.userPool.addDomain("chargebot", { cognitoDomain: { domainPrefix: "chargebot" } });
     }
     else if (app.stage === "staging") {
-        emailOnlyCognitoConfig.cdk.userPool.addDomain("chargebotstaging", { cognitoDomain: { domainPrefix: "chargebotstaging" } });
+        stagingCognito.cdk.userPool.addDomain("chargebotstaging", { cognitoDomain: { domainPrefix: "chargebotstaging" } });
     }
     else if (app.stage === "dev") {
-        emailOnlyCognitoConfig.cdk.userPool.addDomain("chargebotdev", { cognitoDomain: { domainPrefix: "chargebotdev" } });
+        stagingCognito.cdk.userPool.addDomain("chargebotdev", { cognitoDomain: { domainPrefix: "chargebotdev" } });
     }
-    emailOnlyCognitoConfig.attachPermissionsForAuthUsers(stack, ["ssm"]);
-    return emailOnlyCognitoConfig;
+    stagingCognito.attachPermissionsForAuthUsers(stack, ["ssm"]);
+    return stagingCognito;
 };
-const setupKms = (stack) => {
-    const kmsKey = new kms.Key(stack, "CustomSenderKey", {
-        enableKeyRotation: true,
-        description: "KMS key for Cognito custom sender",
-        alias: `${stack.stackName}-custom-sender`,
-    });
-    kmsKey.addToResourcePolicy(new iam.PolicyStatement({
-        actions: [
-            "kms:Encrypt",
-            "kms:Decrypt",
-            "kms:GenerateDataKey",
-            "kms:DescribeKey",
-            "kms:CreateGrant",
-        ],
-        principals: [new iam.ServicePrincipal("cognito-idp.amazonaws.com")],
-        resources: ["*"],
-    }));
-    return kmsKey;
-};
-const setupCognitoEmailPhone = (app, stack, baseUrl, deepLinkUrl, signInUrl, cognitoCustomMessageFunction, kmsKey) => {
+const setupCognitoDevProd = (app, stack, baseUrl, deepLinkUrl, signInUrl, cognitoCustomMessageFunction, kmsKey) => {
     const TWILIO_ACCOUNT_SSID = new Config.Secret(stack, "TWILIO_ACCOUNT_SSID");
     const TWILIO_AUTH_TOKEN = new Config.Secret(stack, "TWILIO_AUTH_TOKEN");
     const TWILIO_PHONE_NUMBER = new Config.Secret(stack, "TWILIO_PHONE_NUMBER");
@@ -217,7 +217,6 @@ const setupCognitoEmailPhone = (app, stack, baseUrl, deepLinkUrl, signInUrl, cog
 export function CognitoStack({ app, stack }) {
     // Secret Keys
     const COGNITO_USER_POOL_ID = new Config.Secret(stack, "COGNITO_USER_POOL_ID");
-    const COGNITO_EMAIL_PHONE_USER_POOL_ID = new Config.Secret(stack, "COGNITO_EMAIL_PHONE_USER_POOL_ID");
     // Cognito admin role
     const cognitoAdminRole = new iam.Role(stack, "CognitoAdminRole", {
         assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
@@ -280,15 +279,15 @@ export function CognitoStack({ app, stack }) {
     //   handler: "packages/functions/src/authenticate_user.main",
     //   // @ts-expect-error ignore check
     //   role: cognitoAdminRole,
-    //   bind: [COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
+    //   bind: [COGNITO_USER_POOL_ID],
     // });
     const kmsKey = setupKms(stack);
     let cognitoConfig = null;
     if (app.stage === "staging") {
-        cognitoConfig = setupCognitoEmail(app, stack, baseUrl, signInUrl, cognitoCustomMessageFunction);
+        cognitoConfig = setupCognitoStaging(app, stack, baseUrl, signInUrl, cognitoCustomMessageFunction);
     }
     else {
-        cognitoConfig = setupCognitoEmailPhone(app, stack, baseUrl, deepLinkUrl, signInUrl, cognitoCustomMessageFunction, kmsKey);
+        cognitoConfig = setupCognitoDevProd(app, stack, baseUrl, deepLinkUrl, signInUrl, cognitoCustomMessageFunction, kmsKey);
     }
     if (app.stage !== "dev") {
         // SES Verified Domain ARN
@@ -333,7 +332,7 @@ export function CognitoStack({ app, stack }) {
             function: {
                 handler: "packages/functions/src/api/expire_user_invitation.main",
                 timeout: app.stage === "prod" ? "30 seconds" : "60 seconds",
-                bind: [rdsCluster, COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
+                bind: [rdsCluster, COGNITO_USER_POOL_ID],
                 // @ts-expect-error ignore check
                 role: cognitoAdminRole,
             }
@@ -350,6 +349,5 @@ export function CognitoStack({ app, stack }) {
         cognito: cognitoConfig,
         cognitoAdminRole,
         COGNITO_USER_POOL_ID,
-        COGNITO_EMAIL_PHONE_USER_POOL_ID,
     };
 }

@@ -5,7 +5,7 @@ import { CognitoStack } from "./CognitoStack";
 export function EventBusStack({ app, stack }) {
     const { rdsCluster } = use(RDSStack);
     const { iotRole, IOT_ENDPOINT } = use(IotStack);
-    const { cognitoAdminRole, COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID } = use(CognitoStack);
+    const { cognitoAdminRole, COGNITO_USER_POOL_ID } = use(CognitoStack);
     const timeout = app.stage === "prod" ? "30 seconds" : "60 seconds";
     const eventBus = new EventBus(stack, "api", {
         rules: {
@@ -162,7 +162,7 @@ export function EventBusStack({ app, stack }) {
                         function: {
                             handler: "packages/functions/src/events/on_user_deleted.main",
                             timeout,
-                            bind: [rdsCluster, COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
+                            bind: [rdsCluster, COGNITO_USER_POOL_ID],
                             // @ts-expect-error ignore check
                             role: cognitoAdminRole,
                         }

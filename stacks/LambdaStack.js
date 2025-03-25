@@ -13,7 +13,7 @@ export function LambdaStack({ app, stack }) {
     const { rdsCluster } = use(RDSStack);
     const { timescaleConfigs } = use(TimescaleStack);
     const { eventBus } = use(EventBusStack);
-    const { cognitoAdminRole, COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID, } = use(CognitoStack);
+    const { cognitoAdminRole, COGNITO_USER_POOL_ID, } = use(CognitoStack);
     // Lambda layers
     // axios layer: to make http requests
     // const axiosLayer = new LayerVersion(stack, "axios-layer", {
@@ -31,7 +31,7 @@ export function LambdaStack({ app, stack }) {
     const sharpLayer = new LayerVersion(stack, "sharp-layer", {
         code: Code.fromAsset("layers/sharp"),
     });
-    // sharp layer: to resize images
+    // expo-server-sdk layer: to resize images
     const expoServerSdkLayer = new LayerVersion(stack, "expo-server-sdk-layer", {
         code: Code.fromAsset("layers/expo-server-sdk"),
     });
@@ -319,7 +319,7 @@ export function LambdaStack({ app, stack }) {
         handler: "packages/functions/src/user_pool_migration.main",
         // @ts-expect-error ignore check
         role: cognitoAdminRole,
-        bind: [COGNITO_USER_POOL_ID, COGNITO_EMAIL_PHONE_USER_POOL_ID],
+        bind: [COGNITO_USER_POOL_ID],
     });
     return {
         lambdaLayers: {

@@ -25,9 +25,6 @@ export function RDSStack({ app, stack }) {
             path: "backend/core/sql/types.ts",
             camelCase: true
         },
-        cdk: {
-            cluster: {}
-        },
         // @ts-expect-error ignore typing
         scaling: app.stage === "prod"
             ? prodConfig

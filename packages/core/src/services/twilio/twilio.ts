@@ -16,6 +16,7 @@ export const sendSMS = async (message: string, to: string): Promise<{
       body: message,
       // from: Config.TWILIO_PHONE_NUMBER,
       messagingServiceSid: Config.TWILIO_SENDER_SERVICE,
+      shortenUrls: true, // only available when using a messaging service
       to
     });
 
