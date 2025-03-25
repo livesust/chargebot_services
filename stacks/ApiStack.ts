@@ -13,7 +13,11 @@ export function ApiStack({ app, stack }: StackContext) {
   const { rdsCluster } = use(RDSStack);
   const { timescaleConfigs } = use(TimescaleStack);
   const { eventBus } = use(EventBusStack);
-  const { cognito, cognitoAdminRole, COGNITO_USER_POOL_ID } = use(CognitoStack);
+  const {
+    cognito,
+    cognitoAdminRole,
+    COGNITO_USER_POOL_ID,
+  } = use(CognitoStack);
   const { iotRole, IOT_ENDPOINT } = use(IotStack);
   const { lambdaLayers, functions/*, setupProvisionedConcurrency*/ } = use(LambdaStack);
 
@@ -300,7 +304,14 @@ export function ApiStack({ app, stack }: StackContext) {
           bind: [COGNITO_USER_POOL_ID],
         },
       },
-      "PATCH /user/{cognito_id}/profile": "packages/functions/src/api/update_user_profile.main",
+      "PATCH /user/{cognito_id}/profile": {
+        function: {
+          handler: "packages/functions/src/api/update_user_profile.main",
+          // @ts-expect-error ignore check
+          role: cognitoAdminRole,
+          bind: [COGNITO_USER_POOL_ID],
+        },
+      },
       "POST /user/reinvite": {
         function: {
           handler: "packages/functions/src/api/reinvite_user.main",

@@ -243,7 +243,6 @@ export async function paginate(page: number, pageSize: number, sort: OrderByDire
     .limit(pageSize)
     .offset(page * pageSize);
 
-  Log.info("Paginate Bots SQL:", {sql: query.compile().sql});
   // @ts-expect-error ignore
   return query.execute();
 }

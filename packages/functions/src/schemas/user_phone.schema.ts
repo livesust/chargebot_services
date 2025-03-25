@@ -4,7 +4,7 @@ import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEnti
 //import { EntitySchema as UserSchema } from "./user.schema";
 
 const UserPhoneSchemaDef = {
-    phone_number: Joi.string(),
+    phone_number: Joi.string().allow(null, ''),
     send_text: Joi.boolean().allow(null),
     primary: Joi.boolean().allow(null),
 };

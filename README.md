@@ -59,6 +59,16 @@ npx sst deploy --stage staging
 npx sst deploy --stage production
 ```
 
+## Access RDS via a SSH tunnel with bastion server
+A bastion server must be setup on the VPC public subnet and modify the security group to allow access on SSH port 22.
+Then, you can use the following command to formward RDS instance 5432 to your localhost:5433.
+
+```bash
+ssh -i <bastion-certificate>.pem -f -N -L 5433:<rds-server>:5432 ec2-user@<bastion-host> -v
+
+ssh -i bastion-staging-rds.pem -f -N -L 5433:staging-chargebot-services-rdscluster.cluster-chbfcndbn3vk.us-east-1.rds.amazonaws.com:5432 ec2-user@ec2-54-165-187-31.compute-1.amazonaws.com -v
+```
+
 ## Generate entities
 ### Create a entity
 ```bash

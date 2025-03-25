@@ -21,7 +21,7 @@ import { BotUser } from "@chargebot-services/core/services/bot_user";
 
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
-  const user_sub = event.requestContext?.authorizer?.jwt.claims.sub;
+  const user_id = event.requestContext?.authorizer?.jwt.claims['cognito:username'] ?? event.requestContext?.authorizer?.jwt.claims['username'];
   const body = event.body;
   const email_address = body.email_address;
 
@@ -48,7 +48,7 @@ const handler = async (event) => {
     // Set status as invited
     existentUser = (await User.update(existentUser.id!, {
       invite_status: UserInviteStatus.INVITED,
-      modified_by: user_sub,
+      modified_by: user_id,
       modified_date: new Date()
     }))?.entity;
 
@@ -59,15 +59,15 @@ const handler = async (event) => {
       const botsToRemove = assignedBots.map(b => b.bot_id).filter((id: number) => !body.bot_ids.some((bot_id: number) => bot_id == id))
       const now = new Date();
       await Promise.all([
-        botsToRemove.map(async (bot_id: number) => BotUser.remove(bot_id, user_sub)),
+        botsToRemove.map(async (bot_id: number) => BotUser.remove(bot_id, user_id)),
         botsToAssign.map(async (bot_id: number) =>
           BotUser.create({
             bot_id: bot_id,
             assignment_date: now,
             user_id: existentUser!.id!,
-            created_by: user_sub,
+            created_by: user_id,
             created_date: now,
-            modified_by: user_sub,
+            modified_by: user_id,
             modified_date: now,
           })
         )

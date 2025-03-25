@@ -3,6 +3,7 @@ import { AuditedEntityCreateSchemaDef, AuditedEntityUpdateSchemaDef, AuditedEnti
 
 import { EntitySchema as CompanySchema } from "./company.schema";
 import { EntitySchema as UserEmailSchema } from "./user_email.schema";
+import { EntitySchema as UserPhoneSchema } from "./user_phone.schema";
 import { EntitySchema as RoleSchema } from "./role.schema";
 
 const UserSchemaDef = {
@@ -24,6 +25,7 @@ export const EntitySchema = Joi.object({
     company_id: Joi.number(),
     company: CompanySchema,
     user_email: UserEmailSchema.allow(null),
+    user_phone: UserPhoneSchema.allow(null),
     role: RoleSchema.allow(null),
 });
 

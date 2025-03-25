@@ -21,7 +21,7 @@ import { Outlet } from "@chargebot-services/core/services/outlet";
 const handler = async (event) => {
   const equipment_id = +event.pathParameters!.equipment_id!;
   const outlet_id = +event.pathParameters!.outlet_id!;
-  const user_id = event.requestContext?.authorizer?.jwt.claims.sub;
+  const user_id = event.requestContext?.authorizer?.jwt.claims['cognito:username'] ?? event.requestContext?.authorizer?.jwt.claims['username'];
 
   try {
     const [equipment, outlet, _] = await Promise.all([

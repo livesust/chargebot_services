@@ -20,7 +20,7 @@ import { Cognito } from "@chargebot-services/core/services/aws/cognito";
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
   const cognito_id = event.pathParameters!.cognito_id!;
-  const user_sub = event.requestContext?.authorizer?.jwt.claims.sub;
+  const user_id = event.requestContext?.authorizer?.jwt.claims['cognito:username'] ?? event.requestContext?.authorizer?.jwt.claims['username'];
 
   try {
     let existentUser = await User.findByCognitoId(cognito_id);
@@ -44,7 +44,7 @@ const handler = async (event) => {
     // save as inactive
     existentUser = (await User.update(existentUser.id!, {
       invite_status: UserInviteStatus.INACTIVE,
-      modified_by: user_sub,
+      modified_by: user_id,
       modified_date: new Date()
     }))?.entity;
 

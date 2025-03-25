@@ -18,7 +18,7 @@ import { EventBus } from "@chargebot-services/core/services/aws/event_bus";
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
   const id = +event.pathParameters!.id!;
-  const user_id = event.requestContext?.authorizer?.jwt.claims.sub;
+  const user_id = event.requestContext?.authorizer?.jwt.claims['cognito:username'] ?? event.requestContext?.authorizer?.jwt.claims['username'];
   const entity_name = event.pathParameters!.entity!;
   console.log("Call to Remove", entity_name);
 

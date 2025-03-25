@@ -8,11 +8,16 @@ import { IotToLambda, IotToLambdaProps } from "@aws-solutions-constructs/aws-iot
 import { Effect, IRole, Policy, PolicyStatement, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { CfnPlaceIndex } from 'aws-cdk-lib/aws-location';
 import { EventBusStack } from "./EventBusStack";
+import { CognitoStack } from "./CognitoStack";
 
 export function LambdaStack({ app, stack }: StackContext) {
   const { rdsCluster } = use(RDSStack);
   const { timescaleConfigs } = use(TimescaleStack);
   const { eventBus } = use(EventBusStack);
+  const {
+    cognitoAdminRole,
+    COGNITO_USER_POOL_ID,
+  } = use(CognitoStack);
 
   // Lambda layers
   // axios layer: to make http requests
@@ -35,7 +40,7 @@ export function LambdaStack({ app, stack }: StackContext) {
     code: Code.fromAsset("layers/sharp"),
   });
 
-  // sharp layer: to resize images
+  // expo-server-sdk layer: to resize images
   const expoServerSdkLayer = new LayerVersion(stack, "expo-server-sdk-layer", {
     code: Code.fromAsset("layers/expo-server-sdk"),
   });
@@ -52,7 +57,6 @@ export function LambdaStack({ app, stack }: StackContext) {
   const EXPO_ACCESS_TOKEN = new Config.Secret(stack, "EXPO_ACCESS_TOKEN");
 
   // Cron function to send daily usage notifications, runs every 15min
-  
   const processDailyUsageAlerts = new Function(stack, "chargebotDailyUsageAlerts", {
     handler: "packages/functions/src/api/send_daily_usage_notifications.main",
     timeout: "180 seconds",
@@ -352,6 +356,16 @@ export function LambdaStack({ app, stack }: StackContext) {
   };
 
   new IotToLambda(stack, `ChargebotIoTSystemShadowConnectedRuleToLambda_${app.stage}`, iotSystemShadowConnectedToLambda);
+
+  /**
+   * Lambda Function to migrate users to a new pool
+   */  
+  new Function(stack, "migrateUserPoolUsers", {
+    handler: "packages/functions/src/user_pool_migration.main",
+    // @ts-expect-error ignore check
+    role: cognitoAdminRole,
+    bind: [COGNITO_USER_POOL_ID],
+  });
 
   return {
     lambdaLayers: {

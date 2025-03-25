@@ -19,7 +19,7 @@ import { BatteryVariables } from "@chargebot-services/core/timescale/chargebot_b
 
 // @ts-expect-error ignore any type for event
 const handler = async ({ requestContext }) => {
-  const user_id = requestContext?.authorizer?.jwt.claims.sub;
+  const user_id = requestContext?.authorizer?.jwt.claims['cognito:username'];
 
   const response: unknown[] = [];
 

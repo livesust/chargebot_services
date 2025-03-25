@@ -21,12 +21,12 @@ import { UserStatusType } from "@aws-sdk/client-cognito-identity-provider";
 // @ts-expect-error ignore any type for event
 const handler = async (event) => {
   const cognito_id = event.pathParameters!.cognito_id!;
-  const user_sub = event.requestContext?.authorizer?.jwt.claims.sub;
+  const user_id = event.requestContext?.authorizer?.jwt.claims['cognito:username'] ?? event.requestContext?.authorizer?.jwt.claims['username'];
 
   try {
     const [existentUser, cognitoUser] = await Promise.all([
       User.findByCognitoId(cognito_id),
-      Cognito.getUserByEmail(cognito_id)
+      Cognito.getUserByUsername(cognito_id)
     ]);
     if (!existentUser) {
       Log.debug("User not found", { cognito_id });
@@ -48,7 +48,7 @@ const handler = async (event) => {
     // save as active
     const updatedUser = (await User.update(existentUser.id!, {
       invite_status: cognitoUser?.UserStatus == UserStatusType.FORCE_CHANGE_PASSWORD ? UserInviteStatus.INVITED : UserInviteStatus.ACTIVE,
-      modified_by: user_sub,
+      modified_by: user_id,
       modified_date: new Date()
     }))?.entity;
 

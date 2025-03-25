@@ -26,6 +26,17 @@ export function withEmail(eb: ExpressionBuilder<Database, 'user'>) {
   ).as('user_email')
 }
 
+export function withPhone(eb: ExpressionBuilder<Database, 'user'>) {
+    return jsonObjectFrom(
+      eb.selectFrom('user_phone')
+        .selectAll()
+        .whereRef('user_phone.user_id', '=', 'user.id')
+        .where('user_phone.deleted_by', 'is', null)
+        .where('user_phone.primary', 'is', true)
+        .limit(1)
+    ).as('user_phone')
+}
+
 export function withRole(eb: ExpressionBuilder<Database, 'user'>) {
   return jsonObjectFrom(
     eb.selectFrom('role')
@@ -130,6 +141,7 @@ export async function list(): Promise<User[]> {
         .selectAll()
         .select((eb) => withCompany(eb))
         .select((eb) => withEmail(eb))
+        .select((eb) => withPhone(eb))
         .select((eb) => withRole(eb))
         .where('user.deleted_by', 'is', null)
         .execute();
@@ -151,6 +163,7 @@ export async function paginate(page: number, pageSize: number, sort: OrderByDire
       .selectAll("user")
       .select((eb) => withCompany(eb))
       .select((eb) => withEmail(eb))
+      .select((eb) => withPhone(eb))
       .select((eb) => withRole(eb))
       .limit(pageSize)
       .offset(page * pageSize)
@@ -173,6 +186,7 @@ export async function get(id: number): Promise<User | undefined> {
         .selectAll()
         .select((eb) => withCompany(eb))
         .select((eb) => withEmail(eb))
+        .select((eb) => withPhone(eb))
         .select((eb) => withRole(eb))
         .where('user.id', '=', id)
         .where('user.deleted_by', 'is', null)
@@ -189,11 +203,24 @@ export async function findByCognitoId(cognito_id: string): Promise<User | undefi
 }
 
 export async function findByEmail(email_address: string): Promise<User | undefined> {
+  if (!email_address) return undefined;
   return db
       .selectFrom("user")
       .innerJoin('user_email', 'user_email.user_id', 'user.id')
       .where('user_email.email_address', '=', email_address)
       .where('user_email.deleted_by', 'is', null)
+      .where('user.deleted_by', 'is', null)
+      .selectAll('user')
+      .executeTakeFirst();
+}
+
+export async function findByPhone(phone_number: string): Promise<User | undefined> {
+  if (!phone_number) return undefined;
+  return db
+      .selectFrom("user")
+      .innerJoin('user_phone', 'user_phone.user_id', 'user.id')
+      .where('user_phone.phone_number', '=', phone_number)
+      .where('user_phone.deleted_by', 'is', null)
       .where('user.deleted_by', 'is', null)
       .selectAll('user')
       .executeTakeFirst();
@@ -215,6 +242,7 @@ export async function findByCriteria(criteria: Partial<User>): Promise<User[]> {
     .selectAll("user")
     .select((eb) => withCompany(eb))
     .select((eb) => withEmail(eb))
+    .select((eb) => withPhone(eb))
     .select((eb) => withRole(eb))
     .execute();
 }
@@ -230,6 +258,7 @@ export async function findOneByCriteria(criteria: Partial<User>): Promise<User |
     .selectAll("user")
     .select((eb) => withCompany(eb))
     .select((eb) => withEmail(eb))
+    .select((eb) => withPhone(eb))
     .select((eb) => withRole(eb))
     .limit(1)
     .executeTakeFirst();
